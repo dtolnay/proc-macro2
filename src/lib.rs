@@ -1,6 +1,7 @@
 extern crate proc_macro;
 
 #[macro_use]
+#[cfg(feature = "stable")]
 extern crate synom;
 
 use std::fmt;
@@ -9,6 +10,10 @@ use std::str::FromStr;
 use std::iter::FromIterator;
 
 #[path = "stable.rs"]
+#[cfg(feature = "stable")]
+mod imp;
+#[path = "unstable.rs"]
+#[cfg(not(feature = "stable"))]
 mod imp;
 
 #[derive(Clone)]
