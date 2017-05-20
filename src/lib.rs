@@ -118,6 +118,18 @@ impl From<TokenKind> for TokenTree {
     }
 }
 
+impl From<Symbol> for TokenTree {
+    fn from(sym: Symbol) -> TokenTree {
+        TokenKind::Word(sym).into()
+    }
+}
+
+impl From<Literal> for TokenTree {
+    fn from(lit: Literal) -> TokenTree {
+        TokenKind::Literal(lit).into()
+    }
+}
+
 impl fmt::Display for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         TokenStream::from(self.clone()).fmt(f)
