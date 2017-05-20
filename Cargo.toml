@@ -1,0 +1,15 @@
+[package]
+name = "proc-macro2"
+version = "0.1.0"
+authors = ["Alex Crichton <alex@alexcrichton.com>"]
+
+[lib]
+doctest = false
+
+[dependencies]
+synom = { version = "0.11", optional = true }
+unicode-xid = { version = "0.0.4", optional = true }
+
+[features]
+stable = ["synom", "unicode-xid"]
+default = ["stable"]
