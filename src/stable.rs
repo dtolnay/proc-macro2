@@ -68,7 +68,11 @@ impl fmt::Display for TokenStream {
                         Delimiter::Bracket => ("[", "]"),
                         Delimiter::None => ("", ""),
                     };
-                    write!(f, "{} {} {}", start, stream, end)?
+                    if stream.0.inner.len() == 0 {
+                        write!(f, "{} {}", start, end)?
+                    } else {
+                        write!(f, "{} {} {}", start, stream, end)?
+                    }
                 }
                 TokenKind::Word(ref sym) => write!(f, "{}", &**sym)?,
                 TokenKind::Op(ch, ref op) => {
@@ -208,24 +212,52 @@ impl Interner {
 #[derive(Clone)]
 pub struct Literal(String);
 
+impl Literal {
+    pub fn bytestring(bytes: &[u8]) -> Literal {
+        let mut escaped = "b\"".to_string();
+        for b in bytes {
+            match *b {
+                b'\0' => escaped.push_str(r"\0"),
+                b'\t' => escaped.push_str(r"\t"),
+                b'\n' => escaped.push_str(r"\n"),
+                b'\r' => escaped.push_str(r"\r"),
+                b'"' => escaped.push_str("\\\""),
+                b'\\' => escaped.push_str("\\\\"),
+                b'\x20' ... b'\x7E' => escaped.push(*b as char),
+                _ => escaped.push_str(&format!("\\x{:02X}", b)),
+            }
+        }
+        escaped.push('"');
+        Literal(escaped)
+    }
+}
+
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-macro_rules! tys {
+macro_rules! numbers {
     ($($t:ty,)*) => {$(
         impl From<$t> for Literal {
             fn from(t: $t) -> Literal {
-                Literal(t.to_string())
+                Literal(format!(concat!("{}", stringify!($t)), t))
             }
         }
     )*}
 }
 
-tys! {
-    u8, i8, u16, i16, u32, i32, u64, i64, f32, f64,
+numbers! {
+    u8, u16, u32, u64, usize,
+    i8, i16, i32, i64, isize,
+    f32, f64,
+}
+
+impl From<bool> for Literal {
+    fn from(t: bool) -> Literal {
+        Literal(t.to_string())
+    }
 }
 
 impl<'a> From<&'a str> for Literal {
@@ -332,8 +364,6 @@ fn literal(input: &str) -> IResult<&str, Literal> {
             let start = input.len() - input_no_ws.len();
             let len = input_no_ws.len() - a.len();
             let end = start + len;
-            println!("{:?}", a);
-            println!("{:?}", &input[start..end]);
             IResult::Done(a, Literal(input[start..end].to_string()))
         }
         IResult::Error => IResult::Error,
@@ -845,6 +875,8 @@ named!(op -> (char, OpKind), alt!(
     punct1!("..") => { |_| ('.', OpKind::Joint) }
     |
     punct!(".") => { |_| ('.', OpKind::Alone) }
+    |
+    punct!(",") => { |_| (',', OpKind::Alone) }
     |
     bin_op_eq
     |

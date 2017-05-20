@@ -144,6 +144,12 @@ impl<'a> From<&'a str> for Symbol {
     }
 }
 
+impl From<String> for Symbol {
+    fn from(string: String) -> Symbol {
+        Symbol(string[..].into())
+    }
+}
+
 impl ops::Deref for Symbol {
     type Target = str;
 
@@ -167,6 +173,12 @@ impl fmt::Display for Literal {
     }
 }
 
+impl Literal {
+    pub fn bytestring(s: &[u8]) -> Literal {
+        Literal(imp::Literal::bytestring(s))
+    }
+}
+
 macro_rules! tys {
     ($($t:ty,)*) => {$(
         impl<'a> From<$t> for Literal {
@@ -178,7 +190,9 @@ macro_rules! tys {
 }
 
 tys! {
-    u8, i8, u16, i16, u32, i32, u64, i64, f32, f64, char, &'a str,
+    u8, u16, u32, u64, usize,
+    i8, i16, i32, i64, isize,
+    f32, f64, char, &'a str, bool,
 }
 
 pub struct TokenIter(imp::TokenIter);
