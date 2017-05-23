@@ -1,5 +1,6 @@
 extern crate unicode_xid;
 
+use std::ascii;
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -213,6 +214,19 @@ impl Interner {
 pub struct Literal(String);
 
 impl Literal {
+    pub fn bytechar(byte: u8) -> Literal {
+        match byte {
+            0 => Literal(format!("b'\\0'")),
+            b'\"' => Literal(format!("b'\"'")),
+            n => {
+                let mut escaped = "b'".to_string();
+                escaped.extend(ascii::escape_default(n).map(|c| c as char));
+                escaped.push('\'');
+                Literal(escaped)
+            }
+        }
+    }
+
     pub fn bytestring(bytes: &[u8]) -> Literal {
         let mut escaped = "b\"".to_string();
         for b in bytes {
@@ -229,6 +243,10 @@ impl Literal {
         }
         escaped.push('"');
         Literal(escaped)
+    }
+
+    pub fn doccomment(s: &str) -> Literal {
+        Literal(s.to_string())
     }
 }
 

@@ -191,8 +191,16 @@ impl fmt::Display for Literal {
 }
 
 impl Literal {
+    pub fn bytechar(b: u8) -> Literal {
+        Literal(imp::Literal::bytechar(b))
+    }
+
     pub fn bytestring(s: &[u8]) -> Literal {
         Literal(imp::Literal::bytestring(s))
+    }
+
+    pub fn doccomment(s: &str) -> Literal {
+        Literal(imp::Literal::doccomment(s))
     }
 }
 
