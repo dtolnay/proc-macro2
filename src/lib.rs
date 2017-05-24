@@ -57,12 +57,6 @@ impl From<TokenTree> for TokenStream {
     }
 }
 
-impl From<TokenKind> for TokenStream {
-    fn from(kind: TokenKind) -> TokenStream {
-        TokenTree::from(kind).into()
-    }
-}
-
 impl<T: Into<TokenStream>> FromIterator<T> for TokenStream {
     fn from_iter<I: IntoIterator<Item = T>>(streams: I) -> Self {
         TokenStream(streams.into_iter().map(|t| t.into().0).collect())
@@ -107,27 +101,6 @@ impl Span {
 pub struct TokenTree {
     pub span: Span,
     pub kind: TokenKind,
-}
-
-impl From<TokenKind> for TokenTree {
-    fn from(kind: TokenKind) -> TokenTree {
-        TokenTree {
-            span: Span::default(),
-            kind: kind,
-        }
-    }
-}
-
-impl From<Symbol> for TokenTree {
-    fn from(sym: Symbol) -> TokenTree {
-        TokenKind::Word(sym).into()
-    }
-}
-
-impl From<Literal> for TokenTree {
-    fn from(lit: Literal) -> TokenTree {
-        TokenKind::Literal(lit).into()
-    }
 }
 
 impl fmt::Display for TokenTree {
