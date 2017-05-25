@@ -272,12 +272,6 @@ numbers! {
     f32, f64,
 }
 
-impl From<bool> for Literal {
-    fn from(t: bool) -> Literal {
-        Literal(t.to_string())
-    }
-}
-
 impl<'a> From<&'a str> for Literal {
     fn from(t: &'a str) -> Literal {
         let mut s = t.chars().flat_map(|c| c.escape_default()).collect::<String>();
