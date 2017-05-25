@@ -311,9 +311,9 @@ named!(token_kind -> TokenKind, alt!(
         TokenKind::Sequence(d, ::TokenStream(s))
     })
     |
-    map!(symbol, |w| TokenKind::Word(::Symbol(w)))
+    map!(literal, |l| TokenKind::Literal(::Literal(l))) // must be before symbol
     |
-    map!(literal, |l| TokenKind::Literal(::Literal(l)))
+    map!(symbol, |w| TokenKind::Word(::Symbol(w)))
     |
     map!(op, |(op, kind): (char, OpKind)| {
         TokenKind::Op(op, kind)
