@@ -75,7 +75,7 @@ impl fmt::Display for TokenStream {
                         write!(f, "{} {} {}", start, stream, end)?
                     }
                 }
-                TokenKind::Word(ref sym) => write!(f, "{}", &**sym)?,
+                TokenKind::Word(ref sym) => write!(f, "{}", sym.as_str())?,
                 TokenKind::Op(ch, ref op) => {
                     write!(f, "{}", ch)?;
                     match *op {
@@ -214,7 +214,7 @@ impl Interner {
 pub struct Literal(String);
 
 impl Literal {
-    pub fn bytechar(byte: u8) -> Literal {
+    pub fn byte_char(byte: u8) -> Literal {
         match byte {
             0 => Literal(format!("b'\\0'")),
             b'\"' => Literal(format!("b'\"'")),
@@ -227,7 +227,7 @@ impl Literal {
         }
     }
 
-    pub fn bytestring(bytes: &[u8]) -> Literal {
+    pub fn byte_string(bytes: &[u8]) -> Literal {
         let mut escaped = "b\"".to_string();
         for b in bytes {
             match *b {
@@ -248,6 +248,14 @@ impl Literal {
     pub fn doccomment(s: &str) -> Literal {
         Literal(s.to_string())
     }
+
+    pub fn float(s: &str) -> Literal {
+        Literal(s.to_string())
+    }
+
+    pub fn integer(s: &str) -> Literal {
+        Literal(s.to_string())
+    }
 }
 
 impl fmt::Display for Literal {
@@ -256,7 +264,7 @@ impl fmt::Display for Literal {
     }
 }
 
-macro_rules! numbers {
+macro_rules! ints {
     ($($t:ty,)*) => {$(
         impl From<$t> for Literal {
             fn from(t: $t) -> Literal {
@@ -266,9 +274,24 @@ macro_rules! numbers {
     )*}
 }
 
-numbers! {
+ints! {
     u8, u16, u32, u64, usize,
     i8, i16, i32, i64, isize,
+}
+
+macro_rules! floats {
+    ($($t:ty,)*) => {$(
+        impl From<$t> for Literal {
+            fn from(t: $t) -> Literal {
+                assert!(!t.is_nan());
+                assert!(!t.is_infinite());
+                Literal(format!(concat!("{}", stringify!($t)), t))
+            }
+        }
+    )*}
+}
+
+floats! {
     f32, f64,
 }
 

@@ -5,7 +5,6 @@ extern crate proc_macro;
 extern crate synom;
 
 use std::fmt;
-use std::ops;
 use std::str::FromStr;
 use std::iter::FromIterator;
 
@@ -140,10 +139,8 @@ impl From<String> for Symbol {
     }
 }
 
-impl ops::Deref for Symbol {
-    type Target = str;
-
-    fn deref(&self) -> &str {
+impl Symbol {
+    fn as_str(&self) -> &str {
         &self.0
     }
 }
@@ -164,20 +161,28 @@ impl fmt::Display for Literal {
 }
 
 impl Literal {
-    pub fn bytechar(b: u8) -> Literal {
-        Literal(imp::Literal::bytechar(b))
+    pub fn byte_char(b: u8) -> Literal {
+        Literal(imp::Literal::byte_char(b))
     }
 
-    pub fn bytestring(s: &[u8]) -> Literal {
-        Literal(imp::Literal::bytestring(s))
+    pub fn byte_string(s: &[u8]) -> Literal {
+        Literal(imp::Literal::byte_string(s))
     }
 
     pub fn doccomment(s: &str) -> Literal {
         Literal(imp::Literal::doccomment(s))
     }
+
+    pub fn float(s: &str) -> Literal {
+        Literal(imp::Literal::float(s))
+    }
+
+    pub fn integer(s: &str) -> Literal {
+        Literal(imp::Literal::integer(s))
+    }
 }
 
-macro_rules! tys {
+macro_rules! froms {
     ($($t:ty,)*) => {$(
         impl<'a> From<$t> for Literal {
             fn from(t: $t) -> Literal {
@@ -187,7 +192,7 @@ macro_rules! tys {
     )*}
 }
 
-tys! {
+froms! {
     u8, u16, u32, u64, usize,
     i8, i16, i32, i64, isize,
     f32, f64, char, &'a str,
