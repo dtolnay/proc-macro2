@@ -256,6 +256,26 @@ impl Literal {
     pub fn integer(s: &str) -> Literal {
         Literal(s.to_string())
     }
+
+    pub fn raw_string(s: &str, pounds: usize) -> Literal {
+        let mut ret = format!("r");
+        ret.extend((0..pounds).map(|_| "#"));
+        ret.push('"');
+        ret.push_str(s);
+        ret.push('"');
+        ret.extend((0..pounds).map(|_| "#"));
+        Literal(ret)
+    }
+
+    pub fn raw_byte_string(s: &str, pounds: usize) -> Literal {
+        let mut ret = format!("rb");
+        ret.extend((0..pounds).map(|_| "#"));
+        ret.push('"');
+        ret.push_str(s);
+        ret.push('"');
+        ret.extend((0..pounds).map(|_| "#"));
+        Literal(ret)
+    }
 }
 
 impl fmt::Display for Literal {

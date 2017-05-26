@@ -180,6 +180,14 @@ impl Literal {
     pub fn integer(s: &str) -> Literal {
         Literal(imp::Literal::integer(s))
     }
+
+    pub fn raw_string(s: &str, pounds: usize) -> Literal {
+        Literal(imp::Literal::raw_string(s, pounds))
+    }
+
+    pub fn raw_byte_string(s: &str, pounds: usize) -> Literal {
+        Literal(imp::Literal::raw_byte_string(s, pounds))
+    }
 }
 
 macro_rules! froms {
