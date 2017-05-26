@@ -268,7 +268,7 @@ impl Literal {
     }
 
     pub fn raw_byte_string(s: &str, pounds: usize) -> Literal {
-        let mut ret = format!("rb");
+        let mut ret = format!("br");
         ret.extend((0..pounds).map(|_| "#"));
         ret.push('"');
         ret.push_str(s);
