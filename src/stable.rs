@@ -326,7 +326,7 @@ impl<'a> From<&'a str> for Literal {
 
 impl From<char> for Literal {
     fn from(t: char) -> Literal {
-        Literal(format!("'{}'", t.escape_default()))
+        Literal(format!("'{}'", t.escape_default().collect::<String>()))
     }
 }
 
