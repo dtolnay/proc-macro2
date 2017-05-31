@@ -853,7 +853,6 @@ fn digits(mut input: &str) -> IResult<&str, ()> {
         10
     };
 
-    let mut value = 0u64;
     let mut len = 0;
     let mut empty = true;
     for b in input.bytes() {
@@ -873,14 +872,6 @@ fn digits(mut input: &str) -> IResult<&str, ()> {
         if digit >= base {
             return IResult::Error;
         }
-        value = match value.checked_mul(base) {
-            Some(value) => value,
-            None => return IResult::Error,
-        };
-        value = match value.checked_add(digit) {
-            Some(value) => value,
-            None => return IResult::Error,
-        };
         len += 1;
         empty = false;
     }
@@ -1090,6 +1081,7 @@ mod tests {
             8u8
             9
             0
+            0xffffffffffffffffffffffffffffffff
         ");
     }
 }
