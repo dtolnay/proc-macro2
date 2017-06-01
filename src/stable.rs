@@ -339,17 +339,13 @@ named!(token_tree -> TokenTree,
        }));
 
 named!(token_kind -> TokenKind, alt!(
-    map!(delimited, |(d, s): (Delimiter, TokenStream)| {
-        TokenKind::Sequence(d, ::TokenStream(s))
-    })
+    map!(delimited, |(d, s)| TokenKind::Sequence(d, ::TokenStream(s)))
     |
     map!(literal, |l| TokenKind::Literal(::Literal(l))) // must be before symbol
     |
     map!(symbol, |w| TokenKind::Word(::Symbol(w)))
     |
-    map!(op, |(op, kind): (char, OpKind)| {
-        TokenKind::Op(op, kind)
-    })
+    map!(op, |(op, kind)| TokenKind::Op(op, kind))
 ));
 
 named!(delimited -> (Delimiter, TokenStream), alt!(
