@@ -1,12 +1,15 @@
 extern crate proc_macro;
 
-#[macro_use]
 #[cfg(not(feature = "unstable"))]
-extern crate synom;
+extern crate unicode_xid;
 
 use std::fmt;
 use std::str::FromStr;
 use std::iter::FromIterator;
+
+#[macro_use]
+#[cfg(not(feature = "unstable"))]
+mod strnom;
 
 #[path = "stable.rs"]
 #[cfg(not(feature = "unstable"))]

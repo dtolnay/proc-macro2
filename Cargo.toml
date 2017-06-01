@@ -7,7 +7,6 @@ authors = ["Alex Crichton <alex@alexcrichton.com>"]
 doctest = false
 
 [dependencies]
-synom = "0.11"
 unicode-xid = "0.0.4"
 
 [features]

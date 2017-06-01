@@ -1,5 +1,3 @@
-extern crate unicode_xid;
-
 use std::ascii;
 use std::borrow::Borrow;
 use std::cell::RefCell;
@@ -12,9 +10,8 @@ use std::str::FromStr;
 use std::vec;
 
 use proc_macro;
-use self::unicode_xid::UnicodeXID;
-use synom::space::{skip_whitespace, block_comment, whitespace};
-use synom::{IResult};
+use unicode_xid::UnicodeXID;
+use strnom::{IResult, skip_whitespace, block_comment, whitespace};
 
 use {TokenTree, TokenKind, Delimiter, OpKind};
 
