@@ -11,7 +11,7 @@ use std::vec;
 
 use proc_macro;
 use unicode_xid::UnicodeXID;
-use strnom::{PResult, skip_whitespace, block_comment, whitespace};
+use strnom::{PResult, skip_whitespace, block_comment, whitespace, word_break};
 
 use {TokenTree, TokenKind, Delimiter, OpKind};
 
@@ -721,19 +721,17 @@ fn backslash_u<I>(chars: &mut I) -> bool
     true
 }
 
-named!(float -> (), do_parse!(
-    float_string >>
-    alt!(
-        tag!("f32") => { |_| () }
-        |
-        tag!("f64") => { |_| () }
-        |
-        epsilon!()
-    ) >>
-    (())
-));
+fn float(input: &str) -> PResult<()> {
+    let (rest, ()) = float_digits(input)?;
+    for suffix in &["f32", "f64"] {
+        if rest.starts_with(suffix) {
+            return word_break(&rest[suffix.len()..]);
+        }
+    }
+    word_break(rest)
+}
 
-fn float_string(input: &str) -> PResult<()> {
+fn float_digits(input: &str) -> PResult<()> {
     let mut chars = input.chars().peekable();
     match chars.next() {
         Some(ch) if ch >= '0' && ch <= '9' => {}
@@ -808,37 +806,28 @@ fn float_string(input: &str) -> PResult<()> {
     Ok((&input[len..], ()))
 }
 
-named!(int -> (), do_parse!(
-    digits >>
-    alt!(
-        tag!("isize") => { |_| () }
-        |
-        tag!("i8") => { |_| () }
-        |
-        tag!("i16") => { |_| () }
-        |
-        tag!("i32") => { |_| () }
-        |
-        tag!("i64") => { |_| () }
-        |
-        tag!("i128") => { |_| () }
-        |
-        tag!("usize") => { |_| () }
-        |
-        tag!("u8") => { |_| () }
-        |
-        tag!("u16") => { |_| () }
-        |
-        tag!("u32") => { |_| () }
-        |
-        tag!("u64") => { |_| () }
-        |
-        tag!("u128") => { |_| () }
-        |
-        epsilon!()
-    ) >>
-    (())
-));
+fn int(input: &str) -> PResult<()> {
+    let (rest, ()) = digits(input)?;
+    for suffix in &[
+        "isize",
+        "i8",
+        "i16",
+        "i32",
+        "i64",
+        "i128",
+        "usize",
+        "u8",
+        "u16",
+        "u32",
+        "u64",
+        "u128",
+    ] {
+        if rest.starts_with(suffix) {
+            return word_break(&rest[suffix.len()..]);
+        }
+    }
+    word_break(rest)
+}
 
 fn digits(mut input: &str) -> PResult<()> {
     let base = if input.starts_with("0x") {
@@ -995,5 +984,17 @@ mod tests {
             0
             0xffffffffffffffffffffffffffffffff
         ");
+    }
+
+    #[test]
+    fn fail() {
+        fn fail(p: &str) {
+            if p.parse::<TokenStream>().is_ok() {
+                panic!("should have failed to parse: {}", p);
+            }
+        }
+        fail("1x");
+        fail("1u80");
+        fail("1f320");
     }
 }
