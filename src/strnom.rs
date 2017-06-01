@@ -1,19 +1,14 @@
-//! Adapted from [`nom`](https://github.com/Geal/nom) by removing the
-//! `IResult::Incomplete` variant.
+//! Adapted from [`nom`](https://github.com/Geal/nom).
 
 use unicode_xid::UnicodeXID;
 
-pub enum IResult<I, O> {
-    /// Parsing succeeded. The first field contains the rest of the unparsed
-    /// data and the second field contains the parse result.
-    Done(I, O),
-    /// Parsing failed.
-    Error,
-}
+use imp::LexError;
 
-pub fn whitespace(input: &str) -> IResult<&str, ()> {
+pub type PResult<'a, O> = Result<(&'a str, O), LexError>;
+
+pub fn whitespace(input: &str) -> PResult<()> {
     if input.is_empty() {
-        return IResult::Error;
+        return Err(LexError);
     }
 
     let bytes = input.as_bytes();
@@ -30,15 +25,9 @@ pub fn whitespace(input: &str) -> IResult<&str, ()> {
                 break;
             } else if s.starts_with("/*") && (!s.starts_with("/**") || s.starts_with("/***")) &&
                       !s.starts_with("/*!") {
-                match block_comment(s) {
-                    IResult::Done(_, com) => {
-                        i += com.len();
-                        continue;
-                    }
-                    IResult::Error => {
-                        return IResult::Error;
-                    }
-                }
+                let (_, com) = block_comment(s)?;
+                i += com.len();
+                continue;
             }
         }
         match bytes[i] {
@@ -56,17 +45,17 @@ pub fn whitespace(input: &str) -> IResult<&str, ()> {
             }
         }
         return if i > 0 {
-            IResult::Done(s, ())
+            Ok((s, ()))
         } else {
-            IResult::Error
+            Err(LexError)
         };
     }
-    IResult::Done("", ())
+    Ok(("", ()))
 }
 
-pub fn block_comment(input: &str) -> IResult<&str, &str> {
+pub fn block_comment(input: &str) -> PResult<&str> {
     if !input.starts_with("/*") {
-        return IResult::Error;
+        return Err(LexError);
     }
 
     let mut depth = 0;
@@ -80,19 +69,19 @@ pub fn block_comment(input: &str) -> IResult<&str, &str> {
         } else if bytes[i] == b'*' && bytes[i + 1] == b'/' {
             depth -= 1;
             if depth == 0 {
-                return IResult::Done(&input[i + 2..], &input[..i + 2]);
+                return Ok((&input[i + 2..], &input[..i + 2]));
             }
             i += 1; // eat '/'
         }
         i += 1;
     }
-    IResult::Error
+    Err(LexError)
 }
 
 pub fn skip_whitespace(input: &str) -> &str {
     match whitespace(input) {
-        IResult::Done(rest, _) => rest,
-        IResult::Error => input,
+        Ok((rest, _)) => rest,
+        Err(LexError) => input,
     }
 }
 
@@ -101,16 +90,16 @@ fn is_whitespace(ch: char) -> bool {
     ch.is_whitespace() || ch == '\u{200e}' || ch == '\u{200f}'
 }
 
-fn word_break(input: &str) -> IResult<&str, ()> {
+fn word_break(input: &str) -> PResult<()> {
     match input.chars().next() {
-        Some(ch) if UnicodeXID::is_xid_continue(ch) => IResult::Error,
-        Some(_) | None => IResult::Done(input, ()),
+        Some(ch) if UnicodeXID::is_xid_continue(ch) => Err(LexError),
+        Some(_) | None => Ok((input, ())),
     }
 }
 
 macro_rules! named {
     ($name:ident -> $o:ty, $submac:ident!( $($args:tt)* )) => {
-        fn $name(i: &str) -> $crate::strnom::IResult<&str, $o> {
+        fn $name(i: &str) -> $crate::strnom::PResult<$o> {
             $submac!(i, $($args)*)
         }
     };
@@ -123,15 +112,15 @@ macro_rules! alt {
 
     ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => {
         match $subrule!($i, $($args)*) {
-            res @ $crate::strnom::IResult::Done(_, _) => res,
+            res @ Ok(_) => res,
             _ => alt!($i, $($rest)*)
         }
     };
 
     ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => {
         match $subrule!($i, $($args)*) {
-            $crate::strnom::IResult::Done(i, o) => $crate::strnom::IResult::Done(i, $gen(o)),
-            $crate::strnom::IResult::Error => alt!($i, $($rest)*)
+            Ok((i, o)) => Ok((i, $gen(o))),
+            Err(LexError) => alt!($i, $($rest)*)
         }
     };
 
@@ -145,8 +134,8 @@ macro_rules! alt {
 
     ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => {
         match $subrule!($i, $($args)*) {
-            $crate::strnom::IResult::Done(i, o) => $crate::strnom::IResult::Done(i, $gen(o)),
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
+            Ok((i, o)) => Ok((i, $gen(o))),
+            Err(LexError) => Err(LexError),
         }
     };
 
@@ -161,7 +150,7 @@ macro_rules! alt {
 
 macro_rules! do_parse {
     ($i:expr, ( $($rest:expr),* )) => {
-        $crate::strnom::IResult::Done($i, ( $($rest),* ))
+        Ok(($i, ( $($rest),* )))
     };
 
     ($i:expr, $e:ident >> $($rest:tt)*) => {
@@ -170,9 +159,8 @@ macro_rules! do_parse {
 
     ($i:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Done(i, _) =>
-                do_parse!(i, $($rest)*),
+            Err(LexError) => Err(LexError),
+            Ok((i, _)) => do_parse!(i, $($rest)*),
         }
     };
 
@@ -182,8 +170,8 @@ macro_rules! do_parse {
 
     ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Done(i, o) => {
+            Err(LexError) => Err(LexError),
+            Ok((i, o)) => {
                 let $field = o;
                 do_parse!(i, $($rest)*)
             },
@@ -194,8 +182,8 @@ macro_rules! do_parse {
 macro_rules! peek {
     ($i:expr, $submac:ident!( $($args:tt)* )) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Done(_, o) => $crate::strnom::IResult::Done($i, o),
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
+            Ok((_, o)) => Ok(($i, o)),
+            Err(LexError) => Err(LexError),
         }
     };
 }
@@ -209,8 +197,8 @@ macro_rules! call {
 macro_rules! option {
     ($i:expr, $f:expr) => {
         match $f($i) {
-            $crate::strnom::IResult::Done(i, o) => $crate::strnom::IResult::Done(i, Some(o)),
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Done($i, None),
+            Ok((i, o)) => Ok((i, Some(o))),
+            Err(LexError) => Ok(($i, None)),
         }
     };
 }
@@ -218,7 +206,7 @@ macro_rules! option {
 macro_rules! take_until {
     ($i:expr, $substr:expr) => {{
         if $substr.len() > $i.len() {
-            $crate::strnom::IResult::Error
+            Err(LexError)
         } else {
             let substr_vec: Vec<char> = $substr.chars().collect();
             let mut window: Vec<char> = vec![];
@@ -240,9 +228,9 @@ macro_rules! take_until {
                 }
             }
             if parsed {
-                $crate::strnom::IResult::Done(&$i[offset..], &$i[..offset])
+                Ok((&$i[offset..], &$i[..offset]))
             } else {
-                $crate::strnom::IResult::Error
+                Err(LexError)
             }
         }
     }};
@@ -262,17 +250,15 @@ macro_rules! tuple_parser {
 
     ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Done(i, o) =>
-                tuple_parser!(i, (o), $($rest)*),
+            Err(LexError) => Err(LexError),
+            Ok((i, o)) => tuple_parser!(i, (o), $($rest)*),
         }
     };
 
     ($i:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Done(i, o) =>
-                tuple_parser!(i, ($($parsed)* , o), $($rest)*),
+            Err(LexError) => Err(LexError),
+            Ok((i, o)) => tuple_parser!(i, ($($parsed)* , o), $($rest)*),
         }
     };
 
@@ -286,21 +272,21 @@ macro_rules! tuple_parser {
 
     ($i:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Done(i, o) => $crate::strnom::IResult::Done(i, ($($parsed),*, o))
+            Err(LexError) => Err(LexError),
+            Ok((i, o)) => Ok((i, ($($parsed),*, o)))
         }
     };
 
     ($i:expr, ($($parsed:expr),*)) => {
-        $crate::strnom::IResult::Done($i, ($($parsed),*))
+        Ok(($i, ($($parsed),*)))
     };
 }
 
 macro_rules! not {
     ($i:expr, $submac:ident!( $($args:tt)* )) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Done(_, _) => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Done($i, ()),
+            Ok((_, _)) => Err(LexError),
+            Err(LexError) => Ok(($i, ())),
         }
     };
 }
@@ -308,9 +294,9 @@ macro_rules! not {
 macro_rules! tag {
     ($i:expr, $tag:expr) => {
         if $i.starts_with($tag) {
-            $crate::strnom::IResult::Done(&$i[$tag.len()..], &$i[..$tag.len()])
+            Ok((&$i[$tag.len()..], &$i[..$tag.len()]))
         } else {
-            $crate::strnom::IResult::Error
+            Err(LexError)
         }
     };
 }
@@ -322,12 +308,12 @@ macro_rules! punct {
 }
 
 /// Do not use directly. Use `punct!`.
-pub fn punct<'a>(input: &'a str, token: &'static str) -> IResult<&'a str, &'a str> {
+pub fn punct<'a>(input: &'a str, token: &'static str) -> PResult<'a, &'a str> {
     let input = skip_whitespace(input);
     if input.starts_with(token) {
-        IResult::Done(&input[token.len()..], token)
+        Ok((&input[token.len()..], token))
     } else {
-        IResult::Error
+        Err(LexError)
     }
 }
 
@@ -338,29 +324,29 @@ macro_rules! keyword {
 }
 
 /// Do not use directly. Use `keyword!`.
-pub fn keyword<'a>(input: &'a str, token: &'static str) -> IResult<&'a str, &'a str> {
+pub fn keyword<'a>(input: &'a str, token: &'static str) -> PResult<'a, &'a str> {
     match punct(input, token) {
-        IResult::Done(rest, _) => {
+        Ok((rest, _)) => {
             match word_break(rest) {
-                IResult::Done(_, _) => IResult::Done(rest, token),
-                IResult::Error => IResult::Error,
+                Ok((_, _)) => Ok((rest, token)),
+                Err(LexError) => Err(LexError),
             }
         }
-        IResult::Error => IResult::Error,
+        Err(LexError) => Err(LexError),
     }
 }
 
 macro_rules! epsilon {
     ($i:expr,) => {
-        $crate::strnom::IResult::Done($i, ())
+        Ok(($i, ()))
     };
 }
 
 macro_rules! preceded {
     ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => {
         match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-            $crate::strnom::IResult::Done(remaining, (_, o)) => $crate::strnom::IResult::Done(remaining, o),
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
+            Ok((remaining, (_, o))) => Ok((remaining, o)),
+            Err(LexError) => Err(LexError),
         }
     };
 
@@ -372,8 +358,8 @@ macro_rules! preceded {
 macro_rules! delimited {
     ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => {
         match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Done(i1, (_, o, _)) => $crate::strnom::IResult::Done(i1, o)
+            Err(LexError) => Err(LexError),
+            Ok((i1, (_, o, _))) => Ok((i1, o))
         }
     };
 }
@@ -381,10 +367,8 @@ macro_rules! delimited {
 macro_rules! map {
     ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
         match $submac!($i, $($args)*) {
-            $crate::strnom::IResult::Error => $crate::strnom::IResult::Error,
-            $crate::strnom::IResult::Done(i, o) => {
-                $crate::strnom::IResult::Done(i, call!(o, $g))
-            }
+            Err(LexError) => Err(LexError),
+            Ok((i, o)) => Ok((i, call!(o, $g)))
         }
     };
 
@@ -401,19 +385,19 @@ macro_rules! many0 {
 
         loop {
             if input.is_empty() {
-                ret = $crate::strnom::IResult::Done(input, res);
+                ret = Ok((input, res));
                 break;
             }
 
             match $f(input) {
-                $crate::strnom::IResult::Error => {
-                    ret = $crate::strnom::IResult::Done(input, res);
+                Err(LexError) => {
+                    ret = Ok((input, res));
                     break;
                 }
-                $crate::strnom::IResult::Done(i, o) => {
+                Ok((i, o)) => {
                     // loop trip must always consume (otherwise infinite loops)
                     if i.len() == input.len() {
-                        ret = $crate::strnom::IResult::Error;
+                        ret = Err(LexError);
                         break;
                     }
 
