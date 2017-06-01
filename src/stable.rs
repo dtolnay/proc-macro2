@@ -370,26 +370,16 @@ named!(delimited -> (Delimiter, ::TokenStream), alt!(
     ) => { |ts| (Delimiter::Brace, ts) }
 ));
 
-named!(symbol -> ::Symbol, alt!(
-    lifetime
-    |
-    map!(word, ::Symbol::from)
-));
-
-named!(lifetime -> ::Symbol, preceded!(
-    punct!("'"),
-    alt!(
-        // TODO: can we get rid of this allocation?
-        map!(word, |id| ::Symbol::from(format!("'{}", id)))
-        |
-        map!(keyword!("static"), |_| ::Symbol::from("'static"))
-    )
-));
-
-fn word(mut input: &str) -> PResult<&str> {
+fn symbol(mut input: &str) -> PResult<::Symbol> {
     input = skip_whitespace(input);
 
     let mut chars = input.char_indices();
+
+    let lifetime = input.starts_with("'");
+    if lifetime {
+        chars.next();
+    }
+
     match chars.next() {
         Some((_, ch)) if UnicodeXID::is_xid_start(ch) || ch == '_' => {}
         _ => return Err(LexError),
@@ -397,11 +387,11 @@ fn word(mut input: &str) -> PResult<&str> {
 
     for (i, ch) in chars {
         if !UnicodeXID::is_xid_continue(ch) {
-            return Ok((&input[i..], &input[..i]))
+            return Ok((&input[i..], input[..i].into()))
         }
     }
 
-    Ok(("", input))
+    Ok(("", input.into()))
 }
 
 fn literal(input: &str) -> PResult<::Literal> {
@@ -980,6 +970,8 @@ mod tests {
             0
             0xffffffffffffffffffffffffffffffff
         ");
+        roundtrip("'a");
+        roundtrip("'static");
     }
 
     #[test]
@@ -992,5 +984,6 @@ mod tests {
         fail("1x");
         fail("1u80");
         fail("1f320");
+        fail("' static");
     }
 }
