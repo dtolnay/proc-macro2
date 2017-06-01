@@ -385,14 +385,31 @@ fn symbol(mut input: &str) -> PResult<::Symbol> {
         _ => return Err(LexError),
     }
 
+    let mut end = input.len();
     for (i, ch) in chars {
         if !UnicodeXID::is_xid_continue(ch) {
-            return Ok((&input[i..], input[..i].into()))
+            end = i;
+            break;
         }
     }
 
-    Ok(("", input.into()))
+    if lifetime && &input[..end] != "'static" && KEYWORDS.contains(&&input[1..end]) {
+        Err(LexError)
+    } else {
+        Ok((&input[end..], input[..end].into()))
+    }
 }
+
+// From https://github.com/rust-lang/rust/blob/master/src/libsyntax_pos/symbol.rs
+static KEYWORDS: &'static [&'static str] = &[
+    "abstract", "alignof", "as", "become", "box", "break", "const", "continue",
+    "crate", "do", "else", "enum", "extern", "false", "final", "fn", "for",
+    "if", "impl", "in", "let", "loop", "macro", "match", "mod", "move", "mut",
+    "offsetof", "override", "priv", "proc", "pub", "pure", "ref", "return",
+    "self", "Self", "sizeof", "static", "struct", "super", "trait", "true",
+    "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while",
+    "yield",
+];
 
 fn literal(input: &str) -> PResult<::Literal> {
     let input_no_ws = skip_whitespace(input);
@@ -985,5 +1002,6 @@ mod tests {
         fail("1u80");
         fail("1f320");
         fail("' static");
+        fail("'mut");
     }
 }
