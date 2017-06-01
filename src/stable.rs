@@ -889,124 +889,35 @@ named!(boolean -> (), alt!(
     keyword!("false") => { |_| () }
 ));
 
-macro_rules! punct1 {
-    ($i:expr, $punct:expr) => {
-        punct1($i, $punct)
+fn op(input: &str) -> IResult<&str, (char, OpKind)> {
+    let input = skip_whitespace(input);
+    match op_char(input) {
+        IResult::Done(rest, ch) => {
+            let kind = match op_char(rest) {
+                IResult::Done(_, _) => OpKind::Joint,
+                IResult::Error => OpKind::Alone,
+            };
+            IResult::Done(rest, (ch, kind))
+        }
+        IResult::Error => IResult::Error,
     }
 }
 
-fn punct1<'a>(input: &'a str, token: &'static str) -> IResult<&'a str, char> {
-    let input = skip_whitespace(input);
-    if input.starts_with(token) {
-        IResult::Done(&input[1..], token.chars().next().unwrap())
+fn op_char(input: &str) -> IResult<&str, char> {
+    let mut chars = input.chars();
+    let first = match chars.next() {
+        Some(ch) => ch,
+        None => {
+            return IResult::Error;
+        }
+    };
+    let recognized = "~!@#$%^&*-=+|;:,<.>/?";
+    if recognized.contains(first) {
+        IResult::Done(chars.as_str(), first)
     } else {
         IResult::Error
     }
 }
-
-named!(op -> (char, OpKind), alt!(
-    keyword!("_") => { |_| ('_', OpKind::Alone) }
-    |
-    punct1!("&&") => { |_| ('&', OpKind::Joint) }
-    |
-    punct1!("||") => { |_| ('|', OpKind::Joint) }
-    |
-    punct1!("->") => { |_| ('-', OpKind::Joint) }
-    |
-    punct1!("<-") => { |_| ('<', OpKind::Joint) }
-    |
-    punct1!("=>") => { |_| ('=', OpKind::Joint) }
-    |
-    punct1!("...") => { |_| ('.', OpKind::Joint) }
-    |
-    punct1!("..") => { |_| ('.', OpKind::Joint) }
-    |
-    punct!(".") => { |_| ('.', OpKind::Alone) }
-    |
-    punct!(",") => { |_| (',', OpKind::Alone) }
-    |
-    bin_op_eq
-    |
-    bin_op
-    |
-    punct1!("<=") => { |_| ('<', OpKind::Joint) }
-    |
-    punct1!("==") => { |_| ('=', OpKind::Joint) }
-    |
-    punct1!("!=") => { |_| ('!', OpKind::Joint) }
-    |
-    punct1!(">=") => { |_| ('>', OpKind::Joint) }
-    |
-    punct1!("::") => { |_| (':', OpKind::Joint) }
-    |
-    punct!("=") => { |_| ('=', OpKind::Alone) }
-    |
-    punct!("<") => { |_| ('<', OpKind::Alone) }
-    |
-    punct!(">") => { |_| ('>', OpKind::Alone) }
-    |
-    punct!("!") => { |_| ('!', OpKind::Alone) }
-    |
-    punct!("~") => { |_| ('~', OpKind::Alone) }
-    |
-    punct!("@") => { |_| ('@', OpKind::Alone) }
-    |
-    punct!(",") => { |_| (',', OpKind::Alone) }
-    |
-    punct!(";") => { |_| (';', OpKind::Alone) }
-    |
-    punct!(":") => { |_| (':', OpKind::Alone) }
-    |
-    punct!("#") => { |_| ('#', OpKind::Alone) }
-    |
-    punct!("$") => { |_| ('$', OpKind::Alone) }
-    |
-    punct!("?") => { |_| ('?', OpKind::Alone) }
-));
-
-named!(bin_op -> (char, OpKind), alt!(
-    punct!("+") => { |_| ('+', OpKind::Alone) }
-    |
-    punct!("-") => { |_| ('-', OpKind::Alone) }
-    |
-    punct!("*") => { |_| ('*', OpKind::Alone) }
-    |
-    punct!("/") => { |_| ('/', OpKind::Alone) }
-    |
-    punct!("%") => { |_| ('%', OpKind::Alone) }
-    |
-    punct!("^") => { |_| ('^', OpKind::Alone) }
-    |
-    punct!("&") => { |_| ('&', OpKind::Alone) }
-    |
-    punct!("|") => { |_| ('|', OpKind::Alone) }
-    |
-    punct1!("<<") => { |_| ('<', OpKind::Joint) }
-    |
-    punct1!(">>") => { |_| ('>', OpKind::Joint) }
-));
-
-named!(bin_op_eq -> (char, OpKind), alt!(
-    punct1!("+=") => { |_| ('+', OpKind::Joint) }
-    |
-    punct1!("-=") => { |_| ('-', OpKind::Joint) }
-    |
-    punct1!("*=") => { |_| ('*', OpKind::Joint) }
-    |
-    punct1!("/=") => { |_| ('/', OpKind::Joint) }
-    |
-    punct1!("%=") => { |_| ('%', OpKind::Joint) }
-    |
-    punct1!("^=") => { |_| ('^', OpKind::Joint) }
-    |
-    punct1!("&=") => { |_| ('&', OpKind::Joint) }
-    |
-    punct1!("|=") => { |_| ('|', OpKind::Joint) }
-    |
-    punct1!("<<=") => { |_| ('<', OpKind::Joint) }
-    |
-    punct1!(">>=") => { |_| ('>', OpKind::Joint) }
-));
 
 named!(doc_comment -> (), alt!(
     do_parse!(
