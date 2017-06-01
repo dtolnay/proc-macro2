@@ -15,7 +15,7 @@ mod imp;
 #[cfg(feature = "unstable")]
 mod imp;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TokenStream(imp::TokenStream);
 
 #[derive(Debug)]
@@ -81,7 +81,7 @@ impl TokenStream {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Span(imp::Span);
 
 impl Default for Span {
@@ -96,7 +96,7 @@ impl Span {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TokenTree {
     pub span: Span,
     pub kind: TokenKind,
@@ -108,7 +108,7 @@ impl fmt::Display for TokenTree {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TokenKind {
     Sequence(Delimiter, TokenStream),
     Word(Symbol),
@@ -116,7 +116,7 @@ pub enum TokenKind {
     Literal(Literal),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Delimiter {
     Parenthesis,
     Brace,
@@ -124,7 +124,7 @@ pub enum Delimiter {
     None,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Symbol(imp::Symbol);
 
 impl<'a> From<&'a str> for Symbol {
@@ -145,13 +145,13 @@ impl Symbol {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum OpKind {
     Alone,
     Joint,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Literal(imp::Literal);
 
 impl fmt::Display for Literal {
@@ -206,6 +206,7 @@ froms! {
     f32, f64, char, &'a str,
 }
 
+#[derive(Debug)]
 pub struct TokenIter(imp::TokenIter);
 
 impl Iterator for TokenIter {
