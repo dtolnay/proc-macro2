@@ -328,9 +328,7 @@ impl From<char> for Literal {
 }
 
 named!(token_stream -> TokenStream,
-       map!(token_trees, |s: Vec<TokenTree>| TokenStream { inner: s }));
-
-named!(token_trees -> Vec<TokenTree>, many0!(token_tree));
+       map!(many0!(token_tree), |trees| TokenStream { inner: trees }));
 
 named!(token_tree -> TokenTree,
        map!(token_kind, |s: TokenKind| {
