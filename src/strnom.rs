@@ -90,7 +90,7 @@ fn is_whitespace(ch: char) -> bool {
     ch.is_whitespace() || ch == '\u{200e}' || ch == '\u{200f}'
 }
 
-fn word_break(input: &str) -> PResult<()> {
+pub fn word_break(input: &str) -> PResult<()> {
     match input.chars().next() {
         Some(ch) if UnicodeXID::is_xid_continue(ch) => Err(LexError),
         Some(_) | None => Ok((input, ())),
@@ -334,12 +334,6 @@ pub fn keyword<'a>(input: &'a str, token: &'static str) -> PResult<'a, &'a str> 
         }
         Err(LexError) => Err(LexError),
     }
-}
-
-macro_rules! epsilon {
-    ($i:expr,) => {
-        Ok(($i, ()))
-    };
 }
 
 macro_rules! preceded {
