@@ -18,7 +18,7 @@ use synom::{IResult};
 
 use {TokenTree, TokenKind, Delimiter, OpKind};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TokenStream {
     inner: Vec<TokenTree>,
 }
@@ -139,7 +139,7 @@ impl IntoIterator for TokenStream {
     }
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct Span;
 
 impl Span {
@@ -148,7 +148,7 @@ impl Span {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Symbol(usize);
 
 thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
@@ -210,7 +210,7 @@ impl Interner {
    }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Literal(String);
 
 impl Literal {
