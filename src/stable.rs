@@ -11,7 +11,7 @@ use std::vec;
 
 use proc_macro;
 use unicode_xid::UnicodeXID;
-use strnom::{IResult, skip_whitespace, block_comment, whitespace};
+use strnom::{PResult, skip_whitespace, block_comment, whitespace};
 
 use {TokenTree, TokenKind, Delimiter, OpKind};
 
@@ -38,14 +38,14 @@ impl FromStr for TokenStream {
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         match token_stream(src) {
-            IResult::Done(input, output) => {
+            Ok((input, output)) => {
                 if skip_whitespace(input).len() != 0 {
                     Err(LexError)
                 } else {
                     Ok(output)
                 }
             }
-            IResult::Error => Err(LexError),
+            Err(LexError) => Err(LexError),
         }
     }
 }
@@ -390,35 +390,35 @@ named!(lifetime -> Symbol, preceded!(
     )
 ));
 
-fn word(mut input: &str) -> IResult<&str, &str> {
+fn word(mut input: &str) -> PResult<&str> {
     input = skip_whitespace(input);
 
     let mut chars = input.char_indices();
     match chars.next() {
         Some((_, ch)) if UnicodeXID::is_xid_start(ch) || ch == '_' => {}
-        _ => return IResult::Error,
+        _ => return Err(LexError),
     }
 
     for (i, ch) in chars {
         if !UnicodeXID::is_xid_continue(ch) {
-            return IResult::Done(&input[i..], &input[..i])
+            return Ok((&input[i..], &input[..i]))
         }
     }
 
-    IResult::Done("", input)
+    Ok(("", input))
 }
 
-fn literal(input: &str) -> IResult<&str, Literal> {
+fn literal(input: &str) -> PResult<Literal> {
     let input_no_ws = skip_whitespace(input);
 
     match literal_nocapture(input_no_ws) {
-        IResult::Done(a, ()) => {
+        Ok((a, ())) => {
             let start = input.len() - input_no_ws.len();
             let len = input_no_ws.len() - a.len();
             let end = start + len;
-            IResult::Done(a, Literal(input[start..end].to_string()))
+            Ok((a, Literal(input[start..end].to_string())))
         }
-        IResult::Error => IResult::Error,
+        Err(LexError) => Err(LexError),
     }
 }
 
@@ -455,12 +455,12 @@ named!(quoted_string -> (), delimited!(
     tag!("\"")
 ));
 
-fn cooked_string(input: &str) -> IResult<&str, ()> {
+fn cooked_string(input: &str) -> PResult<()> {
     let mut chars = input.char_indices().peekable();
     while let Some((byte_offset, ch)) = chars.next() {
         match ch {
             '"' => {
-                return IResult::Done(&input[byte_offset..], ());
+                return Ok((&input[byte_offset..], ()));
             }
             '\r' => {
                 if let Some((_, '\n')) = chars.next() {
@@ -503,7 +503,7 @@ fn cooked_string(input: &str) -> IResult<&str, ()> {
             _ch => {}
         }
     }
-    IResult::Error
+    Err(LexError)
 }
 
 named!(byte_string -> (), alt!(
@@ -519,12 +519,12 @@ named!(byte_string -> (), alt!(
     ) => { |_| () }
 ));
 
-fn cooked_byte_string(mut input: &str) -> IResult<&str, ()> {
+fn cooked_byte_string(mut input: &str) -> PResult<()> {
     let mut bytes = input.bytes().enumerate();
     'outer: while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
-                return IResult::Done(&input[offset..], ());
+                return Ok((&input[offset..], ()));
             }
             b'\r' => {
                 if let Some((_, b'\n')) = bytes.next() {
@@ -566,10 +566,10 @@ fn cooked_byte_string(mut input: &str) -> IResult<&str, ()> {
             _ => break,
         }
     }
-    IResult::Error
+    Err(LexError)
 }
 
-fn raw_string(input: &str) -> IResult<&str, ()> {
+fn raw_string(input: &str) -> PResult<()> {
     let mut chars = input.char_indices();
     let mut n = 0;
     while let Some((byte_offset, ch)) = chars.next() {
@@ -579,20 +579,20 @@ fn raw_string(input: &str) -> IResult<&str, ()> {
                 break;
             }
             '#' => {}
-            _ => return IResult::Error,
+            _ => return Err(LexError),
         }
     }
     for (byte_offset, ch) in chars {
         match ch {
             '"' if input[byte_offset + 1..].starts_with(&input[..n]) => {
                 let rest = &input[byte_offset + 1 + n..];
-                return IResult::Done(rest, ())
+                return Ok((rest, ()))
             }
             '\r' => {}
             _ => {}
         }
     }
-    IResult::Error
+    Err(LexError)
 }
 
 named!(byte -> (), do_parse!(
@@ -603,7 +603,7 @@ named!(byte -> (), do_parse!(
     (())
 ));
 
-fn cooked_byte(input: &str) -> IResult<&str, ()> {
+fn cooked_byte(input: &str) -> PResult<()> {
     let mut bytes = input.bytes().enumerate();
     let ok = match bytes.next().map(|(_, b)| b) {
         Some(b'\\') => {
@@ -623,11 +623,11 @@ fn cooked_byte(input: &str) -> IResult<&str, ()> {
     };
     if ok {
         match bytes.next() {
-            Some((offset, _)) => IResult::Done(&input[offset..], ()),
-            None => IResult::Done("", ()),
+            Some((offset, _)) => Ok((&input[offset..], ())),
+            None => Ok(("", ())),
         }
     } else {
-        IResult::Error
+        Err(LexError)
     }
 }
 
@@ -638,7 +638,7 @@ named!(character -> (), do_parse!(
     (())
 ));
 
-fn cooked_char(input: &str) -> IResult<&str, ()> {
+fn cooked_char(input: &str) -> PResult<()> {
     let mut chars = input.char_indices();
     let ok = match chars.next().map(|(_, ch)| ch) {
         Some('\\') => {
@@ -658,9 +658,9 @@ fn cooked_char(input: &str) -> IResult<&str, ()> {
         ch => ch.is_some(),
     };
     if ok {
-        IResult::Done(chars.as_str(), ())
+        Ok((chars.as_str(), ()))
     } else {
-        IResult::Error
+        Err(LexError)
     }
 }
 
@@ -733,11 +733,11 @@ named!(float -> (), do_parse!(
     (())
 ));
 
-fn float_string(input: &str) -> IResult<&str, ()> {
+fn float_string(input: &str) -> PResult<()> {
     let mut chars = input.chars().peekable();
     match chars.next() {
         Some(ch) if ch >= '0' && ch <= '9' => {}
-        _ => return IResult::Error,
+        _ => return Err(LexError),
     }
 
     let mut len = 1;
@@ -757,7 +757,7 @@ fn float_string(input: &str) -> IResult<&str, ()> {
                 if chars.peek()
                        .map(|&ch| ch == '.' || UnicodeXID::is_xid_start(ch))
                        .unwrap_or(false) {
-                    return IResult::Error;
+                    return Err(LexError);
                 }
                 len += 1;
                 has_dot = true;
@@ -774,7 +774,7 @@ fn float_string(input: &str) -> IResult<&str, ()> {
 
     let rest = &input[len..];
     if !(has_dot || has_exp || rest.starts_with("f32") || rest.starts_with("f64")) {
-        return IResult::Error;
+        return Err(LexError);
     }
 
     if has_exp {
@@ -801,11 +801,11 @@ fn float_string(input: &str) -> IResult<&str, ()> {
             }
         }
         if !has_exp_value {
-            return IResult::Error;
+            return Err(LexError);
         }
     }
 
-    IResult::Done(&input[len..], ())
+    Ok((&input[len..], ()))
 }
 
 named!(int -> (), do_parse!(
@@ -840,7 +840,7 @@ named!(int -> (), do_parse!(
     (())
 ));
 
-fn digits(mut input: &str) -> IResult<&str, ()> {
+fn digits(mut input: &str) -> PResult<()> {
     let base = if input.starts_with("0x") {
         input = &input[2..];
         16
@@ -863,7 +863,7 @@ fn digits(mut input: &str) -> IResult<&str, ()> {
             b'A'...b'F' => 10 + (b - b'A') as u64,
             b'_' => {
                 if empty && base == 10 {
-                    return IResult::Error;
+                    return Err(LexError);
                 }
                 len += 1;
                 continue;
@@ -871,15 +871,15 @@ fn digits(mut input: &str) -> IResult<&str, ()> {
             _ => break,
         };
         if digit >= base {
-            return IResult::Error;
+            return Err(LexError);
         }
         len += 1;
         empty = false;
     }
     if empty {
-        IResult::Error
+        Err(LexError)
     } else {
-        IResult::Done(&input[len..], ())
+        Ok((&input[len..], ()))
     }
 }
 
@@ -889,33 +889,33 @@ named!(boolean -> (), alt!(
     keyword!("false") => { |_| () }
 ));
 
-fn op(input: &str) -> IResult<&str, (char, OpKind)> {
+fn op(input: &str) -> PResult<(char, OpKind)> {
     let input = skip_whitespace(input);
     match op_char(input) {
-        IResult::Done(rest, ch) => {
+        Ok((rest, ch)) => {
             let kind = match op_char(rest) {
-                IResult::Done(_, _) => OpKind::Joint,
-                IResult::Error => OpKind::Alone,
+                Ok(_) => OpKind::Joint,
+                Err(LexError) => OpKind::Alone,
             };
-            IResult::Done(rest, (ch, kind))
+            Ok((rest, (ch, kind)))
         }
-        IResult::Error => IResult::Error,
+        Err(LexError) => Err(LexError),
     }
 }
 
-fn op_char(input: &str) -> IResult<&str, char> {
+fn op_char(input: &str) -> PResult<char> {
     let mut chars = input.chars();
     let first = match chars.next() {
         Some(ch) => ch,
         None => {
-            return IResult::Error;
+            return Err(LexError);
         }
     };
     let recognized = "~!@#$%^&*-=+|;:,<.>/?";
     if recognized.contains(first) {
-        IResult::Done(chars.as_str(), first)
+        Ok((chars.as_str(), first))
     } else {
-        IResult::Error
+        Err(LexError)
     }
 }
 
