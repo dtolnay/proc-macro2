@@ -42,7 +42,7 @@ impl FromStr for TokenStream {
                 if skip_whitespace(input).len() != 0 {
                     Err(LexError)
                 } else {
-                    Ok(output)
+                    Ok(output.0)
                 }
             }
             Err(LexError) => Err(LexError),
@@ -327,8 +327,10 @@ impl From<char> for Literal {
     }
 }
 
-named!(token_stream -> TokenStream,
-       map!(many0!(token_tree), |trees| TokenStream { inner: trees }));
+named!(token_stream -> ::TokenStream, map!(
+    many0!(token_tree),
+    |trees| ::TokenStream(TokenStream { inner: trees })
+));
 
 named!(token_tree -> TokenTree,
        map!(token_kind, |s: TokenKind| {
@@ -339,16 +341,16 @@ named!(token_tree -> TokenTree,
        }));
 
 named!(token_kind -> TokenKind, alt!(
-    map!(delimited, |(d, s)| TokenKind::Sequence(d, ::TokenStream(s)))
+    map!(delimited, |(d, s)| TokenKind::Sequence(d, s))
     |
-    map!(literal, |l| TokenKind::Literal(::Literal(l))) // must be before symbol
+    map!(literal, TokenKind::Literal) // must be before symbol
     |
-    map!(symbol, |w| TokenKind::Word(::Symbol(w)))
+    map!(symbol, TokenKind::Word)
     |
     map!(op, |(op, kind)| TokenKind::Op(op, kind))
 ));
 
-named!(delimited -> (Delimiter, TokenStream), alt!(
+named!(delimited -> (Delimiter, ::TokenStream), alt!(
     delimited!(
         punct!("("),
         token_stream,
@@ -368,19 +370,19 @@ named!(delimited -> (Delimiter, TokenStream), alt!(
     ) => { |ts| (Delimiter::Brace, ts) }
 ));
 
-named!(symbol -> Symbol, alt!(
+named!(symbol -> ::Symbol, alt!(
     lifetime
     |
-    map!(word, Symbol::from)
+    map!(word, ::Symbol::from)
 ));
 
-named!(lifetime -> Symbol, preceded!(
+named!(lifetime -> ::Symbol, preceded!(
     punct!("'"),
     alt!(
         // TODO: can we get rid of this allocation?
-        map!(word, |id| Symbol::from(&format!("'{}", id)[..]))
+        map!(word, |id| ::Symbol::from(format!("'{}", id)))
         |
-        map!(keyword!("static"), |_| Symbol::from("'static"))
+        map!(keyword!("static"), |_| ::Symbol::from("'static"))
     )
 ));
 
@@ -402,7 +404,7 @@ fn word(mut input: &str) -> PResult<&str> {
     Ok(("", input))
 }
 
-fn literal(input: &str) -> PResult<Literal> {
+fn literal(input: &str) -> PResult<::Literal> {
     let input_no_ws = skip_whitespace(input);
 
     match literal_nocapture(input_no_ws) {
@@ -410,7 +412,7 @@ fn literal(input: &str) -> PResult<Literal> {
             let start = input.len() - input_no_ws.len();
             let len = input_no_ws.len() - a.len();
             let end = start + len;
-            Ok((a, Literal(input[start..end].to_string())))
+            Ok((a, ::Literal(Literal(input[start..end].to_string()))))
         }
         Err(LexError) => Err(LexError),
     }
