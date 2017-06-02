@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "unstable", feature(proc_macro))]
+
 extern crate proc_macro;
 
 #[cfg(not(feature = "unstable"))]
