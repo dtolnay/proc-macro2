@@ -119,7 +119,7 @@ pub enum TokenKind {
     Literal(Literal),
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Delimiter {
     Parenthesis,
     Brace,
@@ -148,7 +148,7 @@ impl Symbol {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum OpKind {
     Alone,
     Joint,
