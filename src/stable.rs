@@ -146,7 +146,7 @@ impl Span {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Symbol {
     intern: usize,
     not_send_sync: PhantomData<*const ()>,
@@ -174,6 +174,12 @@ impl ops::Deref for Symbol {
                 &*(s as *const str)
             }
         })
+    }
+}
+
+impl fmt::Debug for Symbol {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("Symbol").field(&&**self).finish()
     }
 }
 
