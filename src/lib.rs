@@ -20,10 +20,12 @@ mod imp;
 #[cfg(feature = "unstable")]
 mod imp;
 
-#[derive(Clone, Debug)]
+#[macro_use]
+mod macros;
+
+#[derive(Clone)]
 pub struct TokenStream(imp::TokenStream);
 
-#[derive(Debug)]
 pub struct LexError(imp::LexError);
 
 impl FromStr for TokenStream {
@@ -34,12 +36,6 @@ impl FromStr for TokenStream {
             Ok(e) => Ok(TokenStream(e)),
             Err(e) => Err(LexError(e)),
         }
-    }
-}
-
-impl fmt::Display for TokenStream {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
     }
 }
 
@@ -86,7 +82,7 @@ impl TokenStream {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Span(imp::Span);
 
 impl Default for Span {
@@ -129,7 +125,7 @@ pub enum Delimiter {
     None,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct Symbol(imp::Symbol);
 
 impl<'a> From<&'a str> for Symbol {
@@ -156,14 +152,8 @@ pub enum OpKind {
     Joint,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Literal(imp::Literal);
-
-impl fmt::Display for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
 
 impl Literal {
     pub fn byte_char(b: u8) -> Literal {
@@ -211,7 +201,6 @@ froms! {
     f32, f64, char, &'a str,
 }
 
-#[derive(Debug)]
 pub struct TokenIter(imp::TokenIter);
 
 impl Iterator for TokenIter {
@@ -221,3 +210,12 @@ impl Iterator for TokenIter {
         self.0.next()
     }
 }
+
+forward_fmt!(Debug for LexError);
+forward_fmt!(Debug for Literal);
+forward_fmt!(Debug for Span);
+forward_fmt!(Debug for Symbol);
+forward_fmt!(Debug for TokenIter);
+forward_fmt!(Debug for TokenStream);
+forward_fmt!(Display for Literal);
+forward_fmt!(Display for TokenStream);
