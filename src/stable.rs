@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::iter;
+use std::marker::PhantomData;
 use std::ops;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -146,13 +147,19 @@ impl Span {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Symbol(usize);
+pub struct Symbol {
+    intern: usize,
+    not_send_sync: PhantomData<*const ()>,
+}
 
 thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
 
 impl<'a> From<&'a str> for Symbol {
     fn from(string: &'a str) -> Symbol {
-        Symbol(SYMBOLS.with(|s| s.borrow_mut().intern(string)))
+        Symbol {
+            intern: SYMBOLS.with(|s| s.borrow_mut().intern(string)),
+            not_send_sync: PhantomData,
+        }
     }
 }
 
@@ -162,7 +169,7 @@ impl ops::Deref for Symbol {
     fn deref(&self) -> &str {
         SYMBOLS.with(|interner| {
             let interner = interner.borrow();
-            let s = interner.get(self.0);
+            let s = interner.get(self.intern);
             unsafe {
                 &*(s as *const str)
             }

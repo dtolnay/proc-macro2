@@ -9,5 +9,8 @@ doctest = false
 [dependencies]
 unicode-xid = "0.0.4"
 
+[dev-dependencies]
+compiletest_rs = "0.2"
+
 [features]
 unstable = []
