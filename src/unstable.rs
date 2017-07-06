@@ -49,7 +49,6 @@ impl From<TokenStream> for proc_macro::TokenStream {
     }
 }
 
-
 impl From<TokenTree> for TokenStream {
     fn from(tree: TokenTree) -> TokenStream {
         TokenStream(proc_macro::TokenTree {
@@ -91,15 +90,13 @@ impl iter::FromIterator<TokenStream> for TokenStream {
 
 impl fmt::Debug for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("TokenStream")
-         .field("tts", &self.clone().into_iter().collect::<Vec<_>>())
-         .finish()
+        self.0.fmt(f)
     }
 }
 
 impl fmt::Debug for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("LexError").finish()
+        self.0.fmt(f)
     }
 }
 
@@ -173,8 +170,7 @@ impl Span {
 
 impl fmt::Debug for Span {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Span")
-         .finish()
+        self.0.fmt(f)
     }
 }
 
@@ -197,7 +193,7 @@ impl ops::Deref for Term {
 
 impl fmt::Debug for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        (**self).fmt(f)
+        self.0.fmt(f)
     }
 }
 
@@ -219,21 +215,7 @@ impl Literal {
     }
 
     pub fn byte_string(bytes: &[u8]) -> Literal {
-        let mut escaped = "b\"".to_string();
-        for b in bytes {
-            match *b {
-                b'\0' => escaped.push_str(r"\0"),
-                b'\t' => escaped.push_str(r"\t"),
-                b'\n' => escaped.push_str(r"\n"),
-                b'\r' => escaped.push_str(r"\r"),
-                b'"' => escaped.push_str("\\\""),
-                b'\\' => escaped.push_str("\\\\"),
-                b'\x20' ... b'\x7E' => escaped.push(*b as char),
-                _ => escaped.push_str(&format!("\\x{:02X}", b)),
-            }
-        }
-        escaped.push('"');
-        Literal(to_literal(&escaped))
+        Literal(proc_macro::Literal::byte_string(bytes))
     }
 
     pub fn doccomment(s: &str) -> Literal {
@@ -241,11 +223,11 @@ impl Literal {
     }
 
     pub fn float(s: f64) -> Literal {
-        Literal(to_literal(&s.to_string()))
+        Literal(proc_macro::Literal::float(s))
     }
 
     pub fn integer(s: i64) -> Literal {
-        Literal(to_literal(&s.to_string()))
+        Literal(proc_macro::Literal::integer(s.into()))
     }
 
     pub fn raw_string(s: &str, pounds: usize) -> Literal {
@@ -277,7 +259,7 @@ impl fmt::Display for Literal {
 
 impl fmt::Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        self.0.fmt(f)
     }
 }
 
@@ -290,7 +272,22 @@ fn to_literal(s: &str) -> proc_macro::Literal {
 }
 
 macro_rules! ints {
-    ($($t:ty,)*) => {$(
+    ($($t:ident,)*) => {$(
+        impl From<$t> for Literal {
+            fn from(t: $t) -> Literal {
+                Literal(proc_macro::Literal::$t(t))
+            }
+        }
+    )*}
+}
+
+ints! {
+    u8, u16, u32, u64, /*usize,*/
+    i8, i16, i32, i64, /*isize,*/
+}
+
+macro_rules! ints_stringified {
+    ($($t:ident,)*) => {$(
         impl From<$t> for Literal {
             fn from(t: $t) -> Literal {
                 Literal(to_literal(&format!(concat!("{}", stringify!($t)), t)))
@@ -299,9 +296,8 @@ macro_rules! ints {
     )*}
 }
 
-ints! {
-    u8, u16, u32, u64, usize,
-    i8, i16, i32, i64, isize,
+ints_stringified! {
+    usize, isize,
 }
 
 macro_rules! floats {
