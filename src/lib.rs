@@ -65,10 +65,10 @@ impl<T: Into<TokenStream>> FromIterator<T> for TokenStream {
 
 impl IntoIterator for TokenStream {
     type Item = TokenTree;
-    type IntoIter = TokenIter;
+    type IntoIter = TokenTreeIter;
 
-    fn into_iter(self) -> TokenIter {
-        TokenIter(self.0.into_iter())
+    fn into_iter(self) -> TokenTreeIter {
+        TokenTreeIter(self.0.into_iter())
     }
 }
 
@@ -100,7 +100,13 @@ impl Span {
 #[derive(Clone, Debug)]
 pub struct TokenTree {
     pub span: Span,
-    pub kind: TokenKind,
+    pub kind: TokenNode,
+}
+
+impl From<TokenNode> for TokenTree {
+    fn from(kind: TokenNode) -> TokenTree {
+        TokenTree { span: Span::default(), kind: kind }
+    }
 }
 
 impl fmt::Display for TokenTree {
@@ -110,10 +116,10 @@ impl fmt::Display for TokenTree {
 }
 
 #[derive(Clone, Debug)]
-pub enum TokenKind {
-    Sequence(Delimiter, TokenStream),
-    Word(Symbol),
-    Op(char, OpKind),
+pub enum TokenNode {
+    Group(Delimiter, TokenStream),
+    Term(Term),
+    Op(char, Spacing),
     Literal(Literal),
 }
 
@@ -126,28 +132,20 @@ pub enum Delimiter {
 }
 
 #[derive(Copy, Clone)]
-pub struct Symbol(imp::Symbol);
+pub struct Term(imp::Term);
 
-impl<'a> From<&'a str> for Symbol {
-    fn from(string: &'a str) -> Symbol {
-        Symbol(string.into())
+impl Term {
+    pub fn intern(string: &str) -> Term {
+        Term(string.into())
     }
-}
 
-impl From<String> for Symbol {
-    fn from(string: String) -> Symbol {
-        Symbol(string[..].into())
-    }
-}
-
-impl Symbol {
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum OpKind {
+#[derive(Copy, Clone, Debug)]
+pub enum Spacing {
     Alone,
     Joint,
 }
@@ -155,25 +153,57 @@ pub enum OpKind {
 #[derive(Clone)]
 pub struct Literal(imp::Literal);
 
+macro_rules! int_literals {
+    ($($kind:ident,)*) => ($(
+        pub fn $kind(n: $kind) -> Literal {
+            Literal(n.into())
+        }
+    )*)
+}
+
 impl Literal {
-    pub fn byte_char(b: u8) -> Literal {
-        Literal(imp::Literal::byte_char(b))
+    pub fn integer(s: i64) -> Literal {
+        Literal(imp::Literal::integer(s))
+    }
+
+    int_literals! {
+        u8, u16, u32, u64, /*usize*/
+        i8, i16, i32, i64, /*isize,*/
+    }
+
+    pub fn float(f: f64) -> Literal {
+        Literal(imp::Literal::float(f))
+    }
+
+    pub fn f64(f: f64) -> Literal {
+        Literal(f.into())
+    }
+
+    pub fn f32(f: f32) -> Literal {
+        Literal(f.into())
+    }
+
+    pub fn string(string: &str) -> Literal {
+        Literal(string.into())
+    }
+
+    pub fn character(ch: char) -> Literal {
+        Literal(ch.into())
     }
 
     pub fn byte_string(s: &[u8]) -> Literal {
         Literal(imp::Literal::byte_string(s))
     }
 
+    // =======================================================================
+    // Not present upstream in proc_macro yet
+
+    pub fn byte_char(b: u8) -> Literal {
+        Literal(imp::Literal::byte_char(b))
+    }
+
     pub fn doccomment(s: &str) -> Literal {
         Literal(imp::Literal::doccomment(s))
-    }
-
-    pub fn float(s: &str) -> Literal {
-        Literal(imp::Literal::float(s))
-    }
-
-    pub fn integer(s: &str) -> Literal {
-        Literal(imp::Literal::integer(s))
     }
 
     pub fn raw_string(s: &str, pounds: usize) -> Literal {
@@ -185,25 +215,9 @@ impl Literal {
     }
 }
 
-macro_rules! froms {
-    ($($t:ty,)*) => {$(
-        impl<'a> From<$t> for Literal {
-            fn from(t: $t) -> Literal {
-                Literal(t.into())
-            }
-        }
-    )*}
-}
+pub struct TokenTreeIter(imp::TokenTreeIter);
 
-froms! {
-    u8, u16, u32, u64, usize,
-    i8, i16, i32, i64, isize,
-    f32, f64, char, &'a str,
-}
-
-pub struct TokenIter(imp::TokenIter);
-
-impl Iterator for TokenIter {
+impl Iterator for TokenTreeIter {
     type Item = TokenTree;
 
     fn next(&mut self) -> Option<TokenTree> {
@@ -214,8 +228,8 @@ impl Iterator for TokenIter {
 forward_fmt!(Debug for LexError);
 forward_fmt!(Debug for Literal);
 forward_fmt!(Debug for Span);
-forward_fmt!(Debug for Symbol);
-forward_fmt!(Debug for TokenIter);
+forward_fmt!(Debug for Term);
+forward_fmt!(Debug for TokenTreeIter);
 forward_fmt!(Debug for TokenStream);
 forward_fmt!(Display for Literal);
 forward_fmt!(Display for TokenStream);

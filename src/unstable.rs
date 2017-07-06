@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use proc_macro;
 
-use {TokenTree, TokenKind, Delimiter, OpKind};
+use {TokenTree, TokenNode, Delimiter, Spacing};
 
 #[derive(Clone)]
 pub struct TokenStream(proc_macro::TokenStream);
@@ -55,27 +55,27 @@ impl From<TokenTree> for TokenStream {
         TokenStream(proc_macro::TokenTree {
             span: (tree.span.0).0,
             kind: match tree.kind {
-                TokenKind::Sequence(delim, s) => {
+                TokenNode::Group(delim, s) => {
                     let delim = match delim {
                         Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
                         Delimiter::Bracket => proc_macro::Delimiter::Bracket,
                         Delimiter::Brace => proc_macro::Delimiter::Brace,
                         Delimiter::None => proc_macro::Delimiter::None,
                     };
-                    proc_macro::TokenKind::Sequence(delim, (s.0).0)
+                    proc_macro::TokenNode::Group(delim, (s.0).0)
                 }
-                TokenKind::Op(ch, kind) => {
+                TokenNode::Op(ch, kind) => {
                     let kind = match kind {
-                        OpKind::Joint => proc_macro::OpKind::Joint,
-                        OpKind::Alone => proc_macro::OpKind::Alone,
+                        Spacing::Joint => proc_macro::Spacing::Joint,
+                        Spacing::Alone => proc_macro::Spacing::Alone,
                     };
-                    proc_macro::TokenKind::Op(ch, kind)
+                    proc_macro::TokenNode::Op(ch, kind)
                 }
-                TokenKind::Word(s) => {
-                    proc_macro::TokenKind::Word((s.0).0)
+                TokenNode::Term(s) => {
+                    proc_macro::TokenNode::Term((s.0).0)
                 }
-                TokenKind::Literal(l) => {
-                    proc_macro::TokenKind::Literal((l.0).0)
+                TokenNode::Literal(l) => {
+                    proc_macro::TokenNode::Literal((l.0).0)
                 }
             },
         }.into())
@@ -103,18 +103,18 @@ impl fmt::Debug for LexError {
     }
 }
 
-pub struct TokenIter(proc_macro::TokenIter);
+pub struct TokenTreeIter(proc_macro::TokenTreeIter);
 
 impl IntoIterator for TokenStream {
     type Item = TokenTree;
-    type IntoIter = TokenIter;
+    type IntoIter = TokenTreeIter;
 
-    fn into_iter(self) -> TokenIter {
-        TokenIter(self.0.into_iter())
+    fn into_iter(self) -> TokenTreeIter {
+        TokenTreeIter(self.0.into_iter())
     }
 }
 
-impl Iterator for TokenIter {
+impl Iterator for TokenTreeIter {
     type Item = TokenTree;
 
     fn next(&mut self) -> Option<TokenTree> {
@@ -125,27 +125,27 @@ impl Iterator for TokenIter {
         Some(TokenTree {
             span: ::Span(Span(token.span)),
             kind: match token.kind {
-                proc_macro::TokenKind::Sequence(delim, s) => {
+                proc_macro::TokenNode::Group(delim, s) => {
                     let delim = match delim {
                         proc_macro::Delimiter::Parenthesis => Delimiter::Parenthesis,
                         proc_macro::Delimiter::Bracket => Delimiter::Bracket,
                         proc_macro::Delimiter::Brace => Delimiter::Brace,
                         proc_macro::Delimiter::None => Delimiter::None,
                     };
-                    TokenKind::Sequence(delim, ::TokenStream(TokenStream(s)))
+                    TokenNode::Group(delim, ::TokenStream(TokenStream(s)))
                 }
-                proc_macro::TokenKind::Op(ch, kind) => {
+                proc_macro::TokenNode::Op(ch, kind) => {
                     let kind = match kind {
-                        proc_macro::OpKind::Joint => OpKind::Joint,
-                        proc_macro::OpKind::Alone => OpKind::Alone,
+                        proc_macro::Spacing::Joint => Spacing::Joint,
+                        proc_macro::Spacing::Alone => Spacing::Alone,
                     };
-                    TokenKind::Op(ch, kind)
+                    TokenNode::Op(ch, kind)
                 }
-                proc_macro::TokenKind::Word(s) => {
-                    TokenKind::Word(::Symbol(Symbol(s)))
+                proc_macro::TokenNode::Term(s) => {
+                    TokenNode::Term(::Term(Term(s)))
                 }
-                proc_macro::TokenKind::Literal(l) => {
-                    TokenKind::Literal(::Literal(Literal(l)))
+                proc_macro::TokenNode::Literal(l) => {
+                    TokenNode::Literal(::Literal(Literal(l)))
                 }
             },
         })
@@ -156,9 +156,9 @@ impl Iterator for TokenIter {
     }
 }
 
-impl fmt::Debug for TokenIter {
+impl fmt::Debug for TokenTreeIter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("TokenIter").finish()
+        f.debug_struct("TokenTreeIter").finish()
     }
 }
 
@@ -179,23 +179,23 @@ impl fmt::Debug for Span {
 }
 
 #[derive(Copy, Clone)]
-pub struct Symbol(proc_macro::Symbol);
+pub struct Term(proc_macro::Term);
 
-impl<'a> From<&'a str> for Symbol {
-    fn from(string: &'a str) -> Symbol {
-        Symbol(string.into())
+impl<'a> From<&'a str> for Term {
+    fn from(string: &'a str) -> Term {
+        Term(proc_macro::Term::intern(string))
     }
 }
 
-impl ops::Deref for Symbol {
+impl ops::Deref for Term {
     type Target = str;
 
     fn deref(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 }
 
-impl fmt::Debug for Symbol {
+impl fmt::Debug for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         (**self).fmt(f)
     }
@@ -240,12 +240,12 @@ impl Literal {
         Literal(to_literal(s))
     }
 
-    pub fn float(s: &str) -> Literal {
-        Literal(to_literal(s))
+    pub fn float(s: f64) -> Literal {
+        Literal(to_literal(&s.to_string()))
     }
 
-    pub fn integer(s: &str) -> Literal {
-        Literal(to_literal(s))
+    pub fn integer(s: i64) -> Literal {
+        Literal(to_literal(&s.to_string()))
     }
 
     pub fn raw_string(s: &str, pounds: usize) -> Literal {
@@ -284,7 +284,7 @@ impl fmt::Debug for Literal {
 fn to_literal(s: &str) -> proc_macro::Literal {
     let stream = s.parse::<proc_macro::TokenStream>().unwrap();
     match stream.into_iter().next().unwrap().kind {
-        proc_macro::TokenKind::Literal(l) => l,
+        proc_macro::TokenNode::Literal(l) => l,
         _ => unreachable!(),
     }
 }
@@ -308,8 +308,7 @@ macro_rules! floats {
     ($($t:ident,)*) => {$(
         impl From<$t> for Literal {
             fn from(t: $t) -> Literal {
-                // TODO: remove this `as f32` when fixed upstream
-                Literal(proc_macro::Literal::$t(t as f32))
+                Literal(proc_macro::Literal::$t(t))
             }
         }
     )*}

@@ -14,7 +14,7 @@ use proc_macro;
 use unicode_xid::UnicodeXID;
 use strnom::{PResult, skip_whitespace, block_comment, whitespace, word_break};
 
-use {TokenTree, TokenKind, Delimiter, OpKind};
+use {TokenTree, TokenNode, Delimiter, Spacing};
 
 #[derive(Clone, Debug)]
 pub struct TokenStream {
@@ -60,7 +60,7 @@ impl fmt::Display for TokenStream {
             }
             joint = false;
             match tt.kind {
-                TokenKind::Sequence(delim, ref stream) => {
+                TokenNode::Group(delim, ref stream) => {
                     let (start, end) = match delim {
                         Delimiter::Parenthesis => ("(", ")"),
                         Delimiter::Brace => ("{", "}"),
@@ -73,15 +73,15 @@ impl fmt::Display for TokenStream {
                         write!(f, "{} {} {}", start, stream, end)?
                     }
                 }
-                TokenKind::Word(ref sym) => write!(f, "{}", sym.as_str())?,
-                TokenKind::Op(ch, ref op) => {
+                TokenNode::Term(ref sym) => write!(f, "{}", sym.as_str())?,
+                TokenNode::Op(ch, ref op) => {
                     write!(f, "{}", ch)?;
                     match *op {
-                        OpKind::Alone => {}
-                        OpKind::Joint => joint = true,
+                        Spacing::Alone => {}
+                        Spacing::Joint => joint = true,
                     }
                 }
-                TokenKind::Literal(ref literal) => {
+                TokenNode::Literal(ref literal) => {
                     write!(f, "{}", literal)?;
                     // handle comments
                     if (literal.0).0.starts_with("/") {
@@ -126,13 +126,13 @@ impl iter::FromIterator<TokenStream> for TokenStream {
     }
 }
 
-pub type TokenIter = vec::IntoIter<TokenTree>;
+pub type TokenTreeIter = vec::IntoIter<TokenTree>;
 
 impl IntoIterator for TokenStream {
     type Item = TokenTree;
-    type IntoIter = TokenIter;
+    type IntoIter = TokenTreeIter;
 
-    fn into_iter(self) -> TokenIter {
+    fn into_iter(self) -> TokenTreeIter {
         self.inner.into_iter()
     }
 }
@@ -147,23 +147,23 @@ impl Span {
 }
 
 #[derive(Copy, Clone)]
-pub struct Symbol {
+pub struct Term {
     intern: usize,
     not_send_sync: PhantomData<*const ()>,
 }
 
 thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
 
-impl<'a> From<&'a str> for Symbol {
-    fn from(string: &'a str) -> Symbol {
-        Symbol {
+impl<'a> From<&'a str> for Term {
+    fn from(string: &'a str) -> Term {
+        Term {
             intern: SYMBOLS.with(|s| s.borrow_mut().intern(string)),
             not_send_sync: PhantomData,
         }
     }
 }
 
-impl ops::Deref for Symbol {
+impl ops::Deref for Term {
     type Target = str;
 
     fn deref(&self) -> &str {
@@ -177,9 +177,9 @@ impl ops::Deref for Symbol {
     }
 }
 
-impl fmt::Debug for Symbol {
+impl fmt::Debug for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Symbol").field(&&**self).finish()
+        f.debug_tuple("Term").field(&&**self).finish()
     }
 }
 
@@ -259,11 +259,11 @@ impl Literal {
         Literal(s.to_string())
     }
 
-    pub fn float(s: &str) -> Literal {
+    pub fn float(s: f64) -> Literal {
         Literal(s.to_string())
     }
 
-    pub fn integer(s: &str) -> Literal {
+    pub fn integer(s: i64) -> Literal {
         Literal(s.to_string())
     }
 
@@ -346,21 +346,21 @@ named!(token_stream -> ::TokenStream, map!(
 ));
 
 named!(token_tree -> TokenTree,
-       map!(token_kind, |s: TokenKind| {
+       map!(token_kind, |s: TokenNode| {
            TokenTree {
                span: ::Span(Span),
                kind: s,
            }
        }));
 
-named!(token_kind -> TokenKind, alt!(
-    map!(delimited, |(d, s)| TokenKind::Sequence(d, s))
+named!(token_kind -> TokenNode, alt!(
+    map!(delimited, |(d, s)| TokenNode::Group(d, s))
     |
-    map!(literal, TokenKind::Literal) // must be before symbol
+    map!(literal, TokenNode::Literal) // must be before symbol
     |
-    map!(symbol, TokenKind::Word)
+    map!(symbol, TokenNode::Term)
     |
-    map!(op, |(op, kind)| TokenKind::Op(op, kind))
+    map!(op, |(op, kind)| TokenNode::Op(op, kind))
 ));
 
 named!(delimited -> (Delimiter, ::TokenStream), alt!(
@@ -383,7 +383,7 @@ named!(delimited -> (Delimiter, ::TokenStream), alt!(
     ) => { |ts| (Delimiter::Brace, ts) }
 ));
 
-fn symbol(mut input: &str) -> PResult<::Symbol> {
+fn symbol(mut input: &str) -> PResult<::Term> {
     input = skip_whitespace(input);
 
     let mut chars = input.char_indices();
@@ -409,7 +409,7 @@ fn symbol(mut input: &str) -> PResult<::Symbol> {
     if lifetime && &input[..end] != "'static" && KEYWORDS.contains(&&input[1..end]) {
         Err(LexError)
     } else {
-        Ok((&input[end..], input[..end].into()))
+        Ok((&input[end..], ::Term::intern(&input[..end])))
     }
 }
 
@@ -894,13 +894,13 @@ named!(boolean -> (), alt!(
     keyword!("false") => { |_| () }
 ));
 
-fn op(input: &str) -> PResult<(char, OpKind)> {
+fn op(input: &str) -> PResult<(char, Spacing)> {
     let input = skip_whitespace(input);
     match op_char(input) {
         Ok((rest, ch)) => {
             let kind = match op_char(rest) {
-                Ok(_) => OpKind::Joint,
-                Err(LexError) => OpKind::Alone,
+                Ok(_) => Spacing::Joint,
+                Err(LexError) => Spacing::Alone,
             };
             Ok((rest, (ch, kind)))
         }

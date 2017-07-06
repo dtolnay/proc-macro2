@@ -1,17 +1,17 @@
 extern crate proc_macro2;
 
-use proc_macro2::{Symbol, Literal, TokenStream};
+use proc_macro2::{Term, Literal, TokenStream};
 
 #[test]
 fn symbols() {
-    assert_eq!(Symbol::from("foo").as_str(), "foo");
-    assert_eq!(Symbol::from("bar").as_str(), "bar");
+    assert_eq!(Term::intern("foo").as_str(), "foo");
+    assert_eq!(Term::intern("bar").as_str(), "bar");
 }
 
 #[test]
 fn literals() {
-    assert_eq!(Literal::from("foo").to_string(), "\"foo\"");
-    assert_eq!(Literal::from("\"").to_string(), "\"\\\"\"");
+    assert_eq!(Literal::string("foo").to_string(), "\"foo\"");
+    assert_eq!(Literal::string("\"").to_string(), "\"\\\"\"");
 }
 
 #[test]
