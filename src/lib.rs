@@ -1,3 +1,24 @@
+//! A "shim crate" intended to multiplex the `proc_macro` API on to stable Rust.
+//!
+//! Procedural macros in Rust operate over the upstream
+//! `proc_macro::TokenStream` type. This type currently is quite conservative
+//! and exposed no internal implementation details. Nightly compilers, however,
+//! contain a much richer interface. This richer interface allows fine-grained
+//! inspection of the token stream which avoids stringification/re-lexing and
+//! also preserves span information.
+//!
+//! The upcoming APIs added to `proc_macro` upstream are the foundation for
+//! productive procedural macros in the ecosystem. To help prepare the ecosystem
+//! for using them this crate serves to both compile on stable and nightly and
+//! mirrors the API-to-be. The intention is that procedural macros which switch
+//! to use this crate will be trivially able to switch to the upstream
+//! `proc_macro` crate once its API stabilizes.
+//!
+//! In the meantime this crate also has an `unstable` Cargo feature which
+//! enables it to reimplement itself with the unstable API of `proc_macro`.
+//! This'll allow immediate usage of the beneficial upstream API, particularly
+//! around preserving span information.
+
 #![cfg_attr(feature = "unstable", feature(proc_macro))]
 
 extern crate proc_macro;
