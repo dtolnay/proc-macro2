@@ -282,22 +282,8 @@ macro_rules! ints {
 }
 
 ints! {
-    u8, u16, u32, u64, /*usize,*/
-    i8, i16, i32, i64, /*isize,*/
-}
-
-macro_rules! ints_stringified {
-    ($($t:ident,)*) => {$(
-        impl From<$t> for Literal {
-            fn from(t: $t) -> Literal {
-                Literal(to_literal(&format!(concat!("{}", stringify!($t)), t)))
-            }
-        }
-    )*}
-}
-
-ints_stringified! {
-    usize, isize,
+    u8, u16, u32, u64, usize,
+    i8, i16, i32, i64, isize,
 }
 
 macro_rules! floats {
