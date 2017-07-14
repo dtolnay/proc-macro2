@@ -1,0 +1,10 @@
+[package]
+name = "testcrate"
+version = "0.1.0"
+authors = ["Alex Crichton <alex@alexcrichton.com>"]
+
+[dependencies]
+proc-macro2 = { path = ".." }
+
+[dev-dependencies]
+compiletest_rs = "0.2"

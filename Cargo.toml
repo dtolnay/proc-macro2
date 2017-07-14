@@ -20,8 +20,5 @@ doctest = false
 [dependencies]
 unicode-xid = "0.1"
 
-[dev-dependencies]
-compiletest_rs = "0.2"
-
 [features]
 unstable = []
