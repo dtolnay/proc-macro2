@@ -165,7 +165,7 @@ impl Term {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Spacing {
     Alone,
     Joint,
