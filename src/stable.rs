@@ -358,7 +358,7 @@ named!(token_kind -> TokenNode, alt!(
     |
     map!(literal, TokenNode::Literal) // must be before symbol
     |
-    map!(symbol, TokenNode::Term)
+    symbol
     |
     map!(op, |(op, kind)| TokenNode::Op(op, kind))
 ));
@@ -383,7 +383,7 @@ named!(delimited -> (Delimiter, ::TokenStream), alt!(
     ) => { |ts| (Delimiter::Brace, ts) }
 ));
 
-fn symbol(mut input: &str) -> PResult<::Term> {
+fn symbol(mut input: &str) -> PResult<TokenNode> {
     input = skip_whitespace(input);
 
     let mut chars = input.char_indices();
@@ -409,7 +409,12 @@ fn symbol(mut input: &str) -> PResult<::Term> {
     if lifetime && &input[..end] != "'static" && KEYWORDS.contains(&&input[1..end]) {
         Err(LexError)
     } else {
-        Ok((&input[end..], ::Term::intern(&input[..end])))
+        let (a, b) = input.split_at(end);
+        if a == "_" {
+            Ok((b, TokenNode::Op('_', Spacing::Alone)))
+        } else {
+            Ok((b, TokenNode::Term(::Term::intern(a))))
+        }
     }
 }
 
