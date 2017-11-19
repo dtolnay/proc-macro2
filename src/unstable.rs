@@ -159,12 +159,18 @@ impl fmt::Debug for TokenTreeIter {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone)]
 pub struct Span(proc_macro::Span);
 
 impl Span {
     pub fn call_site() -> Span {
         Span(proc_macro::Span::call_site())
+    }
+}
+
+impl Default for Span {
+    fn default() -> Span {
+        Span(proc_macro::Span::def_site())
     }
 }
 
