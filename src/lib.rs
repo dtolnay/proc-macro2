@@ -106,15 +106,20 @@ impl TokenStream {
 #[derive(Copy, Clone)]
 pub struct Span(imp::Span);
 
+#[doc(hidden)]
 impl Default for Span {
     fn default() -> Span {
-        Span(imp::Span::default())
+        Span(imp::Span::def_site())
     }
 }
 
 impl Span {
     pub fn call_site() -> Span {
         Span(imp::Span::call_site())
+    }
+
+    pub fn def_site() -> Span {
+        Span(imp::Span::def_site())
     }
 }
 

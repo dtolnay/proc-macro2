@@ -137,11 +137,15 @@ impl IntoIterator for TokenStream {
     }
 }
 
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Span;
 
 impl Span {
     pub fn call_site() -> Span {
+        Span
+    }
+
+    pub fn def_site() -> Span {
         Span
     }
 }

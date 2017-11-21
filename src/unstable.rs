@@ -166,10 +166,8 @@ impl Span {
     pub fn call_site() -> Span {
         Span(proc_macro::Span::call_site())
     }
-}
 
-impl Default for Span {
-    fn default() -> Span {
+    pub fn def_site() -> Span {
         Span(proc_macro::Span::def_site())
     }
 }
