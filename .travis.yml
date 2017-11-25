@@ -11,7 +11,6 @@ matrix:
         - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
       script:
         - cargo test
-        - cargo test --manifest-path testcrate/Cargo.toml
         - cargo build --features unstable
         - cargo doc --no-deps
       after_success:
