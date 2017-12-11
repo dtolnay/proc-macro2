@@ -1,6 +1,6 @@
 extern crate proc_macro2;
 
-use proc_macro2::{Term, Literal, TokenStream};
+use proc_macro2::{Term, Literal, TokenStream, TokenNode, Span};
 
 #[test]
 fn symbols() {
@@ -62,3 +62,68 @@ fn fail() {
     fail("' static");
     fail("'mut");
 }
+
+#[test]
+fn span_test() {
+    fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
+        eprintln!("checking {:?}", p);
+        let ts = p.parse::<TokenStream>().unwrap();
+        check_spans_internal(ts, &mut lines);
+    }
+
+    fn check_spans_internal(
+        ts: TokenStream,
+        lines: &mut &[(usize, usize, usize, usize)],
+    ) {
+        for i in ts {
+            if let Some((&(sline, scol, eline, ecol), rest)) = lines.split_first() {
+                *lines = rest;
+
+                eprintln!("span = {:?}", i.span);
+
+                let start = i.span.start();
+                assert_eq!(start.line, sline, "sline did not match for {}", i);
+                assert_eq!(start.column, scol, "scol did not match for {}", i);
+
+                let end = i.span.end();
+                assert_eq!(end.line, eline, "eline did not match for {}", i);
+                assert_eq!(end.column, ecol, "ecol did not match for {}", i);
+
+                match i.kind {
+                    TokenNode::Group(_, stream) =>
+                        check_spans_internal(stream, lines),
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    check_spans("\
+/// This is a document comment
+testing 123
+{
+  testing 234
+}", &[
+    (1, 0, 1, 30),
+    (2, 0, 2, 7),
+    (2, 8, 2, 11),
+    (3, 0, 5, 1),
+    (4, 2, 4, 9),
+    (4, 10, 4, 13),
+]);
+}
+
+#[cfg(not(feature = "unstable"))]
+#[test]
+fn default_span() {
+    let start = Span::call_site().start();
+    assert_eq!(start.line, 1);
+    assert_eq!(start.column, 0);
+    let end = Span::call_site().end();
+    assert_eq!(end.line, 1);
+    assert_eq!(end.column, 0);
+    let source_file = Span::call_site().source_file();
+    assert_eq!(source_file.as_str(), "<unspecified>");
+    assert!(!source_file.is_real());
+}
+

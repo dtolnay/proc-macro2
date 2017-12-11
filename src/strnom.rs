@@ -1,12 +1,61 @@
 //! Adapted from [`nom`](https://github.com/Geal/nom).
 
+use std::str::{Chars, CharIndices, Bytes};
+
 use unicode_xid::UnicodeXID;
 
 use imp::LexError;
 
-pub type PResult<'a, O> = Result<(&'a str, O), LexError>;
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct Cursor<'a> {
+    pub rest: &'a str,
+    pub off: u32,
+}
 
-pub fn whitespace(input: &str) -> PResult<()> {
+impl<'a> Cursor<'a> {
+    pub fn advance(&self, amt: usize) -> Cursor<'a> {
+        Cursor {
+            rest: &self.rest[amt..],
+            off: self.off + (amt as u32),
+        }
+    }
+
+    pub fn find(&self, p: char) -> Option<usize> {
+        self.rest.find(p)
+    }
+
+    pub fn starts_with(&self, s: &str) -> bool {
+        self.rest.starts_with(s)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.rest.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.rest.len()
+    }
+
+    pub fn as_bytes(&self) -> &'a [u8] {
+        self.rest.as_bytes()
+    }
+
+    pub fn bytes(&self) -> Bytes<'a> {
+        self.rest.bytes()
+    }
+
+    pub fn chars(&self) -> Chars<'a> {
+        self.rest.chars()
+    }
+
+    pub fn char_indices(&self) -> CharIndices<'a> {
+        self.rest.char_indices()
+    }
+}
+
+pub type PResult<'a, O> = Result<(Cursor<'a>, O), LexError>;
+
+pub fn whitespace(input: Cursor) -> PResult<()> {
     if input.is_empty() {
         return Err(LexError);
     }
@@ -14,7 +63,7 @@ pub fn whitespace(input: &str) -> PResult<()> {
     let bytes = input.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
-        let s = &input[i..];
+        let s = input.advance(i);
         if bytes[i] == b'/' {
             if s.starts_with("//") && (!s.starts_with("///") || s.starts_with("////")) &&
                !s.starts_with("//!") {
@@ -50,10 +99,10 @@ pub fn whitespace(input: &str) -> PResult<()> {
             Err(LexError)
         };
     }
-    Ok(("", ()))
+    Ok((input.advance(input.len()), ()))
 }
 
-pub fn block_comment(input: &str) -> PResult<&str> {
+pub fn block_comment(input: Cursor) -> PResult<&str> {
     if !input.starts_with("/*") {
         return Err(LexError);
     }
@@ -69,7 +118,7 @@ pub fn block_comment(input: &str) -> PResult<&str> {
         } else if bytes[i] == b'*' && bytes[i + 1] == b'/' {
             depth -= 1;
             if depth == 0 {
-                return Ok((&input[i + 2..], &input[..i + 2]));
+                return Ok((input.advance(i + 2), &input.rest[..i + 2]));
             }
             i += 1; // eat '/'
         }
@@ -78,7 +127,7 @@ pub fn block_comment(input: &str) -> PResult<&str> {
     Err(LexError)
 }
 
-pub fn skip_whitespace(input: &str) -> &str {
+pub fn skip_whitespace(input: Cursor) -> Cursor {
     match whitespace(input) {
         Ok((rest, _)) => rest,
         Err(LexError) => input,
@@ -90,7 +139,7 @@ fn is_whitespace(ch: char) -> bool {
     ch.is_whitespace() || ch == '\u{200e}' || ch == '\u{200f}'
 }
 
-pub fn word_break(input: &str) -> PResult<()> {
+pub fn word_break(input: Cursor) -> PResult<()> {
     match input.chars().next() {
         Some(ch) if UnicodeXID::is_xid_continue(ch) => Err(LexError),
         Some(_) | None => Ok((input, ())),
@@ -99,7 +148,7 @@ pub fn word_break(input: &str) -> PResult<()> {
 
 macro_rules! named {
     ($name:ident -> $o:ty, $submac:ident!( $($args:tt)* )) => {
-        fn $name(i: &str) -> $crate::strnom::PResult<$o> {
+        fn $name<'a>(i: Cursor<'a>) -> $crate::strnom::PResult<'a, $o> {
             $submac!(i, $($args)*)
         }
     };
@@ -228,7 +277,7 @@ macro_rules! take_until {
                 }
             }
             if parsed {
-                Ok((&$i[offset..], &$i[..offset]))
+                Ok(($i.advance(offset), &$i.rest[..offset]))
             } else {
                 Err(LexError)
             }
@@ -294,7 +343,7 @@ macro_rules! not {
 macro_rules! tag {
     ($i:expr, $tag:expr) => {
         if $i.starts_with($tag) {
-            Ok((&$i[$tag.len()..], &$i[..$tag.len()]))
+            Ok(($i.advance($tag.len()), &$i.rest[..$tag.len()]))
         } else {
             Err(LexError)
         }
@@ -308,10 +357,10 @@ macro_rules! punct {
 }
 
 /// Do not use directly. Use `punct!`.
-pub fn punct<'a>(input: &'a str, token: &'static str) -> PResult<'a, &'a str> {
+pub fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &'a str> {
     let input = skip_whitespace(input);
     if input.starts_with(token) {
-        Ok((&input[token.len()..], token))
+        Ok((input.advance(token.len()), token))
     } else {
         Err(LexError)
     }
@@ -324,7 +373,7 @@ macro_rules! keyword {
 }
 
 /// Do not use directly. Use `keyword!`.
-pub fn keyword<'a>(input: &'a str, token: &'static str) -> PResult<'a, &'a str> {
+pub fn keyword<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &'a str> {
     match punct(input, token) {
         Ok((rest, _)) => {
             match word_break(rest) {

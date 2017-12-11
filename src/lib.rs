@@ -24,6 +24,9 @@
 extern crate proc_macro;
 
 #[cfg(not(feature = "unstable"))]
+extern crate memchr;
+
+#[cfg(not(feature = "unstable"))]
 extern crate unicode_xid;
 
 use std::fmt;
@@ -103,6 +106,43 @@ impl TokenStream {
     }
 }
 
+#[derive(Clone, PartialEq, Eq)]
+pub struct SourceFile(imp::SourceFile);
+
+impl SourceFile {
+    /// Get the path to this source file as a string.
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+
+    pub fn is_real(&self) -> bool {
+        self.0.is_real()
+    }
+}
+
+impl AsRef<str> for SourceFile {
+    fn as_ref(&self) -> &str {
+        self.0.as_ref()
+    }
+}
+
+impl PartialEq<str> for SourceFile {
+    fn eq(&self, other: &str) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl fmt::Debug for SourceFile {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+// NOTE: We can't easily wrap LineColumn right now, as the version in proc-macro
+// doesn't actually expose the internal `line` and `column` fields, making it
+// mostly useless.
+pub use imp::LineColumn;
+
 #[derive(Copy, Clone)]
 pub struct Span(imp::Span);
 
@@ -120,6 +160,24 @@ impl Span {
 
     pub fn def_site() -> Span {
         Span(imp::Span::def_site())
+    }
+
+    pub fn source_file(&self) -> SourceFile {
+        SourceFile(self.0.source_file())
+    }
+
+    pub fn start(&self) -> LineColumn {
+        // XXX(nika): We can't easily wrap LineColumn right now
+        self.0.start()
+    }
+
+    pub fn end(&self) -> LineColumn {
+        // XXX(nika): We can't easily wrap LineColumn right now
+        self.0.end()
+    }
+
+    pub fn join(&self, other: Span) -> Option<Span> {
+        self.0.join(other.0).map(Span)
     }
 }
 
