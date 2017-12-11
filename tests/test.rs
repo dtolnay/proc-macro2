@@ -127,3 +127,27 @@ fn default_span() {
     assert!(!source_file.is_real());
 }
 
+#[test]
+fn span_join() {
+    let source1 =
+        "aaa\nbbb".parse::<TokenStream>().unwrap().into_iter().collect::<Vec<_>>();
+    let source2 =
+        "ccc\nddd".parse::<TokenStream>().unwrap().into_iter().collect::<Vec<_>>();
+
+    assert!(source1[0].span.source_file() != source2[0].span.source_file());
+    assert_eq!(source1[0].span.source_file(), source1[1].span.source_file());
+
+    let joined1 = source1[0].span.join(source1[1].span);
+    let joined2 = source1[0].span.join(source2[0].span);
+    assert!(joined1.is_some());
+    assert!(joined2.is_none());
+
+    let start = joined1.unwrap().start();
+    let end = joined1.unwrap().end();
+    assert_eq!(start.line, 1);
+    assert_eq!(start.column, 0);
+    assert_eq!(end.line, 2);
+    assert_eq!(end.column, 3);
+
+    assert_eq!(joined1.unwrap().source_file(), source1[0].span.source_file());
+}
