@@ -66,7 +66,6 @@ fn fail() {
 #[test]
 fn span_test() {
     fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
-        eprintln!("checking {:?}", p);
         let ts = p.parse::<TokenStream>().unwrap();
         check_spans_internal(ts, &mut lines);
     }
@@ -78,8 +77,6 @@ fn span_test() {
         for i in ts {
             if let Some((&(sline, scol, eline, ecol), rest)) = lines.split_first() {
                 *lines = rest;
-
-                eprintln!("span = {:?}", i.span);
 
                 let start = i.span.start();
                 assert_eq!(start.line, sline, "sline did not match for {}", i);
