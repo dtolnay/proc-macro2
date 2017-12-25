@@ -47,6 +47,8 @@ fn roundtrip() {
     ");
     roundtrip("'a");
     roundtrip("'static");
+    roundtrip("'\\u{10__FFFF}'");
+    roundtrip("\"\\u{10_F0FF__}foo\\u{1_0_0_0__}\"");
 }
 
 #[test]

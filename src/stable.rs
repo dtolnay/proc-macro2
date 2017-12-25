@@ -722,28 +722,12 @@ fn backslash_u<I>(chars: &mut I) -> bool
 {
     next_ch!(chars @ '{');
     next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F');
-    let b = next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F' | '}');
-    if b == '}' {
-        return true
+    loop {
+        let c = next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F' | '_' | '}');
+        if c == '}' {
+            return true;
+        }
     }
-    let c = next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F' | '}');
-    if c == '}' {
-        return true
-    }
-    let d = next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F' | '}');
-    if d == '}' {
-        return true
-    }
-    let e = next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F' | '}');
-    if e == '}' {
-        return true
-    }
-    let f = next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F' | '}');
-    if f == '}' {
-        return true
-    }
-    next_ch!(chars @ '}');
-    true
 }
 
 fn float(input: &str) -> PResult<()> {
