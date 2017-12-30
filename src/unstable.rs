@@ -191,8 +191,10 @@ impl fmt::Debug for SourceFile {
     }
 }
 
-// XXX(nika): We can't easily wrap LineColumn right now
-pub use proc_macro::LineColumn;
+pub struct LineColumn {
+    pub line: usize,
+    pub column: usize,
+}
 
 #[derive(Copy, Clone)]
 pub struct Span(proc_macro::Span);
@@ -211,13 +213,13 @@ impl Span {
     }
 
     pub fn start(&self) -> LineColumn {
-        // XXX(nika): We can't easily wrap LineColumn right now
-        self.0.start()
+        let proc_macro::LineColumn{ line, column } = self.0.start();
+        LineColumn { line, column }
     }
 
     pub fn end(&self) -> LineColumn {
-        // XXX(nika): We can't easily wrap LineColumn right now
-        self.0.end()
+        let proc_macro::LineColumn{ line, column } = self.0.end();
+        LineColumn { line, column }
     }
 
     pub fn join(&self, other: Span) -> Option<Span> {

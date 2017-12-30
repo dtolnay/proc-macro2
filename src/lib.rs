@@ -141,7 +141,10 @@ impl fmt::Debug for SourceFile {
 // NOTE: We can't easily wrap LineColumn right now, as the version in proc-macro
 // doesn't actually expose the internal `line` and `column` fields, making it
 // mostly useless.
-pub use imp::LineColumn;
+pub struct LineColumn {
+    pub line: usize,
+    pub column: usize,
+}
 
 #[derive(Copy, Clone)]
 pub struct Span(imp::Span);
@@ -167,13 +170,13 @@ impl Span {
     }
 
     pub fn start(&self) -> LineColumn {
-        // XXX(nika): We can't easily wrap LineColumn right now
-        self.0.start()
+        let imp::LineColumn{ line, column } = self.0.start();
+        LineColumn { line, column }
     }
 
     pub fn end(&self) -> LineColumn {
-        // XXX(nika): We can't easily wrap LineColumn right now
-        self.0.end()
+        let imp::LineColumn{ line, column } = self.0.end();
+        LineColumn { line, column }
     }
 
     pub fn join(&self, other: Span) -> Option<Span> {
