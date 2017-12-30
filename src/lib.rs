@@ -107,11 +107,14 @@ impl TokenStream {
 }
 
 // Returned by reference, so we can't easily wrap it.
+#[cfg(procmacro2_unstable)]
 pub use imp::FileName;
 
+#[cfg(procmacro2_unstable)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile(imp::SourceFile);
 
+#[cfg(procmacro2_unstable)]
 impl SourceFile {
     /// Get the path to this source file as a string.
     pub fn path(&self) -> &FileName {
@@ -123,18 +126,21 @@ impl SourceFile {
     }
 }
 
+#[cfg(procmacro2_unstable)]
 impl AsRef<FileName> for SourceFile {
     fn as_ref(&self) -> &FileName {
         self.0.path()
     }
 }
 
+#[cfg(procmacro2_unstable)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
+#[cfg(procmacro2_unstable)]
 pub struct LineColumn {
     pub line: usize,
     pub column: usize,
@@ -159,20 +165,24 @@ impl Span {
         Span(imp::Span::def_site())
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile(self.0.source_file())
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn{ line, column } = self.0.start();
         LineColumn { line, column }
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn{ line, column } = self.0.end();
         LineColumn { line, column }
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn join(&self, other: Span) -> Option<Span> {
         self.0.join(other.0).map(Span)
     }

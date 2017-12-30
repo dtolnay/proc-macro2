@@ -1,6 +1,7 @@
 use std::ascii;
 use std::borrow::Borrow;
 use std::cell::RefCell;
+#[cfg(procmacro2_unstable)]
 use std::cmp;
 use std::collections::HashMap;
 use std::fmt;
@@ -11,6 +12,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
 
+#[cfg(procmacro2_unstable)]
 use memchr;
 use proc_macro;
 use unicode_xid::UnicodeXID;
@@ -36,20 +38,34 @@ impl TokenStream {
     }
 }
 
+#[cfg(procmacro2_unstable)]
+fn get_cursor(src: &str) -> Cursor {
+    // Create a dummy file & add it to the codemap
+    CODEMAP.with(|cm| {
+        let mut cm = cm.borrow_mut();
+        let name = format!("<parsed string {}>", cm.files.len());
+        let span = cm.add_file(&name, src);
+        Cursor {
+            rest: src,
+            off: span.lo,
+        }
+    })
+}
+
+#[cfg(not(procmacro2_unstable))]
+fn get_cursor(src: &str) -> Cursor {
+    Cursor {
+        rest: src,
+        off: 0,
+    }
+}
+
 impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         // Create a dummy file & add it to the codemap
-        let cursor = CODEMAP.with(|cm| {
-            let mut cm = cm.borrow_mut();
-            let name = format!("<parsed string {}>", cm.files.len());
-            let span = cm.add_file(&name, src);
-            Cursor {
-                rest: src,
-                off: span.lo,
-            }
-        });
+        let cursor = get_cursor(src);
 
         match token_stream(cursor) {
             Ok((input, output)) => {
@@ -150,20 +166,24 @@ impl IntoIterator for TokenStream {
     }
 }
 
+#[cfg(procmacro2_unstable)]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct FileName(String);
 
+#[cfg(procmacro2_unstable)]
 impl fmt::Display for FileName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
+#[cfg(procmacro2_unstable)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     name: FileName,
 }
 
+#[cfg(procmacro2_unstable)]
 impl SourceFile {
     /// Get the path to this source file as a string.
     pub fn path(&self) -> &FileName {
@@ -176,12 +196,14 @@ impl SourceFile {
     }
 }
 
+#[cfg(procmacro2_unstable)]
 impl AsRef<FileName> for SourceFile {
     fn as_ref(&self) -> &FileName {
         self.path()
     }
 }
 
+#[cfg(procmacro2_unstable)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("SourceFile")
@@ -191,12 +213,14 @@ impl fmt::Debug for SourceFile {
     }
 }
 
+#[cfg(procmacro2_unstable)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LineColumn {
     pub line: usize,
     pub column: usize,
 }
 
+#[cfg(procmacro2_unstable)]
 thread_local! {
     static CODEMAP: RefCell<Codemap> = RefCell::new(Codemap {
         // NOTE: We start with a single dummy file which all call_site() and
@@ -209,12 +233,14 @@ thread_local! {
     });
 }
 
+#[cfg(procmacro2_unstable)]
 struct FileInfo {
     name: String,
     span: Span,
     lines: Vec<usize>,
 }
 
+#[cfg(procmacro2_unstable)]
 impl FileInfo {
     fn offset_line_column(&self, offset: usize) -> LineColumn {
         assert!(self.span_within(Span { lo: offset as u32, hi: offset as u32 }));
@@ -237,6 +263,7 @@ impl FileInfo {
 }
 
 /// Computes the offsets of each line in the given source string.
+#[cfg(procmacro2_unstable)]
 fn lines_offsets(s: &[u8]) -> Vec<usize> {
     let mut lines = vec![0];
     let mut prev = 0;
@@ -247,10 +274,12 @@ fn lines_offsets(s: &[u8]) -> Vec<usize> {
     lines
 }
 
+#[cfg(procmacro2_unstable)]
 struct Codemap {
     files: Vec<FileInfo>,
 }
 
+#[cfg(procmacro2_unstable)]
 impl Codemap {
     fn next_start_pos(&self) -> u32 {
         // Add 1 so there's always space between files.
@@ -297,6 +326,7 @@ impl Span {
         Span { lo: 0, hi: 0 }
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn source_file(&self) -> SourceFile {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -307,6 +337,7 @@ impl Span {
         })
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn start(&self) -> LineColumn {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -315,6 +346,7 @@ impl Span {
         })
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn end(&self) -> LineColumn {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -323,6 +355,7 @@ impl Span {
         })
     }
 
+    #[cfg(procmacro2_unstable)]
     pub fn join(&self, other: Span) -> Option<Span> {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
