@@ -59,6 +59,17 @@ proc-macro2 = { version = "0.1", features = ["unstable"] }
 ```
 
 
+## Unstable Features
+
+`proc-macro2` supports exporting some methods from `proc_macro` which are
+currently highly unstable, and may not be stabilized in the first pass of
+`proc_macro` stabilizations. These features are not exported by default.
+
+To export these features, the `procmacro2_unstable` config flag must be passed
+to rustc. To pass this flag, run `cargo` with 
+`RUSTFLAGS='--cfg procmacro2_unstable' cargo build`.
+
+
 # License
 
 This project is licensed under either of
