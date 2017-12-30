@@ -160,12 +160,28 @@ impl fmt::Debug for TokenTreeIter {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct SourceFile(proc_macro::SourceFile);
+pub struct FileName(String);
+
+impl fmt::Display for FileName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+// NOTE: We have to generate our own filename object here because we can't wrap
+// the one provided by proc_macro.
+#[derive(Clone, PartialEq, Eq)]
+pub struct SourceFile(proc_macro::SourceFile, FileName);
 
 impl SourceFile {
+    fn new(sf: proc_macro::SourceFile) -> Self {
+        let filename = FileName(sf.path().to_string());
+        SourceFile(sf, filename)
+    }
+
     /// Get the path to this source file as a string.
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
+    pub fn path(&self) -> &FileName {
+        &self.1
     }
 
     pub fn is_real(&self) -> bool {
@@ -173,15 +189,9 @@ impl SourceFile {
     }
 }
 
-impl AsRef<str> for SourceFile {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
-    }
-}
-
-impl PartialEq<str> for SourceFile {
-    fn eq(&self, other: &str) -> bool {
-        self.0.eq(other)
+impl AsRef<FileName> for SourceFile {
+    fn as_ref(&self) -> &FileName {
+        self.path()
     }
 }
 
@@ -209,7 +219,7 @@ impl Span {
     }
 
     pub fn source_file(&self) -> SourceFile {
-        SourceFile(self.0.source_file())
+        SourceFile::new(self.0.source_file())
     }
 
     pub fn start(&self) -> LineColumn {

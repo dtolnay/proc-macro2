@@ -150,14 +150,23 @@ impl IntoIterator for TokenStream {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct FileName(String);
+
+impl fmt::Display for FileName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
-    name: String,
+    name: FileName,
 }
 
 impl SourceFile {
     /// Get the path to this source file as a string.
-    pub fn as_str(&self) -> &str {
+    pub fn path(&self) -> &FileName {
         &self.name
     }
 
@@ -167,22 +176,16 @@ impl SourceFile {
     }
 }
 
-impl AsRef<str> for SourceFile {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl PartialEq<str> for SourceFile {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
+impl AsRef<FileName> for SourceFile {
+    fn as_ref(&self) -> &FileName {
+        self.path()
     }
 }
 
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("SourceFile")
-            .field("path", &self.as_str())
+            .field("path", &self.path())
             .field("is_real", &self.is_real())
             .finish()
     }
@@ -299,7 +302,7 @@ impl Span {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
             SourceFile {
-                name: fi.name.clone(),
+                name: FileName(fi.name.clone()),
             }
         })
     }

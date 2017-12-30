@@ -106,13 +106,16 @@ impl TokenStream {
     }
 }
 
+// Returned by reference, so we can't easily wrap it.
+pub use imp::FileName;
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile(imp::SourceFile);
 
 impl SourceFile {
     /// Get the path to this source file as a string.
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
+    pub fn path(&self) -> &FileName {
+        self.0.path()
     }
 
     pub fn is_real(&self) -> bool {
@@ -120,15 +123,9 @@ impl SourceFile {
     }
 }
 
-impl AsRef<str> for SourceFile {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
-    }
-}
-
-impl PartialEq<str> for SourceFile {
-    fn eq(&self, other: &str) -> bool {
-        self.0.eq(other)
+impl AsRef<FileName> for SourceFile {
+    fn as_ref(&self) -> &FileName {
+        self.0.path()
     }
 }
 
