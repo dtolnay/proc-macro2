@@ -24,9 +24,6 @@
 extern crate proc_macro;
 
 #[cfg(not(feature = "unstable"))]
-extern crate memchr;
-
-#[cfg(not(feature = "unstable"))]
 extern crate unicode_xid;
 
 use std::fmt;

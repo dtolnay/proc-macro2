@@ -19,7 +19,6 @@ doctest = false
 
 [dependencies]
 unicode-xid = "0.1"
-memchr = "2.0"
 
 [features]
 unstable = []

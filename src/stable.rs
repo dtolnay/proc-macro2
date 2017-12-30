@@ -12,8 +12,6 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
 
-#[cfg(procmacro2_unstable)]
-use memchr;
 use proc_macro;
 use unicode_xid::UnicodeXID;
 use strnom::{Cursor, PResult, skip_whitespace, block_comment, whitespace, word_break};
@@ -264,10 +262,10 @@ impl FileInfo {
 
 /// Computes the offsets of each line in the given source string.
 #[cfg(procmacro2_unstable)]
-fn lines_offsets(s: &[u8]) -> Vec<usize> {
+fn lines_offsets(s: &str) -> Vec<usize> {
     let mut lines = vec![0];
     let mut prev = 0;
-    while let Some(len) = memchr::memchr(b'\n', &s[prev..]) {
+    while let Some(len) = s[prev..].find('\n') {
         prev += len + 1;
         lines.push(prev);
     }
@@ -290,7 +288,7 @@ impl Codemap {
     }
 
     fn add_file(&mut self, name: &str, src: &str) -> Span {
-        let lines = lines_offsets(src.as_bytes());
+        let lines = lines_offsets(src);
         let lo = self.next_start_pos();
         // XXX(nika): Shouild we bother doing a checked cast or checked add here?
         let span = Span { lo: lo, hi: lo + (src.len() as u32) };
