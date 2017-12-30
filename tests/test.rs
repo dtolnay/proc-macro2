@@ -63,6 +63,7 @@ fn fail() {
     fail("'mut");
 }
 
+#[cfg(procmacro2_unstable)]
 #[test]
 fn span_test() {
     fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
@@ -110,6 +111,7 @@ testing 123
 ]);
 }
 
+#[cfg(procmacro2_unstable)]
 #[cfg(not(feature = "unstable"))]
 #[test]
 fn default_span() {
@@ -120,10 +122,11 @@ fn default_span() {
     assert_eq!(end.line, 1);
     assert_eq!(end.column, 0);
     let source_file = Span::call_site().source_file();
-    assert_eq!(source_file.as_str(), "<unspecified>");
+    assert_eq!(source_file.path().to_string(), "<unspecified>");
     assert!(!source_file.is_real());
 }
 
+#[cfg(procmacro2_unstable)]
 #[test]
 fn span_join() {
     let source1 =
