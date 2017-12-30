@@ -135,9 +135,6 @@ impl fmt::Debug for SourceFile {
     }
 }
 
-// NOTE: We can't easily wrap LineColumn right now, as the version in proc-macro
-// doesn't actually expose the internal `line` and `column` fields, making it
-// mostly useless.
 pub struct LineColumn {
     pub line: usize,
     pub column: usize,
