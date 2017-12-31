@@ -225,6 +225,10 @@ impl Span {
         Span(proc_macro::Span::def_site())
     }
 
+    pub fn unstable(self) -> proc_macro::Span {
+        self.0
+    }
+
     #[cfg(procmacro2_unstable)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile::new(self.0.source_file())
