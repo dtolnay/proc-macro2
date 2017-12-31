@@ -162,6 +162,12 @@ impl Span {
         Span(imp::Span::def_site())
     }
 
+    /// This method is only available when the `"unstable"` feature is enabled.
+    #[cfg(feature = "unstable")]
+    pub fn unstable(self) -> proc_macro::Span {
+        self.0.unstable()
+    }
+
     #[cfg(procmacro2_unstable)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile(self.0.source_file())
