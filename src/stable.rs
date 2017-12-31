@@ -1,6 +1,8 @@
 use std::ascii;
 use std::borrow::Borrow;
 use std::cell::RefCell;
+#[cfg(procmacro2_unstable)]
+use std::cmp;
 use std::collections::HashMap;
 use std::fmt;
 use std::iter;
@@ -12,7 +14,7 @@ use std::vec;
 
 use proc_macro;
 use unicode_xid::UnicodeXID;
-use strnom::{PResult, skip_whitespace, block_comment, whitespace, word_break};
+use strnom::{Cursor, PResult, skip_whitespace, block_comment, whitespace, word_break};
 
 use {TokenTree, TokenNode, Delimiter, Spacing};
 
@@ -34,11 +36,36 @@ impl TokenStream {
     }
 }
 
+#[cfg(procmacro2_unstable)]
+fn get_cursor(src: &str) -> Cursor {
+    // Create a dummy file & add it to the codemap
+    CODEMAP.with(|cm| {
+        let mut cm = cm.borrow_mut();
+        let name = format!("<parsed string {}>", cm.files.len());
+        let span = cm.add_file(&name, src);
+        Cursor {
+            rest: src,
+            off: span.lo,
+        }
+    })
+}
+
+#[cfg(not(procmacro2_unstable))]
+fn get_cursor(src: &str) -> Cursor {
+    Cursor {
+        rest: src,
+        off: 0,
+    }
+}
+
 impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        match token_stream(src) {
+        // Create a dummy file & add it to the codemap
+        let cursor = get_cursor(src);
+
+        match token_stream(cursor) {
             Ok((input, output)) => {
                 if skip_whitespace(input).len() != 0 {
                     Err(LexError)
@@ -137,16 +164,208 @@ impl IntoIterator for TokenStream {
     }
 }
 
+#[cfg(procmacro2_unstable)]
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct FileName(String);
+
+#[cfg(procmacro2_unstable)]
+impl fmt::Display for FileName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[cfg(procmacro2_unstable)]
+#[derive(Clone, PartialEq, Eq)]
+pub struct SourceFile {
+    name: FileName,
+}
+
+#[cfg(procmacro2_unstable)]
+impl SourceFile {
+    /// Get the path to this source file as a string.
+    pub fn path(&self) -> &FileName {
+        &self.name
+    }
+
+    pub fn is_real(&self) -> bool {
+        // XXX(nika): Support real files in the future?
+        false
+    }
+}
+
+#[cfg(procmacro2_unstable)]
+impl AsRef<FileName> for SourceFile {
+    fn as_ref(&self) -> &FileName {
+        self.path()
+    }
+}
+
+#[cfg(procmacro2_unstable)]
+impl fmt::Debug for SourceFile {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("SourceFile")
+            .field("path", &self.path())
+            .field("is_real", &self.is_real())
+            .finish()
+    }
+}
+
+#[cfg(procmacro2_unstable)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LineColumn {
+    pub line: usize,
+    pub column: usize,
+}
+
+#[cfg(procmacro2_unstable)]
+thread_local! {
+    static CODEMAP: RefCell<Codemap> = RefCell::new(Codemap {
+        // NOTE: We start with a single dummy file which all call_site() and
+        // def_site() spans reference.
+        files: vec![FileInfo {
+            name: "<unspecified>".to_owned(),
+            span: Span { lo: 0, hi: 0 },
+            lines: vec![0],
+        }],
+    });
+}
+
+#[cfg(procmacro2_unstable)]
+struct FileInfo {
+    name: String,
+    span: Span,
+    lines: Vec<usize>,
+}
+
+#[cfg(procmacro2_unstable)]
+impl FileInfo {
+    fn offset_line_column(&self, offset: usize) -> LineColumn {
+        assert!(self.span_within(Span { lo: offset as u32, hi: offset as u32 }));
+        let offset = offset - self.span.lo as usize;
+        match self.lines.binary_search(&offset) {
+            Ok(found) => LineColumn {
+                line: found + 1,
+                column: 0
+            },
+            Err(idx) => LineColumn {
+                line: idx,
+                column: offset - self.lines[idx - 1]
+            },
+        }
+    }
+
+    fn span_within(&self, span: Span) -> bool {
+        span.lo >= self.span.lo && span.hi <= self.span.hi
+    }
+}
+
+/// Computes the offsets of each line in the given source string.
+#[cfg(procmacro2_unstable)]
+fn lines_offsets(s: &str) -> Vec<usize> {
+    let mut lines = vec![0];
+    let mut prev = 0;
+    while let Some(len) = s[prev..].find('\n') {
+        prev += len + 1;
+        lines.push(prev);
+    }
+    lines
+}
+
+#[cfg(procmacro2_unstable)]
+struct Codemap {
+    files: Vec<FileInfo>,
+}
+
+#[cfg(procmacro2_unstable)]
+impl Codemap {
+    fn next_start_pos(&self) -> u32 {
+        // Add 1 so there's always space between files.
+        //
+        // We'll always have at least 1 file, as we initialize our files list
+        // with a dummy file.
+        self.files.last().unwrap().span.hi + 1
+    }
+
+    fn add_file(&mut self, name: &str, src: &str) -> Span {
+        let lines = lines_offsets(src);
+        let lo = self.next_start_pos();
+        // XXX(nika): Shouild we bother doing a checked cast or checked add here?
+        let span = Span { lo: lo, hi: lo + (src.len() as u32) };
+
+        self.files.push(FileInfo {
+            name: name.to_owned(),
+            span: span,
+            lines: lines,
+        });
+
+        span
+    }
+
+    fn fileinfo(&self, span: Span) -> &FileInfo {
+        for file in &self.files {
+            if file.span_within(span) {
+                return file;
+            }
+        }
+        panic!("Invalid span with no related FileInfo!");
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
-pub struct Span;
+pub struct Span { lo: u32, hi: u32 }
 
 impl Span {
     pub fn call_site() -> Span {
-        Span
+        Span { lo: 0, hi: 0 }
     }
 
     pub fn def_site() -> Span {
-        Span
+        Span { lo: 0, hi: 0 }
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn source_file(&self) -> SourceFile {
+        CODEMAP.with(|cm| {
+            let cm = cm.borrow();
+            let fi = cm.fileinfo(*self);
+            SourceFile {
+                name: FileName(fi.name.clone()),
+            }
+        })
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn start(&self) -> LineColumn {
+        CODEMAP.with(|cm| {
+            let cm = cm.borrow();
+            let fi = cm.fileinfo(*self);
+            fi.offset_line_column(self.lo as usize)
+        })
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn end(&self) -> LineColumn {
+        CODEMAP.with(|cm| {
+            let cm = cm.borrow();
+            let fi = cm.fileinfo(*self);
+            fi.offset_line_column(self.hi as usize)
+        })
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn join(&self, other: Span) -> Option<Span> {
+        CODEMAP.with(|cm| {
+            let cm = cm.borrow();
+            // If `other` is not within the same FileInfo as us, return None.
+            if !cm.fileinfo(*self).span_within(other) {
+                return None;
+            }
+            Some(Span {
+                lo: cmp::min(self.lo, other.lo),
+                hi: cmp::max(self.hi, other.hi),
+            })
+        })
     }
 }
 
@@ -349,13 +568,19 @@ named!(token_stream -> ::TokenStream, map!(
     |trees| ::TokenStream(TokenStream { inner: trees })
 ));
 
-named!(token_tree -> TokenTree,
-       map!(token_kind, |s: TokenNode| {
-           TokenTree {
-               span: ::Span(Span),
-               kind: s,
-           }
-       }));
+fn token_tree(input: Cursor) -> PResult<TokenTree> {
+    let input = skip_whitespace(input);
+    let lo = input.off;
+    let (input, kind) = token_kind(input)?;
+    let hi = input.off;
+    Ok((input, TokenTree {
+        span: ::Span(Span {
+            lo: lo,
+            hi: hi,
+        }),
+        kind: kind,
+    }))
+}
 
 named!(token_kind -> TokenNode, alt!(
     map!(delimited, |(d, s)| TokenNode::Group(d, s))
@@ -387,7 +612,7 @@ named!(delimited -> (Delimiter, ::TokenStream), alt!(
     ) => { |ts| (Delimiter::Brace, ts) }
 ));
 
-fn symbol(mut input: &str) -> PResult<TokenNode> {
+fn symbol(mut input: Cursor) -> PResult<TokenNode> {
     input = skip_whitespace(input);
 
     let mut chars = input.char_indices();
@@ -410,14 +635,14 @@ fn symbol(mut input: &str) -> PResult<TokenNode> {
         }
     }
 
-    if lifetime && &input[..end] != "'static" && KEYWORDS.contains(&&input[1..end]) {
+    if lifetime && &input.rest[..end] != "'static" && KEYWORDS.contains(&&input.rest[1..end]) {
         Err(LexError)
     } else {
-        let (a, b) = input.split_at(end);
+        let a = &input.rest[..end];
         if a == "_" {
-            Ok((b, TokenNode::Op('_', Spacing::Alone)))
+            Ok((input.advance(end), TokenNode::Op('_', Spacing::Alone)))
         } else {
-            Ok((b, TokenNode::Term(::Term::intern(a))))
+            Ok((input.advance(end), TokenNode::Term(::Term::intern(a))))
         }
     }
 }
@@ -433,7 +658,7 @@ static KEYWORDS: &'static [&'static str] = &[
     "yield",
 ];
 
-fn literal(input: &str) -> PResult<::Literal> {
+fn literal(input: Cursor) -> PResult<::Literal> {
     let input_no_ws = skip_whitespace(input);
 
     match literal_nocapture(input_no_ws) {
@@ -441,7 +666,7 @@ fn literal(input: &str) -> PResult<::Literal> {
             let start = input.len() - input_no_ws.len();
             let len = input_no_ws.len() - a.len();
             let end = start + len;
-            Ok((a, ::Literal(Literal(input[start..end].to_string()))))
+            Ok((a, ::Literal(Literal(input.rest[start..end].to_string()))))
         }
         Err(LexError) => Err(LexError),
     }
@@ -480,12 +705,12 @@ named!(quoted_string -> (), delimited!(
     tag!("\"")
 ));
 
-fn cooked_string(input: &str) -> PResult<()> {
+fn cooked_string(input: Cursor) -> PResult<()> {
     let mut chars = input.char_indices().peekable();
     while let Some((byte_offset, ch)) = chars.next() {
         match ch {
             '"' => {
-                return Ok((&input[byte_offset..], ()));
+                return Ok((input.advance(byte_offset), ()));
             }
             '\r' => {
                 if let Some((_, '\n')) = chars.next() {
@@ -544,12 +769,12 @@ named!(byte_string -> (), alt!(
     ) => { |_| () }
 ));
 
-fn cooked_byte_string(mut input: &str) -> PResult<()> {
+fn cooked_byte_string(mut input: Cursor) -> PResult<()> {
     let mut bytes = input.bytes().enumerate();
     'outer: while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
-                return Ok((&input[offset..], ()));
+                return Ok((input.advance(offset), ()));
             }
             b'\r' => {
                 if let Some((_, b'\n')) = bytes.next() {
@@ -574,10 +799,10 @@ fn cooked_byte_string(mut input: &str) -> PResult<()> {
                     Some((_, b'"'))  => {}
                     Some((newline, b'\n')) |
                     Some((newline, b'\r')) => {
-                        let rest = &input[newline + 1..];
+                        let rest = input.advance(newline + 1);
                         for (offset, ch) in rest.char_indices() {
                             if !ch.is_whitespace() {
-                                input = &rest[offset..];
+                                input = rest.advance(offset);
                                 bytes = input.bytes().enumerate();
                                 continue 'outer;
                             }
@@ -594,7 +819,7 @@ fn cooked_byte_string(mut input: &str) -> PResult<()> {
     Err(LexError)
 }
 
-fn raw_string(input: &str) -> PResult<()> {
+fn raw_string(input: Cursor) -> PResult<()> {
     let mut chars = input.char_indices();
     let mut n = 0;
     while let Some((byte_offset, ch)) = chars.next() {
@@ -609,8 +834,8 @@ fn raw_string(input: &str) -> PResult<()> {
     }
     for (byte_offset, ch) in chars {
         match ch {
-            '"' if input[byte_offset + 1..].starts_with(&input[..n]) => {
-                let rest = &input[byte_offset + 1 + n..];
+            '"' if input.advance(byte_offset + 1).starts_with(&input.rest[..n]) => {
+                let rest = input.advance(byte_offset + 1 + n);
                 return Ok((rest, ()))
             }
             '\r' => {}
@@ -628,7 +853,7 @@ named!(byte -> (), do_parse!(
     (())
 ));
 
-fn cooked_byte(input: &str) -> PResult<()> {
+fn cooked_byte(input: Cursor) -> PResult<()> {
     let mut bytes = input.bytes().enumerate();
     let ok = match bytes.next().map(|(_, b)| b) {
         Some(b'\\') => {
@@ -648,8 +873,8 @@ fn cooked_byte(input: &str) -> PResult<()> {
     };
     if ok {
         match bytes.next() {
-            Some((offset, _)) => Ok((&input[offset..], ())),
-            None => Ok(("", ())),
+            Some((offset, _)) => Ok((input.advance(offset), ())),
+            None => Ok((input.advance(input.len()), ())),
         }
     } else {
         Err(LexError)
@@ -663,7 +888,7 @@ named!(character -> (), do_parse!(
     (())
 ));
 
-fn cooked_char(input: &str) -> PResult<()> {
+fn cooked_char(input: Cursor) -> PResult<()> {
     let mut chars = input.char_indices();
     let ok = match chars.next().map(|(_, ch)| ch) {
         Some('\\') => {
@@ -683,7 +908,10 @@ fn cooked_char(input: &str) -> PResult<()> {
         ch => ch.is_some(),
     };
     if ok {
-        Ok((chars.as_str(), ()))
+        match chars.next() {
+            Some((idx, _)) => Ok((input.advance(idx), ())),
+            None => Ok((input.advance(input.len()), ())),
+        }
     } else {
         Err(LexError)
     }
@@ -730,17 +958,17 @@ fn backslash_u<I>(chars: &mut I) -> bool
     }
 }
 
-fn float(input: &str) -> PResult<()> {
+fn float(input: Cursor) -> PResult<()> {
     let (rest, ()) = float_digits(input)?;
     for suffix in &["f32", "f64"] {
         if rest.starts_with(suffix) {
-            return word_break(&rest[suffix.len()..]);
+            return word_break(rest.advance(suffix.len()));
         }
     }
     word_break(rest)
 }
 
-fn float_digits(input: &str) -> PResult<()> {
+fn float_digits(input: Cursor) -> PResult<()> {
     let mut chars = input.chars().peekable();
     match chars.next() {
         Some(ch) if ch >= '0' && ch <= '9' => {}
@@ -779,7 +1007,7 @@ fn float_digits(input: &str) -> PResult<()> {
         }
     }
 
-    let rest = &input[len..];
+    let rest = input.advance(len);
     if !(has_dot || has_exp || rest.starts_with("f32") || rest.starts_with("f64")) {
         return Err(LexError);
     }
@@ -812,10 +1040,10 @@ fn float_digits(input: &str) -> PResult<()> {
         }
     }
 
-    Ok((&input[len..], ()))
+    Ok((input.advance(len), ()))
 }
 
-fn int(input: &str) -> PResult<()> {
+fn int(input: Cursor) -> PResult<()> {
     let (rest, ()) = digits(input)?;
     for suffix in &[
         "isize",
@@ -832,21 +1060,21 @@ fn int(input: &str) -> PResult<()> {
         "u128",
     ] {
         if rest.starts_with(suffix) {
-            return word_break(&rest[suffix.len()..]);
+            return word_break(rest.advance(suffix.len()));
         }
     }
     word_break(rest)
 }
 
-fn digits(mut input: &str) -> PResult<()> {
+fn digits(mut input: Cursor) -> PResult<()> {
     let base = if input.starts_with("0x") {
-        input = &input[2..];
+        input = input.advance(2);
         16
     } else if input.starts_with("0o") {
-        input = &input[2..];
+        input = input.advance(2);
         8
     } else if input.starts_with("0b") {
-        input = &input[2..];
+        input = input.advance(2);
         2
     } else {
         10
@@ -877,7 +1105,7 @@ fn digits(mut input: &str) -> PResult<()> {
     if empty {
         Err(LexError)
     } else {
-        Ok((&input[len..], ()))
+        Ok((input.advance(len), ()))
     }
 }
 
@@ -887,7 +1115,7 @@ named!(boolean -> (), alt!(
     keyword!("false") => { |_| () }
 ));
 
-fn op(input: &str) -> PResult<(char, Spacing)> {
+fn op(input: Cursor) -> PResult<(char, Spacing)> {
     let input = skip_whitespace(input);
     match op_char(input) {
         Ok((rest, ch)) => {
@@ -901,7 +1129,7 @@ fn op(input: &str) -> PResult<(char, Spacing)> {
     }
 }
 
-fn op_char(input: &str) -> PResult<char> {
+fn op_char(input: Cursor) -> PResult<char> {
     let mut chars = input.chars();
     let first = match chars.next() {
         Some(ch) => ch,
@@ -911,7 +1139,7 @@ fn op_char(input: &str) -> PResult<char> {
     };
     let recognized = "~!@#$%^&*-=+|;:,<.>/?";
     if recognized.contains(first) {
-        Ok((chars.as_str(), first))
+        Ok((input.advance(first.len_utf8()), first))
     } else {
         Err(LexError)
     }

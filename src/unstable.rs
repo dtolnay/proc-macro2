@@ -159,6 +159,60 @@ impl fmt::Debug for TokenTreeIter {
     }
 }
 
+#[cfg(procmacro2_unstable)]
+#[derive(Clone, PartialEq, Eq)]
+pub struct FileName(String);
+
+#[cfg(procmacro2_unstable)]
+impl fmt::Display for FileName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+// NOTE: We have to generate our own filename object here because we can't wrap
+// the one provided by proc_macro.
+#[cfg(procmacro2_unstable)]
+#[derive(Clone, PartialEq, Eq)]
+pub struct SourceFile(proc_macro::SourceFile, FileName);
+
+#[cfg(procmacro2_unstable)]
+impl SourceFile {
+    fn new(sf: proc_macro::SourceFile) -> Self {
+        let filename = FileName(sf.path().to_string());
+        SourceFile(sf, filename)
+    }
+
+    /// Get the path to this source file as a string.
+    pub fn path(&self) -> &FileName {
+        &self.1
+    }
+
+    pub fn is_real(&self) -> bool {
+        self.0.is_real()
+    }
+}
+
+#[cfg(procmacro2_unstable)]
+impl AsRef<FileName> for SourceFile {
+    fn as_ref(&self) -> &FileName {
+        self.path()
+    }
+}
+
+#[cfg(procmacro2_unstable)]
+impl fmt::Debug for SourceFile {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[cfg(procmacro2_unstable)]
+pub struct LineColumn {
+    pub line: usize,
+    pub column: usize,
+}
+
 #[derive(Copy, Clone)]
 pub struct Span(proc_macro::Span);
 
@@ -169,6 +223,28 @@ impl Span {
 
     pub fn def_site() -> Span {
         Span(proc_macro::Span::def_site())
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn source_file(&self) -> SourceFile {
+        SourceFile::new(self.0.source_file())
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn start(&self) -> LineColumn {
+        let proc_macro::LineColumn{ line, column } = self.0.start();
+        LineColumn { line, column }
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn end(&self) -> LineColumn {
+        let proc_macro::LineColumn{ line, column } = self.0.end();
+        LineColumn { line, column }
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn join(&self, other: Span) -> Option<Span> {
+        self.0.join(other.0).map(Span)
     }
 }
 
