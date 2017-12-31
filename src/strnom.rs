@@ -9,10 +9,18 @@ use imp::LexError;
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Cursor<'a> {
     pub rest: &'a str,
+    #[cfg(procmacro2_unstable)]
     pub off: u32,
 }
 
 impl<'a> Cursor<'a> {
+    #[cfg(not(procmacro2_unstable))]
+    pub fn advance(&self, amt: usize) -> Cursor<'a> {
+        Cursor {
+            rest: &self.rest[amt..],
+        }
+    }
+    #[cfg(procmacro2_unstable)]
     pub fn advance(&self, amt: usize) -> Cursor<'a> {
         Cursor {
             rest: &self.rest[amt..],
