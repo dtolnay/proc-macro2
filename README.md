@@ -1,6 +1,8 @@
 # proc-macro2
 
-[Documentation](https://docs.rs/proc-macro2)
+[![Build Status](https://api.travis-ci.org/alexcrichton/proc-macro2.svg?branch=master)](https://travis-ci.org/alexcrichton/proc-macro2)
+[![Latest Version](https://img.shields.io/crates/v/proc-macro2.svg)](https://crates.io/crates/proc-macro2)
+[![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/proc-macro2)
 
 A small shim over the `proc_macro` crate in the compiler intended to multiplex
 the current stable interface (as of 2017-07-05) and the [upcoming richer
