@@ -54,7 +54,6 @@ fn get_cursor(src: &str) -> Cursor {
 fn get_cursor(src: &str) -> Cursor {
     Cursor {
         rest: src,
-        off: 0,
     }
 }
 
@@ -313,15 +312,30 @@ impl Codemap {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Span { lo: u32, hi: u32 }
+pub struct Span {
+    #[cfg(procmacro2_unstable)]
+    lo: u32,
+    #[cfg(procmacro2_unstable)]
+    hi: u32,
+}
 
 impl Span {
     pub fn call_site() -> Span {
-        Span { lo: 0, hi: 0 }
+        Span {
+            #[cfg(procmacro2_unstable)]
+            lo: 0,
+            #[cfg(procmacro2_unstable)]
+            hi: 0,
+        }
     }
 
     pub fn def_site() -> Span {
-        Span { lo: 0, hi: 0 }
+        Span {
+            #[cfg(procmacro2_unstable)]
+            lo: 0,
+            #[cfg(procmacro2_unstable)]
+            hi: 0,
+        }
     }
 
     #[cfg(procmacro2_unstable)]
@@ -568,6 +582,16 @@ named!(token_stream -> ::TokenStream, map!(
     |trees| ::TokenStream(TokenStream { inner: trees })
 ));
 
+#[cfg(not(procmacro2_unstable))]
+fn token_tree(input: Cursor) -> PResult<TokenTree> {
+    let (input, kind) = token_kind(input)?;
+    Ok((input, TokenTree {
+        span: ::Span(Span {}),
+        kind: kind,
+    }))
+}
+
+#[cfg(procmacro2_unstable)]
 fn token_tree(input: Cursor) -> PResult<TokenTree> {
     let input = skip_whitespace(input);
     let lo = input.off;
