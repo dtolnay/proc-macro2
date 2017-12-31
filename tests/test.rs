@@ -1,6 +1,13 @@
 extern crate proc_macro2;
 
-use proc_macro2::{Term, Literal, TokenStream, TokenNode, Span};
+use proc_macro2::{Term, Literal, TokenStream};
+
+#[cfg(procmacro2_unstable)]
+use proc_macro2::TokenNode;
+
+#[cfg(procmacro2_unstable)]
+#[cfg(not(feature = "unstable"))]
+use proc_macro2::Span;
 
 #[test]
 fn symbols() {

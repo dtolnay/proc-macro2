@@ -170,13 +170,13 @@ impl Span {
     #[cfg(procmacro2_unstable)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn{ line, column } = self.0.start();
-        LineColumn { line, column }
+        LineColumn { line: line, column: column }
     }
 
     #[cfg(procmacro2_unstable)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn{ line, column } = self.0.end();
-        LineColumn { line, column }
+        LineColumn { line: line, column: column }
     }
 
     #[cfg(procmacro2_unstable)]

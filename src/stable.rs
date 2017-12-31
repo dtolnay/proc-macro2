@@ -320,22 +320,18 @@ pub struct Span {
 }
 
 impl Span {
+    #[cfg(not(procmacro2_unstable))]
     pub fn call_site() -> Span {
-        Span {
-            #[cfg(procmacro2_unstable)]
-            lo: 0,
-            #[cfg(procmacro2_unstable)]
-            hi: 0,
-        }
+        Span {}
+    }
+
+    #[cfg(procmacro2_unstable)]
+    pub fn call_site() -> Span {
+        Span { lo: 0, hi: 0 }
     }
 
     pub fn def_site() -> Span {
-        Span {
-            #[cfg(procmacro2_unstable)]
-            lo: 0,
-            #[cfg(procmacro2_unstable)]
-            hi: 0,
-        }
+        Span::call_site()
     }
 
     #[cfg(procmacro2_unstable)]

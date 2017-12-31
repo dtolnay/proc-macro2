@@ -14,10 +14,16 @@ pub struct Cursor<'a> {
 }
 
 impl<'a> Cursor<'a> {
+    #[cfg(not(procmacro2_unstable))]
     pub fn advance(&self, amt: usize) -> Cursor<'a> {
         Cursor {
             rest: &self.rest[amt..],
-            #[cfg(procmacro2_unstable)]
+        }
+    }
+    #[cfg(procmacro2_unstable)]
+    pub fn advance(&self, amt: usize) -> Cursor<'a> {
+        Cursor {
+            rest: &self.rest[amt..],
             off: self.off + (amt as u32),
         }
     }
