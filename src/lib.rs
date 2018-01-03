@@ -14,16 +14,16 @@
 //! to use this crate will be trivially able to switch to the upstream
 //! `proc_macro` crate once its API stabilizes.
 //!
-//! In the meantime this crate also has an `unstable` Cargo feature which
+//! In the meantime this crate also has a `nightly` Cargo feature which
 //! enables it to reimplement itself with the unstable API of `proc_macro`.
 //! This'll allow immediate usage of the beneficial upstream API, particularly
 //! around preserving span information.
 
-#![cfg_attr(feature = "unstable", feature(proc_macro))]
+#![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 extern crate proc_macro;
 
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 extern crate unicode_xid;
 
 use std::fmt;
@@ -31,14 +31,14 @@ use std::str::FromStr;
 use std::iter::FromIterator;
 
 #[macro_use]
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 mod strnom;
 
 #[path = "stable.rs"]
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 mod imp;
 #[path = "unstable.rs"]
-#[cfg(feature = "unstable")]
+#[cfg(feature = "nightly")]
 mod imp;
 
 #[macro_use]
@@ -162,8 +162,8 @@ impl Span {
         Span(imp::Span::def_site())
     }
 
-    /// This method is only available when the `"unstable"` feature is enabled.
-    #[cfg(feature = "unstable")]
+    /// This method is only available when the `"nightly"` feature is enabled.
+    #[cfg(feature = "nightly")]
     pub fn unstable(self) -> proc_macro::Span {
         self.0.unstable()
     }

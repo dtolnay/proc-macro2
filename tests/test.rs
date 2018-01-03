@@ -6,7 +6,7 @@ use proc_macro2::{Term, Literal, TokenStream};
 use proc_macro2::TokenNode;
 
 #[cfg(procmacro2_unstable)]
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 use proc_macro2::Span;
 
 #[test]
@@ -121,7 +121,7 @@ testing 123
 }
 
 #[cfg(procmacro2_unstable)]
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 #[test]
 fn default_span() {
     let start = Span::call_site().start();

@@ -48,7 +48,7 @@ pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 ```
 
-If you'd like you can enable the `unstable` feature in this crate. This will
+If you'd like you can enable the `nightly` feature in this crate. This will
 cause it to compile against the **unstable and nightly-only** features of the
 `proc_macro` crate. This in turn requires a nightly compiler. This should help
 preserve span information, however, coming in from the compiler itself.
@@ -57,7 +57,7 @@ You can enable this feature via:
 
 ```toml
 [dependencies]
-proc-macro2 = { version = "0.1", features = ["unstable"] }
+proc-macro2 = { version = "0.1", features = ["nightly"] }
 ```
 
 
