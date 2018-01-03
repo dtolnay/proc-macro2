@@ -11,16 +11,16 @@ matrix:
         - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
       script:
         - cargo test
-        - cargo build --features unstable
-        - RUSTFLAGS='--cfg procmacro2_unstable' cargo test
-        - RUSTFLAGS='--cfg procmacro2_unstable' cargo build --features unstable
-        - RUSTFLAGS='--cfg procmacro2_unstable' cargo doc --no-deps
+        - cargo build --features nightly
+        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
+        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build --features nightly
+        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo doc --no-deps
       after_success:
         - travis-cargo --only nightly doc-upload
 
 script:
   - cargo test
-  - RUSTFLAGS='--cfg procmacro2_unstable' cargo test
+  - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
 env:
   global:
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""

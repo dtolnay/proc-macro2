@@ -1,7 +1,7 @@
 use std::ascii;
 use std::borrow::Borrow;
 use std::cell::RefCell;
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 use std::cmp;
 use std::collections::HashMap;
 use std::fmt;
@@ -36,7 +36,7 @@ impl TokenStream {
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 fn get_cursor(src: &str) -> Cursor {
     // Create a dummy file & add it to the codemap
     CODEMAP.with(|cm| {
@@ -50,7 +50,7 @@ fn get_cursor(src: &str) -> Cursor {
     })
 }
 
-#[cfg(not(procmacro2_unstable))]
+#[cfg(not(procmacro2_semver_exempt))]
 fn get_cursor(src: &str) -> Cursor {
     Cursor {
         rest: src,
@@ -163,24 +163,24 @@ impl IntoIterator for TokenStream {
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct FileName(String);
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl fmt::Display for FileName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     name: FileName,
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl SourceFile {
     /// Get the path to this source file as a string.
     pub fn path(&self) -> &FileName {
@@ -193,14 +193,14 @@ impl SourceFile {
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl AsRef<FileName> for SourceFile {
     fn as_ref(&self) -> &FileName {
         self.path()
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("SourceFile")
@@ -210,14 +210,14 @@ impl fmt::Debug for SourceFile {
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LineColumn {
     pub line: usize,
     pub column: usize,
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 thread_local! {
     static CODEMAP: RefCell<Codemap> = RefCell::new(Codemap {
         // NOTE: We start with a single dummy file which all call_site() and
@@ -230,14 +230,14 @@ thread_local! {
     });
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 struct FileInfo {
     name: String,
     span: Span,
     lines: Vec<usize>,
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl FileInfo {
     fn offset_line_column(&self, offset: usize) -> LineColumn {
         assert!(self.span_within(Span { lo: offset as u32, hi: offset as u32 }));
@@ -260,7 +260,7 @@ impl FileInfo {
 }
 
 /// Computes the offsets of each line in the given source string.
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 fn lines_offsets(s: &str) -> Vec<usize> {
     let mut lines = vec![0];
     let mut prev = 0;
@@ -271,12 +271,12 @@ fn lines_offsets(s: &str) -> Vec<usize> {
     lines
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 struct Codemap {
     files: Vec<FileInfo>,
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl Codemap {
     fn next_start_pos(&self) -> u32 {
         // Add 1 so there's always space between files.
@@ -313,19 +313,19 @@ impl Codemap {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Span {
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     lo: u32,
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     hi: u32,
 }
 
 impl Span {
-    #[cfg(not(procmacro2_unstable))]
+    #[cfg(not(procmacro2_semver_exempt))]
     pub fn call_site() -> Span {
         Span {}
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn call_site() -> Span {
         Span { lo: 0, hi: 0 }
     }
@@ -334,7 +334,7 @@ impl Span {
         Span::call_site()
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -345,7 +345,7 @@ impl Span {
         })
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn start(&self) -> LineColumn {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -354,7 +354,7 @@ impl Span {
         })
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn end(&self) -> LineColumn {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -363,7 +363,7 @@ impl Span {
         })
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn join(&self, other: Span) -> Option<Span> {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -578,7 +578,7 @@ named!(token_stream -> ::TokenStream, map!(
     |trees| ::TokenStream(TokenStream { inner: trees })
 ));
 
-#[cfg(not(procmacro2_unstable))]
+#[cfg(not(procmacro2_semver_exempt))]
 fn token_tree(input: Cursor) -> PResult<TokenTree> {
     let (input, kind) = token_kind(input)?;
     Ok((input, TokenTree {
@@ -587,7 +587,7 @@ fn token_tree(input: Cursor) -> PResult<TokenTree> {
     }))
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 fn token_tree(input: Cursor) -> PResult<TokenTree> {
     let input = skip_whitespace(input);
     let lo = input.off;

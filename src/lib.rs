@@ -14,16 +14,16 @@
 //! to use this crate will be trivially able to switch to the upstream
 //! `proc_macro` crate once its API stabilizes.
 //!
-//! In the meantime this crate also has an `unstable` Cargo feature which
+//! In the meantime this crate also has a `nightly` Cargo feature which
 //! enables it to reimplement itself with the unstable API of `proc_macro`.
 //! This'll allow immediate usage of the beneficial upstream API, particularly
 //! around preserving span information.
 
-#![cfg_attr(feature = "unstable", feature(proc_macro))]
+#![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 extern crate proc_macro;
 
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 extern crate unicode_xid;
 
 use std::fmt;
@@ -31,14 +31,14 @@ use std::str::FromStr;
 use std::iter::FromIterator;
 
 #[macro_use]
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 mod strnom;
 
 #[path = "stable.rs"]
-#[cfg(not(feature = "unstable"))]
+#[cfg(not(feature = "nightly"))]
 mod imp;
 #[path = "unstable.rs"]
-#[cfg(feature = "unstable")]
+#[cfg(feature = "nightly")]
 mod imp;
 
 #[macro_use]
@@ -104,14 +104,14 @@ impl TokenStream {
 }
 
 // Returned by reference, so we can't easily wrap it.
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 pub use imp::FileName;
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile(imp::SourceFile);
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl SourceFile {
     /// Get the path to this source file as a string.
     pub fn path(&self) -> &FileName {
@@ -123,21 +123,21 @@ impl SourceFile {
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl AsRef<FileName> for SourceFile {
     fn as_ref(&self) -> &FileName {
         self.0.path()
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 pub struct LineColumn {
     pub line: usize,
     pub column: usize,
@@ -162,30 +162,30 @@ impl Span {
         Span(imp::Span::def_site())
     }
 
-    /// This method is only available when the `"unstable"` feature is enabled.
-    #[cfg(feature = "unstable")]
+    /// This method is only available when the `"nightly"` feature is enabled.
+    #[cfg(feature = "nightly")]
     pub fn unstable(self) -> proc_macro::Span {
         self.0.unstable()
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile(self.0.source_file())
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn{ line, column } = self.0.start();
         LineColumn { line: line, column: column }
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn{ line, column } = self.0.end();
         LineColumn { line: line, column: column }
     }
 
-    #[cfg(procmacro2_unstable)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn join(&self, other: Span) -> Option<Span> {
         self.0.join(other.0).map(Span)
     }

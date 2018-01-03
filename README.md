@@ -48,7 +48,7 @@ pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 ```
 
-If you'd like you can enable the `unstable` feature in this crate. This will
+If you'd like you can enable the `nightly` feature in this crate. This will
 cause it to compile against the **unstable and nightly-only** features of the
 `proc_macro` crate. This in turn requires a nightly compiler. This should help
 preserve span information, however, coming in from the compiler itself.
@@ -57,7 +57,7 @@ You can enable this feature via:
 
 ```toml
 [dependencies]
-proc-macro2 = { version = "0.1", features = ["unstable"] }
+proc-macro2 = { version = "0.1", features = ["nightly"] }
 ```
 
 
@@ -65,11 +65,19 @@ proc-macro2 = { version = "0.1", features = ["unstable"] }
 
 `proc-macro2` supports exporting some methods from `proc_macro` which are
 currently highly unstable, and may not be stabilized in the first pass of
-`proc_macro` stabilizations. These features are not exported by default.
+`proc_macro` stabilizations. These features are not exported by default. Minor
+versions of `proc-macro2` may make breaking changes to them at any time.
 
-To export these features, the `procmacro2_unstable` config flag must be passed
-to rustc. To pass this flag, run `cargo` with 
-`RUSTFLAGS='--cfg procmacro2_unstable' cargo build`.
+To enable these features, the `procmacro2_semver_exempt` config flag must be
+passed to rustc.
+
+```
+RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build
+```
+
+Note that this must not only be done for your crate, but for any crate that
+depends on your crate. This infectious nature is intentional, as it serves as a
+reminder that you are outside of the normal semver guarantees.
 
 
 # License
