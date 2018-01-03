@@ -12,15 +12,15 @@ matrix:
       script:
         - cargo test
         - cargo build --features nightly
-        - RUSTFLAGS='--cfg procmacro2_unstable' cargo test
-        - RUSTFLAGS='--cfg procmacro2_unstable' cargo build --features nightly
-        - RUSTFLAGS='--cfg procmacro2_unstable' cargo doc --no-deps
+        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
+        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build --features nightly
+        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo doc --no-deps
       after_success:
         - travis-cargo --only nightly doc-upload
 
 script:
   - cargo test
-  - RUSTFLAGS='--cfg procmacro2_unstable' cargo test
+  - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
 env:
   global:
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""

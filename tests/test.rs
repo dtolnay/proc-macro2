@@ -2,10 +2,10 @@ extern crate proc_macro2;
 
 use proc_macro2::{Term, Literal, TokenStream};
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 use proc_macro2::TokenNode;
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[cfg(not(feature = "nightly"))]
 use proc_macro2::Span;
 
@@ -72,7 +72,7 @@ fn fail() {
     fail("'mut");
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[test]
 fn span_test() {
     fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
@@ -120,7 +120,7 @@ testing 123
 ]);
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[cfg(not(feature = "nightly"))]
 #[test]
 fn default_span() {
@@ -135,7 +135,7 @@ fn default_span() {
     assert!(!source_file.is_real());
 }
 
-#[cfg(procmacro2_unstable)]
+#[cfg(procmacro2_semver_exempt)]
 #[test]
 fn span_join() {
     let source1 =
