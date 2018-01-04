@@ -216,6 +216,12 @@ pub struct LineColumn {
 #[derive(Copy, Clone)]
 pub struct Span(proc_macro::Span);
 
+impl From<proc_macro::Span> for ::Span {
+    fn from(proc_span: proc_macro::Span) -> ::Span {
+        ::Span(Span(proc_span))
+    }
+}
+
 impl Span {
     pub fn call_site() -> Span {
         Span(proc_macro::Span::call_site())
