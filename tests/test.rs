@@ -19,6 +19,7 @@ fn symbols() {
 fn literals() {
     assert_eq!(Literal::string("foo").to_string(), "\"foo\"");
     assert_eq!(Literal::string("\"").to_string(), "\"\\\"\"");
+    assert_eq!(Literal::float(10.0).to_string(), "10.0");
 }
 
 #[test]

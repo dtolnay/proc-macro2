@@ -492,8 +492,15 @@ impl Literal {
         Literal(s.to_string())
     }
 
-    pub fn float(s: f64) -> Literal {
-        Literal(s.to_string())
+    pub fn float(n: f64) -> Literal {
+        if !n.is_finite() {
+            panic!("Invalid float literal {}", n);
+        }
+        let mut s = n.to_string();
+        if !s.contains('.') {
+            s += ".0";
+        }
+        Literal(s)
     }
 
     pub fn integer(s: i64) -> Literal {
