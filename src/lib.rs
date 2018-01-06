@@ -242,11 +242,11 @@ pub struct Term(imp::Term);
 
 impl Term {
     pub fn intern(string: &str) -> Term {
-        Term(string.into())
+        Term(imp::Term::intern(string))
     }
 
     pub fn as_str(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 }
 

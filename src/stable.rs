@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::iter;
 use std::marker::PhantomData;
-use std::ops;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
@@ -398,19 +397,15 @@ pub struct Term {
 
 thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
 
-impl<'a> From<&'a str> for Term {
-    fn from(string: &'a str) -> Term {
+impl Term {
+    pub fn intern(string: &str) -> Term {
         Term {
             intern: SYMBOLS.with(|s| s.borrow_mut().intern(string)),
             not_send_sync: PhantomData,
         }
     }
-}
 
-impl ops::Deref for Term {
-    type Target = str;
-
-    fn deref(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         SYMBOLS.with(|interner| {
             let interner = interner.borrow();
             let s = interner.get(self.intern);
@@ -423,7 +418,7 @@ impl ops::Deref for Term {
 
 impl fmt::Debug for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Term").field(&&**self).finish()
+        f.debug_tuple("Term").field(&self.as_str()).finish()
     }
 }
 
