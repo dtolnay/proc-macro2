@@ -334,6 +334,17 @@ impl Span {
         Span::call_site()
     }
 
+    pub fn resolved_at(&self, _other: Span) -> Span {
+        // Stable spans consist only of line/column information, so
+        // `resolved_at` and `located_at` only select which span the
+        // caller wants line/column information from.
+        *self
+    }
+
+    pub fn located_at(&self, other: Span) -> Span {
+        other
+    }
+
     #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
         CODEMAP.with(|cm| {

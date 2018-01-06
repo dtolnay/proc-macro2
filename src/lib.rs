@@ -162,6 +162,18 @@ impl Span {
         Span(imp::Span::def_site())
     }
 
+    /// Creates a new span with the same line/column information as `self` but
+    /// that resolves symbols as though it were at `other`.
+    pub fn resolved_at(&self, other: Span) -> Span {
+        Span(self.0.resolved_at(other.0))
+    }
+
+    /// Creates a new span with the same name resolution behavior as `self` but
+    /// with the line/column information of `other`.
+    pub fn located_at(&self, other: Span) -> Span {
+        Span(self.0.located_at(other.0))
+    }
+
     /// This method is only available when the `"nightly"` feature is enabled.
     #[cfg(feature = "nightly")]
     pub fn unstable(self) -> proc_macro::Span {
