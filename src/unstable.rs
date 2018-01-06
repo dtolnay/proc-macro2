@@ -1,7 +1,6 @@
 use std::ascii;
 use std::fmt;
 use std::iter;
-use std::ops;
 use std::str::FromStr;
 
 use proc_macro;
@@ -269,16 +268,12 @@ impl fmt::Debug for Span {
 #[derive(Copy, Clone)]
 pub struct Term(proc_macro::Term);
 
-impl<'a> From<&'a str> for Term {
-    fn from(string: &'a str) -> Term {
+impl Term {
+    pub fn intern(string: &str) -> Term {
         Term(proc_macro::Term::intern(string))
     }
-}
 
-impl ops::Deref for Term {
-    type Target = str;
-
-    fn deref(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
 }
