@@ -225,6 +225,14 @@ impl Span {
         Span(proc_macro::Span::def_site())
     }
 
+    pub fn resolved_at(&self, other: Span) -> Span {
+        Span(self.0.resolved_at(other.0))
+    }
+
+    pub fn located_at(&self, other: Span) -> Span {
+        Span(self.0.located_at(other.0))
+    }
+
     pub fn unstable(self) -> proc_macro::Span {
         self.0
     }
