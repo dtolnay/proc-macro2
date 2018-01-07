@@ -146,13 +146,6 @@ pub struct LineColumn {
 #[derive(Copy, Clone)]
 pub struct Span(imp::Span);
 
-#[doc(hidden)]
-impl Default for Span {
-    fn default() -> Span {
-        Span(imp::Span::def_site())
-    }
-}
-
 impl Span {
     pub fn call_site() -> Span {
         Span(imp::Span::call_site())
@@ -211,7 +204,7 @@ pub struct TokenTree {
 
 impl From<TokenNode> for TokenTree {
     fn from(kind: TokenNode) -> TokenTree {
-        TokenTree { span: Span::default(), kind: kind }
+        TokenTree { span: Span::def_site(), kind: kind }
     }
 }
 
