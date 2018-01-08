@@ -718,8 +718,6 @@ named!(literal_nocapture -> (), alt!(
     |
     int
     |
-    boolean
-    |
     doc_comment
 ));
 
@@ -1141,12 +1139,6 @@ fn digits(mut input: Cursor) -> PResult<()> {
         Ok((input.advance(len), ()))
     }
 }
-
-named!(boolean -> (), alt!(
-    keyword!("true") => { |_| () }
-    |
-    keyword!("false") => { |_| () }
-));
 
 fn op(input: Cursor) -> PResult<(char, Spacing)> {
     let input = skip_whitespace(input);
