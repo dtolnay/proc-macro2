@@ -19,6 +19,9 @@
 //! This'll allow immediate usage of the beneficial upstream API, particularly
 //! around preserving span information.
 
+// Proc-macro2 types in rustdoc of other crates get linked to here.
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.1.10")]
+
 #![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 extern crate proc_macro;
