@@ -374,25 +374,6 @@ pub fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &'a str>
     }
 }
 
-macro_rules! keyword {
-    ($i:expr, $keyword:expr) => {
-        $crate::strnom::keyword($i, $keyword)
-    };
-}
-
-/// Do not use directly. Use `keyword!`.
-pub fn keyword<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &'a str> {
-    match punct(input, token) {
-        Ok((rest, _)) => {
-            match word_break(rest) {
-                Ok((_, _)) => Ok((rest, token)),
-                Err(LexError) => Err(LexError),
-            }
-        }
-        Err(LexError) => Err(LexError),
-    }
-}
-
 macro_rules! preceded {
     ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => {
         match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
