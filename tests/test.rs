@@ -1,5 +1,7 @@
 extern crate proc_macro2;
 
+use std::str;
+
 use proc_macro2::{Term, Literal, TokenStream};
 
 #[cfg(procmacro2_semver_exempt)]
@@ -161,3 +163,10 @@ fn span_join() {
 
     assert_eq!(joined1.unwrap().source_file(), source1[0].span.source_file());
 }
+
+#[test]
+fn no_panic() {
+    let s = str::from_utf8(b"b\'\xc2\x86  \x00\x00\x00^\"").unwrap();
+    assert!(s.parse::<proc_macro2::TokenStream>().is_err());
+}
+

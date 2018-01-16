@@ -904,7 +904,13 @@ fn cooked_byte(input: Cursor) -> PResult<()> {
     };
     if ok {
         match bytes.next() {
-            Some((offset, _)) => Ok((input.advance(offset), ())),
+            Some((offset, _)) => {
+                if input.chars().as_str().is_char_boundary(offset) {
+                    Ok((input.advance(offset), ()))
+                } else {
+                    Err(LexError)
+                }
+            }
             None => Ok((input.advance(input.len()), ())),
         }
     } else {
