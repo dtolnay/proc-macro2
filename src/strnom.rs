@@ -80,6 +80,9 @@ pub fn whitespace(input: Cursor) -> PResult<()> {
                     continue;
                 }
                 break;
+            } else if s.starts_with("/**/") {
+                i += 4;
+                continue
             } else if s.starts_with("/*") && (!s.starts_with("/**") || s.starts_with("/***")) &&
                       !s.starts_with("/*!") {
                 let (_, com) = block_comment(s)?;
