@@ -170,3 +170,10 @@ fn no_panic() {
     assert!(s.parse::<proc_macro2::TokenStream>().is_err());
 }
 
+#[test]
+fn tricky_doc_commaent() {
+    let stream = "/**/".parse::<proc_macro2::TokenStream>().unwrap();
+    let tokens = stream.into_iter().collect::<Vec<_>>();
+    assert!(tokens.is_empty(), "not empty -- {:?}", tokens);
+}
+
