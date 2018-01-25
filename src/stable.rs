@@ -1179,7 +1179,7 @@ fn op_char(input: Cursor) -> PResult<char> {
 named!(doc_comment -> (), alt!(
     do_parse!(
         punct!("//!") >>
-        take_until!("\n") >>
+        take_until_newline_or_eof!() >>
         (())
     )
     |
@@ -1193,7 +1193,7 @@ named!(doc_comment -> (), alt!(
     do_parse!(
         punct!("///") >>
         not!(tag!("/")) >>
-        take_until!("\n") >>
+        take_until_newline_or_eof!() >>
         (())
     )
     |
