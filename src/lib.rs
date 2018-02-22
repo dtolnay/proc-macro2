@@ -28,6 +28,7 @@
 
 #![cfg_attr(feature = "nightly", feature(proc_macro))]
 
+#[cfg(feature = "proc-macro")]
 extern crate proc_macro;
 
 #[cfg(not(feature = "nightly"))]
@@ -67,12 +68,14 @@ impl FromStr for TokenStream {
     }
 }
 
+#[cfg(feature = "proc-macro")]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> TokenStream {
         TokenStream(inner.into())
     }
 }
 
+#[cfg(feature = "proc-macro")]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
         inner.0.into()
@@ -175,7 +178,7 @@ impl Span {
     }
 
     /// This method is only available when the `"nightly"` feature is enabled.
-    #[cfg(feature = "nightly")]
+    #[cfg(all(feature = "nightly", feature = "proc-macro"))]
     pub fn unstable(self) -> proc_macro::Span {
         self.0.unstable()
     }
