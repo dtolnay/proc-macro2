@@ -11,7 +11,6 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
 
-use proc_macro;
 use unicode_xid::UnicodeXID;
 use strnom::{Cursor, PResult, skip_whitespace, block_comment, whitespace, word_break};
 
@@ -120,14 +119,16 @@ impl fmt::Display for TokenStream {
     }
 }
 
-impl From<proc_macro::TokenStream> for TokenStream {
-    fn from(inner: proc_macro::TokenStream) -> TokenStream {
+#[cfg(feature = "proc-macro")]
+impl From<::proc_macro::TokenStream> for TokenStream {
+    fn from(inner: ::proc_macro::TokenStream) -> TokenStream {
         inner.to_string().parse().expect("compiler token stream parse failed")
     }
 }
 
-impl From<TokenStream> for proc_macro::TokenStream {
-    fn from(inner: TokenStream) -> proc_macro::TokenStream {
+#[cfg(feature = "proc-macro")]
+impl From<TokenStream> for ::proc_macro::TokenStream {
+    fn from(inner: TokenStream) -> ::proc_macro::TokenStream {
         inner.to_string().parse().expect("failed to parse to compiler tokens")
     }
 }
