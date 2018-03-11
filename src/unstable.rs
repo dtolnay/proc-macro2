@@ -212,7 +212,7 @@ pub struct LineColumn {
     pub column: usize,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Span(proc_macro::Span);
 
 impl From<proc_macro::Span> for ::Span {

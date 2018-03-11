@@ -311,7 +311,7 @@ impl Codemap {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Span {
     #[cfg(procmacro2_semver_exempt)]
     lo: u32,
