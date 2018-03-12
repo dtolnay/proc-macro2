@@ -153,7 +153,7 @@ pub struct LineColumn {
     pub column: usize,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Span(imp::Span);
 
 impl Span {
