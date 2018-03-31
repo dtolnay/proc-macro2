@@ -2,7 +2,7 @@ extern crate proc_macro2;
 
 use std::str::{self, FromStr};
 
-use proc_macro2::{Term, Literal, TokenStream, Span, TokenTree};
+use proc_macro2::{Literal, Span, Term, TokenStream, TokenTree};
 
 #[test]
 fn symbols() {
@@ -29,11 +29,14 @@ fn roundtrip() {
     roundtrip("a");
     roundtrip("<<");
     roundtrip("<<=");
-    roundtrip("
+    roundtrip(
+        "
         /// a
         wut
-    ");
-    roundtrip("
+    ",
+    );
+    roundtrip(
+        "
         1
         1.0
         1f32
@@ -47,7 +50,8 @@ fn roundtrip() {
         9
         0
         0xffffffffffffffffffffffffffffffff
-    ");
+    ",
+    );
     roundtrip("'a");
     roundtrip("'static");
     roundtrip("'\\u{10__FFFF}'");
@@ -80,10 +84,7 @@ fn span_test() {
         check_spans_internal(ts, &mut lines);
     }
 
-    fn check_spans_internal(
-        ts: TokenStream,
-        lines: &mut &[(usize, usize, usize, usize)],
-    ) {
+    fn check_spans_internal(ts: TokenStream, lines: &mut &[(usize, usize, usize, usize)]) {
         for i in ts {
             if let Some((&(sline, scol, eline, ecol), rest)) = lines.split_first() {
                 *lines = rest;
@@ -106,19 +107,22 @@ fn span_test() {
         }
     }
 
-    check_spans("\
+    check_spans(
+        "\
 /// This is a document comment
 testing 123
 {
   testing 234
-}", &[
-    (1, 0, 1, 30),
-    (2, 0, 2, 7),
-    (2, 8, 2, 11),
-    (3, 0, 5, 1),
-    (4, 2, 4, 9),
-    (4, 10, 4, 13),
-]);
+}",
+        &[
+            (1, 0, 1, 30),
+            (2, 0, 2, 7),
+            (2, 8, 2, 11),
+            (3, 0, 5, 1),
+            (4, 2, 4, 9),
+            (4, 10, 4, 13),
+        ],
+    );
 }
 
 #[cfg(procmacro2_semver_exempt)]
@@ -139,13 +143,22 @@ fn default_span() {
 #[cfg(procmacro2_semver_exempt)]
 #[test]
 fn span_join() {
-    let source1 =
-        "aaa\nbbb".parse::<TokenStream>().unwrap().into_iter().collect::<Vec<_>>();
-    let source2 =
-        "ccc\nddd".parse::<TokenStream>().unwrap().into_iter().collect::<Vec<_>>();
+    let source1 = "aaa\nbbb"
+        .parse::<TokenStream>()
+        .unwrap()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let source2 = "ccc\nddd"
+        .parse::<TokenStream>()
+        .unwrap()
+        .into_iter()
+        .collect::<Vec<_>>();
 
     assert!(source1[0].span().source_file() != source2[0].span().source_file());
-    assert_eq!(source1[0].span().source_file(), source1[1].span().source_file());
+    assert_eq!(
+        source1[0].span().source_file(),
+        source1[1].span().source_file()
+    );
 
     let joined1 = source1[0].span().join(source1[1].span());
     let joined2 = source1[0].span().join(source2[0].span());
@@ -159,7 +172,10 @@ fn span_join() {
     assert_eq!(end.line, 2);
     assert_eq!(end.column, 3);
 
-    assert_eq!(joined1.unwrap().source_file(), source1[0].span().source_file());
+    assert_eq!(
+        joined1.unwrap().source_file(),
+        source1[0].span().source_file()
+    );
 }
 
 #[test]

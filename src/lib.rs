@@ -25,7 +25,6 @@
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
 #![doc(html_root_url = "https://docs.rs/proc-macro2/0.3.1")]
-
 #![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 #[cfg(feature = "proc-macro")]
@@ -83,8 +82,9 @@ impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        let e = src.parse().map_err(|e| {
-            LexError { inner: e, _marker: marker::PhantomData }
+        let e = src.parse().map_err(|e| LexError {
+            inner: e,
+            _marker: marker::PhantomData,
         })?;
         Ok(TokenStream::_new(e))
     }
@@ -219,14 +219,20 @@ impl Span {
 
     #[cfg(procmacro2_semver_exempt)]
     pub fn start(&self) -> LineColumn {
-        let imp::LineColumn{ line, column } = self.inner.start();
-        LineColumn { line: line, column: column }
+        let imp::LineColumn { line, column } = self.inner.start();
+        LineColumn {
+            line: line,
+            column: column,
+        }
     }
 
     #[cfg(procmacro2_semver_exempt)]
     pub fn end(&self) -> LineColumn {
-        let imp::LineColumn{ line, column } = self.inner.end();
-        LineColumn { line: line, column: column }
+        let imp::LineColumn { line, column } = self.inner.end();
+        LineColumn {
+            line: line,
+            column: column,
+        }
     }
 
     #[cfg(procmacro2_semver_exempt)]
@@ -559,15 +565,14 @@ pub mod token_stream {
     use std::marker;
     use std::rc::Rc;
 
-    use imp;
-    use TokenTree;
     pub use TokenStream;
+    use TokenTree;
+    use imp;
 
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
         _marker: marker::PhantomData<Rc<()>>,
     }
-
 
     impl Iterator for IntoIter {
         type Item = TokenTree;

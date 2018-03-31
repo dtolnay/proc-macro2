@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use proc_macro;
 
-use {TokenTree, Delimiter, Spacing, Group, Op};
+use {Delimiter, Group, Op, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub struct TokenStream(proc_macro::TokenStream);
@@ -71,19 +71,20 @@ impl From<TokenTree> for TokenStream {
                 };
                 (tt.span(), proc_macro::TokenNode::Op(tt.op(), kind))
             }
-            TokenTree::Term(tt) => {
-                (tt.span(), proc_macro::TokenNode::Term(tt.inner.0))
-            }
-            TokenTree::Literal(tt) => {
-                (tt.span(), proc_macro::TokenNode::Literal(tt.inner.0))
-            }
+            TokenTree::Term(tt) => (tt.span(), proc_macro::TokenNode::Term(tt.inner.0)),
+            TokenTree::Literal(tt) => (tt.span(), proc_macro::TokenNode::Literal(tt.inner.0)),
         };
-        TokenStream(proc_macro::TokenTree { span: span.inner.0, kind }.into())
+        TokenStream(
+            proc_macro::TokenTree {
+                span: span.inner.0,
+                kind,
+            }.into(),
+        )
     }
 }
 
 impl iter::FromIterator<TokenTree> for TokenStream {
-    fn from_iter<I: IntoIterator<Item=TokenTree>>(streams: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
         let streams = streams.into_iter().map(TokenStream::from);
         TokenStream(streams.collect::<proc_macro::TokenStream>())
     }
@@ -140,9 +141,7 @@ impl Iterator for TokenTreeIter {
                 o.span = span;
                 o.into()
             }
-            proc_macro::TokenNode::Term(s) => {
-                ::Term::_new(Term(s), span).into()
-            }
+            proc_macro::TokenNode::Term(s) => ::Term::_new(Term(s), span).into(),
             proc_macro::TokenNode::Literal(l) => {
                 let mut l = ::Literal::_new(Literal(l));
                 l.span = span;
@@ -244,12 +243,12 @@ impl Span {
     }
 
     pub fn start(&self) -> LineColumn {
-        let proc_macro::LineColumn{ line, column } = self.0.start();
+        let proc_macro::LineColumn { line, column } = self.0.start();
         LineColumn { line, column }
     }
 
     pub fn end(&self) -> LineColumn {
-        let proc_macro::LineColumn{ line, column } = self.0.end();
+        let proc_macro::LineColumn { line, column } = self.0.end();
         LineColumn { line, column }
     }
 
