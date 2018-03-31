@@ -652,6 +652,12 @@ fn symbol(mut input: Cursor) -> PResult<TokenTree> {
         chars.next();
     }
 
+    let raw = !lifetime && input.starts_with("r#");
+    if raw {
+        chars.next();
+        chars.next();
+    }
+
     match chars.next() {
         Some((_, ch)) if UnicodeXID::is_xid_start(ch) || ch == '_' => {}
         _ => return Err(LexError),
@@ -665,15 +671,13 @@ fn symbol(mut input: Cursor) -> PResult<TokenTree> {
         }
     }
 
-    if lifetime && &input.rest[..end] != "'static" && KEYWORDS.contains(&&input.rest[1..end]) {
+    let a = &input.rest[..end];
+    if a == "r#_" || lifetime && a != "'static" && KEYWORDS.contains(&&a[1..]) {
         Err(LexError)
+    } else if a == "_" {
+        Ok((input.advance(end), Op::new('_', Spacing::Alone).into()))
     } else {
-        let a = &input.rest[..end];
-        if a == "_" {
-            Ok((input.advance(end), Op::new('_', Spacing::Alone).into()))
-        } else {
-            Ok((input.advance(end), ::Term::new(a, ::Span::call_site()).into()))
-        }
+        Ok((input.advance(end), ::Term::new(a, ::Span::call_site()).into()))
     }
 }
 

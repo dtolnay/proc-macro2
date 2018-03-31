@@ -1,8 +1,8 @@
 extern crate proc_macro2;
 
-use std::str;
+use std::str::{self, FromStr};
 
-use proc_macro2::{Term, Literal, TokenStream, Span};
+use proc_macro2::{Term, Literal, TokenStream, Span, TokenTree};
 
 #[test]
 fn symbols() {
@@ -66,6 +66,8 @@ fn fail() {
     fail("1f320");
     fail("' static");
     fail("'mut");
+    fail("r#1");
+    fail("r#_");
 }
 
 #[cfg(procmacro2_semver_exempt)]
@@ -181,3 +183,12 @@ fn tricky_doc_comment() {
     }
 }
 
+#[test]
+fn raw_identifier() {
+    let mut tts = TokenStream::from_str("r#dyn").unwrap().into_iter();
+    match tts.next().unwrap() {
+        TokenTree::Term(raw) => assert_eq!("r#dyn", raw.as_str()),
+        wrong => panic!("wrong token {:?}", wrong),
+    }
+    assert!(tts.next().is_none());
+}
