@@ -167,7 +167,7 @@ fn no_panic() {
 }
 
 #[test]
-fn tricky_doc_commaent() {
+fn tricky_doc_comment() {
     let stream = "/**/".parse::<proc_macro2::TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.is_empty(), "not empty -- {:?}", tokens);
