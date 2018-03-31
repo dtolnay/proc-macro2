@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::ascii;
 use std::borrow::Borrow;
 use std::cell::RefCell;
@@ -14,7 +16,7 @@ use std::vec;
 use unicode_xid::UnicodeXID;
 use strnom::{Cursor, PResult, skip_whitespace, block_comment, whitespace, word_break};
 
-use {TokenTree, TokenNode, Delimiter, Spacing};
+use {TokenTree, Delimiter, Spacing, Group, Op};
 
 #[derive(Clone, Debug)]
 pub struct TokenStream {
@@ -67,7 +69,7 @@ impl FromStr for TokenStream {
                 if skip_whitespace(input).len() != 0 {
                     Err(LexError)
                 } else {
-                    Ok(output.0)
+                    Ok(output.inner)
                 }
             }
             Err(LexError) => Err(LexError),
@@ -83,32 +85,32 @@ impl fmt::Display for TokenStream {
                 write!(f, " ")?;
             }
             joint = false;
-            match tt.kind {
-                TokenNode::Group(delim, ref stream) => {
-                    let (start, end) = match delim {
+            match *tt {
+                TokenTree::Group(ref tt) => {
+                    let (start, end) = match tt.delimiter() {
                         Delimiter::Parenthesis => ("(", ")"),
                         Delimiter::Brace => ("{", "}"),
                         Delimiter::Bracket => ("[", "]"),
                         Delimiter::None => ("", ""),
                     };
-                    if stream.0.inner.len() == 0 {
+                    if tt.stream().inner.inner.len() == 0 {
                         write!(f, "{} {}", start, end)?
                     } else {
-                        write!(f, "{} {} {}", start, stream, end)?
+                        write!(f, "{} {} {}", start, tt.stream(), end)?
                     }
                 }
-                TokenNode::Term(ref sym) => write!(f, "{}", sym.as_str())?,
-                TokenNode::Op(ch, ref op) => {
-                    write!(f, "{}", ch)?;
-                    match *op {
+                TokenTree::Term(ref tt) => write!(f, "{}", tt.as_str())?,
+                TokenTree::Op(ref tt) => {
+                    write!(f, "{}", tt.op())?;
+                    match tt.spacing() {
                         Spacing::Alone => {}
                         Spacing::Joint => joint = true,
                     }
                 }
-                TokenNode::Literal(ref literal) => {
-                    write!(f, "{}", literal)?;
+                TokenTree::Literal(ref tt) => {
+                    write!(f, "{}", tt)?;
                     // handle comments
-                    if (literal.0).0.starts_with("/") {
+                    if tt.inner.0.starts_with("/") {
                         write!(f, "\n")?;
                     }
                 }
@@ -140,12 +142,12 @@ impl From<TokenTree> for TokenStream {
     }
 }
 
-impl iter::FromIterator<TokenStream> for TokenStream {
-    fn from_iter<I: IntoIterator<Item=TokenStream>>(streams: I) -> Self {
+impl iter::FromIterator<TokenTree> for TokenStream {
+    fn from_iter<I: IntoIterator<Item=TokenTree>>(streams: I) -> Self {
         let mut v = Vec::new();
 
-        for stream in streams.into_iter() {
-            v.extend(stream.inner);
+        for token in streams.into_iter() {
+            v.push(token);
         }
 
         TokenStream { inner: v }
@@ -589,64 +591,58 @@ impl From<char> for Literal {
 
 named!(token_stream -> ::TokenStream, map!(
     many0!(token_tree),
-    |trees| ::TokenStream(TokenStream { inner: trees })
+    |trees| ::TokenStream::_new(TokenStream { inner: trees })
 ));
 
 #[cfg(not(procmacro2_semver_exempt))]
 fn token_tree(input: Cursor) -> PResult<TokenTree> {
-    let (input, kind) = token_kind(input)?;
-    Ok((input, TokenTree {
-        span: ::Span(Span {}),
-        kind: kind,
-    }))
+    token_kind(input)
 }
 
 #[cfg(procmacro2_semver_exempt)]
 fn token_tree(input: Cursor) -> PResult<TokenTree> {
     let input = skip_whitespace(input);
     let lo = input.off;
-    let (input, kind) = token_kind(input)?;
+    let (input, mut token) = token_kind(input)?;
     let hi = input.off;
-    Ok((input, TokenTree {
-        span: ::Span(Span {
-            lo: lo,
-            hi: hi,
-        }),
-        kind: kind,
-    }))
+    token.set_span(::Span::_new(Span {
+        lo: lo,
+        hi: hi,
+    }));
+    Ok((input, token))
 }
 
-named!(token_kind -> TokenNode, alt!(
-    map!(delimited, |(d, s)| TokenNode::Group(d, s))
+named!(token_kind -> TokenTree, alt!(
+    map!(group, TokenTree::Group)
     |
-    map!(literal, TokenNode::Literal) // must be before symbol
+    map!(literal, TokenTree::Literal) // must be before symbol
     |
     symbol
     |
-    map!(op, |(op, kind)| TokenNode::Op(op, kind))
+    map!(op, TokenTree::Op)
 ));
 
-named!(delimited -> (Delimiter, ::TokenStream), alt!(
+named!(group -> Group, alt!(
     delimited!(
         punct!("("),
         token_stream,
         punct!(")")
-    ) => { |ts| (Delimiter::Parenthesis, ts) }
+    ) => { |ts| Group::new(Delimiter::Parenthesis, ts) }
     |
     delimited!(
         punct!("["),
         token_stream,
         punct!("]")
-    ) => { |ts| (Delimiter::Bracket, ts) }
+    ) => { |ts| Group::new(Delimiter::Bracket, ts) }
     |
     delimited!(
         punct!("{"),
         token_stream,
         punct!("}")
-    ) => { |ts| (Delimiter::Brace, ts) }
+    ) => { |ts| Group::new(Delimiter::Brace, ts) }
 ));
 
-fn symbol(mut input: Cursor) -> PResult<TokenNode> {
+fn symbol(mut input: Cursor) -> PResult<TokenTree> {
     input = skip_whitespace(input);
 
     let mut chars = input.char_indices();
@@ -674,9 +670,9 @@ fn symbol(mut input: Cursor) -> PResult<TokenNode> {
     } else {
         let a = &input.rest[..end];
         if a == "_" {
-            Ok((input.advance(end), TokenNode::Op('_', Spacing::Alone)))
+            Ok((input.advance(end), Op::new('_', Spacing::Alone).into()))
         } else {
-            Ok((input.advance(end), TokenNode::Term(::Term::intern(a))))
+            Ok((input.advance(end), ::Term::new(a, ::Span::call_site()).into()))
         }
     }
 }
@@ -700,7 +696,7 @@ fn literal(input: Cursor) -> PResult<::Literal> {
             let start = input.len() - input_no_ws.len();
             let len = input_no_ws.len() - a.len();
             let end = start + len;
-            Ok((a, ::Literal(Literal(input.rest[start..end].to_string()))))
+            Ok((a, ::Literal::_new(Literal(input.rest[start..end].to_string()))))
         }
         Err(LexError) => Err(LexError),
     }
@@ -1147,7 +1143,7 @@ fn digits(mut input: Cursor) -> PResult<()> {
     }
 }
 
-fn op(input: Cursor) -> PResult<(char, Spacing)> {
+fn op(input: Cursor) -> PResult<Op> {
     let input = skip_whitespace(input);
     match op_char(input) {
         Ok((rest, ch)) => {
@@ -1155,7 +1151,7 @@ fn op(input: Cursor) -> PResult<(char, Spacing)> {
                 Ok(_) => Spacing::Joint,
                 Err(LexError) => Spacing::Alone,
             };
-            Ok((rest, (ch, kind)))
+            Ok((rest, Op::new(ch, kind)))
         }
         Err(LexError) => Err(LexError),
     }

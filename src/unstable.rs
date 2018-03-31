@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::ascii;
 use std::fmt;
 use std::iter;
@@ -5,7 +7,7 @@ use std::str::FromStr;
 
 use proc_macro;
 
-use {TokenTree, TokenNode, Delimiter, Spacing};
+use {TokenTree, Delimiter, Spacing, Group, Op};
 
 #[derive(Clone)]
 pub struct TokenStream(proc_macro::TokenStream);
@@ -49,40 +51,40 @@ impl From<TokenStream> for proc_macro::TokenStream {
 }
 
 impl From<TokenTree> for TokenStream {
-    fn from(tree: TokenTree) -> TokenStream {
-        TokenStream(proc_macro::TokenTree {
-            span: (tree.span.0).0,
-            kind: match tree.kind {
-                TokenNode::Group(delim, s) => {
-                    let delim = match delim {
-                        Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
-                        Delimiter::Bracket => proc_macro::Delimiter::Bracket,
-                        Delimiter::Brace => proc_macro::Delimiter::Brace,
-                        Delimiter::None => proc_macro::Delimiter::None,
-                    };
-                    proc_macro::TokenNode::Group(delim, (s.0).0)
-                }
-                TokenNode::Op(ch, kind) => {
-                    let kind = match kind {
-                        Spacing::Joint => proc_macro::Spacing::Joint,
-                        Spacing::Alone => proc_macro::Spacing::Alone,
-                    };
-                    proc_macro::TokenNode::Op(ch, kind)
-                }
-                TokenNode::Term(s) => {
-                    proc_macro::TokenNode::Term((s.0).0)
-                }
-                TokenNode::Literal(l) => {
-                    proc_macro::TokenNode::Literal((l.0).0)
-                }
-            },
-        }.into())
+    fn from(token: TokenTree) -> TokenStream {
+        let (span, kind) = match token {
+            TokenTree::Group(tt) => {
+                let delim = match tt.delimiter() {
+                    Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
+                    Delimiter::Bracket => proc_macro::Delimiter::Bracket,
+                    Delimiter::Brace => proc_macro::Delimiter::Brace,
+                    Delimiter::None => proc_macro::Delimiter::None,
+                };
+                let span = tt.span();
+                let group = proc_macro::TokenNode::Group(delim, tt.stream.inner.0);
+                (span, group)
+            }
+            TokenTree::Op(tt) => {
+                let kind = match tt.spacing() {
+                    Spacing::Joint => proc_macro::Spacing::Joint,
+                    Spacing::Alone => proc_macro::Spacing::Alone,
+                };
+                (tt.span(), proc_macro::TokenNode::Op(tt.op(), kind))
+            }
+            TokenTree::Term(tt) => {
+                (tt.span(), proc_macro::TokenNode::Term(tt.inner.0))
+            }
+            TokenTree::Literal(tt) => {
+                (tt.span(), proc_macro::TokenNode::Literal(tt.inner.0))
+            }
+        };
+        TokenStream(proc_macro::TokenTree { span: span.inner.0, kind }.into())
     }
 }
 
-impl iter::FromIterator<TokenStream> for TokenStream {
-    fn from_iter<I: IntoIterator<Item=TokenStream>>(streams: I) -> Self {
-        let streams = streams.into_iter().map(|s| s.0);
+impl iter::FromIterator<TokenTree> for TokenStream {
+    fn from_iter<I: IntoIterator<Item=TokenTree>>(streams: I) -> Self {
+        let streams = streams.into_iter().map(TokenStream::from);
         TokenStream(streams.collect::<proc_macro::TokenStream>())
     }
 }
@@ -114,36 +116,38 @@ impl Iterator for TokenTreeIter {
     type Item = TokenTree;
 
     fn next(&mut self) -> Option<TokenTree> {
-        let token = match self.0.next() {
-            Some(n) => n,
-            None => return None,
-        };
-        Some(TokenTree {
-            span: ::Span(Span(token.span)),
-            kind: match token.kind {
-                proc_macro::TokenNode::Group(delim, s) => {
-                    let delim = match delim {
-                        proc_macro::Delimiter::Parenthesis => Delimiter::Parenthesis,
-                        proc_macro::Delimiter::Bracket => Delimiter::Bracket,
-                        proc_macro::Delimiter::Brace => Delimiter::Brace,
-                        proc_macro::Delimiter::None => Delimiter::None,
-                    };
-                    TokenNode::Group(delim, ::TokenStream(TokenStream(s)))
-                }
-                proc_macro::TokenNode::Op(ch, kind) => {
-                    let kind = match kind {
-                        proc_macro::Spacing::Joint => Spacing::Joint,
-                        proc_macro::Spacing::Alone => Spacing::Alone,
-                    };
-                    TokenNode::Op(ch, kind)
-                }
-                proc_macro::TokenNode::Term(s) => {
-                    TokenNode::Term(::Term(Term(s)))
-                }
-                proc_macro::TokenNode::Literal(l) => {
-                    TokenNode::Literal(::Literal(Literal(l)))
-                }
-            },
+        let token = self.0.next()?;
+        let span = ::Span::_new(Span(token.span));
+        Some(match token.kind {
+            proc_macro::TokenNode::Group(delim, s) => {
+                let delim = match delim {
+                    proc_macro::Delimiter::Parenthesis => Delimiter::Parenthesis,
+                    proc_macro::Delimiter::Bracket => Delimiter::Bracket,
+                    proc_macro::Delimiter::Brace => Delimiter::Brace,
+                    proc_macro::Delimiter::None => Delimiter::None,
+                };
+                let stream = ::TokenStream::_new(TokenStream(s));
+                let mut g = Group::new(delim, stream);
+                g.set_span(span);
+                g.into()
+            }
+            proc_macro::TokenNode::Op(ch, kind) => {
+                let kind = match kind {
+                    proc_macro::Spacing::Joint => Spacing::Joint,
+                    proc_macro::Spacing::Alone => Spacing::Alone,
+                };
+                let mut o = Op::new(ch, kind);
+                o.span = span;
+                o.into()
+            }
+            proc_macro::TokenNode::Term(s) => {
+                ::Term::_new(Term(s), span).into()
+            }
+            proc_macro::TokenNode::Literal(l) => {
+                let mut l = ::Literal::_new(Literal(l));
+                l.span = span;
+                l.into()
+            }
         })
     }
 
@@ -158,11 +162,9 @@ impl fmt::Debug for TokenTreeIter {
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct FileName(String);
 
-#[cfg(procmacro2_semver_exempt)]
 impl fmt::Display for FileName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
@@ -171,11 +173,9 @@ impl fmt::Display for FileName {
 
 // NOTE: We have to generate our own filename object here because we can't wrap
 // the one provided by proc_macro.
-#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile(proc_macro::SourceFile, FileName);
 
-#[cfg(procmacro2_semver_exempt)]
 impl SourceFile {
     fn new(sf: proc_macro::SourceFile) -> Self {
         let filename = FileName(sf.path().to_string());
@@ -192,21 +192,18 @@ impl SourceFile {
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 impl AsRef<FileName> for SourceFile {
     fn as_ref(&self) -> &FileName {
         self.path()
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 pub struct LineColumn {
     pub line: usize,
     pub column: usize,
@@ -217,7 +214,7 @@ pub struct Span(proc_macro::Span);
 
 impl From<proc_macro::Span> for ::Span {
     fn from(proc_span: proc_macro::Span) -> ::Span {
-        ::Span(Span(proc_span))
+        ::Span::_new(Span(proc_span))
     }
 }
 
@@ -242,24 +239,20 @@ impl Span {
         self.0
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile::new(self.0.source_file())
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn start(&self) -> LineColumn {
         let proc_macro::LineColumn{ line, column } = self.0.start();
         LineColumn { line, column }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn end(&self) -> LineColumn {
         let proc_macro::LineColumn{ line, column } = self.0.end();
         LineColumn { line, column }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn join(&self, other: Span) -> Option<Span> {
         self.0.join(other.0).map(Span)
     }

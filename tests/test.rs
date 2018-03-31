@@ -2,26 +2,19 @@ extern crate proc_macro2;
 
 use std::str;
 
-use proc_macro2::{Term, Literal, TokenStream};
-
-#[cfg(procmacro2_semver_exempt)]
-use proc_macro2::TokenNode;
-
-#[cfg(procmacro2_semver_exempt)]
-#[cfg(not(feature = "nightly"))]
-use proc_macro2::Span;
+use proc_macro2::{Term, Literal, TokenStream, Span};
 
 #[test]
 fn symbols() {
-    assert_eq!(Term::intern("foo").as_str(), "foo");
-    assert_eq!(Term::intern("bar").as_str(), "bar");
+    assert_eq!(Term::new("foo", Span::call_site()).as_str(), "foo");
+    assert_eq!(Term::new("bar", Span::call_site()).as_str(), "bar");
 }
 
 #[test]
 fn literals() {
     assert_eq!(Literal::string("foo").to_string(), "\"foo\"");
     assert_eq!(Literal::string("\"").to_string(), "\"\\\"\"");
-    assert_eq!(Literal::float(10.0).to_string(), "10.0");
+    assert_eq!(Literal::f32_unsuffixed(10.0).to_string(), "10.0");
 }
 
 #[test]
@@ -78,6 +71,8 @@ fn fail() {
 #[cfg(procmacro2_semver_exempt)]
 #[test]
 fn span_test() {
+    use proc_macro2::TokenTree;
+
     fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
         let ts = p.parse::<TokenStream>().unwrap();
         check_spans_internal(ts, &mut lines);
@@ -91,17 +86,18 @@ fn span_test() {
             if let Some((&(sline, scol, eline, ecol), rest)) = lines.split_first() {
                 *lines = rest;
 
-                let start = i.span.start();
+                let start = i.span().start();
                 assert_eq!(start.line, sline, "sline did not match for {}", i);
                 assert_eq!(start.column, scol, "scol did not match for {}", i);
 
-                let end = i.span.end();
+                let end = i.span().end();
                 assert_eq!(end.line, eline, "eline did not match for {}", i);
                 assert_eq!(end.column, ecol, "ecol did not match for {}", i);
 
-                match i.kind {
-                    TokenNode::Group(_, stream) =>
-                        check_spans_internal(stream, lines),
+                match i {
+                    TokenTree::Group(ref g) => {
+                        check_spans_internal(g.stream().clone(), lines);
+                    }
                     _ => {}
                 }
             }
@@ -146,11 +142,11 @@ fn span_join() {
     let source2 =
         "ccc\nddd".parse::<TokenStream>().unwrap().into_iter().collect::<Vec<_>>();
 
-    assert!(source1[0].span.source_file() != source2[0].span.source_file());
-    assert_eq!(source1[0].span.source_file(), source1[1].span.source_file());
+    assert!(source1[0].span().source_file() != source2[0].span().source_file());
+    assert_eq!(source1[0].span().source_file(), source1[1].span().source_file());
 
-    let joined1 = source1[0].span.join(source1[1].span);
-    let joined2 = source1[0].span.join(source2[0].span);
+    let joined1 = source1[0].span().join(source1[1].span());
+    let joined2 = source1[0].span().join(source2[0].span());
     assert!(joined1.is_some());
     assert!(joined2.is_none());
 
@@ -161,7 +157,7 @@ fn span_join() {
     assert_eq!(end.line, 2);
     assert_eq!(end.column, 3);
 
-    assert_eq!(joined1.unwrap().source_file(), source1[0].span.source_file());
+    assert_eq!(joined1.unwrap().source_file(), source1[0].span().source_file());
 }
 
 #[test]
@@ -179,8 +175,8 @@ fn tricky_doc_commaent() {
     let stream = "/// doc".parse::<proc_macro2::TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.len() == 1, "not length 1 -- {:?}", tokens);
-    match tokens[0].kind {
-        proc_macro2::TokenNode::Literal(_) => {}
+    match tokens[0] {
+        proc_macro2::TokenTree::Literal(_) => {}
         _ => panic!("wrong token {:?}", tokens[0]),
     }
 }
