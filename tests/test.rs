@@ -31,12 +31,6 @@ fn roundtrip() {
     roundtrip("<<=");
     roundtrip(
         "
-        /// a
-        wut
-    ",
-    );
-    roundtrip(
-        "
         1
         1.0
         1f32
@@ -115,12 +109,16 @@ testing 123
   testing 234
 }",
         &[
-            (1, 0, 1, 30),
-            (2, 0, 2, 7),
-            (2, 8, 2, 11),
-            (3, 0, 5, 1),
-            (4, 2, 4, 9),
-            (4, 10, 4, 13),
+            (1, 0, 1, 30),  // #
+            (1, 0, 1, 30),  // [ ... ]
+            (1, 0, 1, 30),  // doc
+            (1, 0, 1, 30),  // =
+            (1, 0, 1, 30),  // "This is..."
+            (2, 0, 2, 7),   // testing
+            (2, 8, 2, 11),  // 123
+            (3, 0, 5, 1),   // { ... }
+            (4, 2, 4, 9),   // testing
+            (4, 10, 4, 13), // 234
         ],
     );
 }
@@ -192,11 +190,38 @@ fn tricky_doc_comment() {
 
     let stream = "/// doc".parse::<proc_macro2::TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
-    assert!(tokens.len() == 1, "not length 1 -- {:?}", tokens);
+    assert!(tokens.len() == 2, "not length 2 -- {:?}", tokens);
     match tokens[0] {
-        proc_macro2::TokenTree::Literal(_) => {}
+        proc_macro2::TokenTree::Op(ref tt) => assert_eq!(tt.op(), '#'),
         _ => panic!("wrong token {:?}", tokens[0]),
     }
+    let mut tokens = match tokens[1] {
+        proc_macro2::TokenTree::Group(ref tt) => {
+            assert_eq!(tt.delimiter(), proc_macro2::Delimiter::Bracket);
+            tt.stream().into_iter()
+        }
+        _ => panic!("wrong token {:?}", tokens[0]),
+    };
+
+    match tokens.next().unwrap() {
+        proc_macro2::TokenTree::Term(ref tt) => assert_eq!(tt.as_str(), "doc"),
+        t => panic!("wrong token {:?}", t),
+    }
+    match tokens.next().unwrap() {
+        proc_macro2::TokenTree::Op(ref tt) => assert_eq!(tt.op(), '='),
+        t => panic!("wrong token {:?}", t),
+    }
+    match tokens.next().unwrap() {
+        proc_macro2::TokenTree::Literal(ref tt) => {
+            assert_eq!(tt.to_string(), "\" doc\"");
+        }
+        t => panic!("wrong token {:?}", t),
+    }
+    assert!(tokens.next().is_none());
+
+    let stream = "//! doc".parse::<proc_macro2::TokenStream>().unwrap();
+    let tokens = stream.into_iter().collect::<Vec<_>>();
+    assert!(tokens.len() == 3, "not length 3 -- {:?}", tokens);
 }
 
 #[test]
