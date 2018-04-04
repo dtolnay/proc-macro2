@@ -591,24 +591,55 @@ impl fmt::Display for Literal {
     }
 }
 
-named!(token_stream -> ::TokenStream, map!(
-    many0!(token_tree),
-    |trees| ::TokenStream::_new(TokenStream { inner: trees })
-));
+fn token_stream(mut input: Cursor) -> PResult<::TokenStream> {
+    let mut trees = Vec::new();
+    loop {
+        let input_no_ws = skip_whitespace(input);
+        if input_no_ws.rest.len() == 0 {
+            break
+        }
+        if let Ok((a, tokens)) = doc_comment(input_no_ws) {
+            input = a;
+            trees.extend(tokens);
+            continue
+        }
+
+        let (a, tt) = match token_tree(input_no_ws) {
+            Ok(p) => p,
+            Err(_) => break,
+        };
+        trees.push(tt);
+        input = a;
+    }
+    Ok((input, ::TokenStream::_new(TokenStream { inner: trees })))
+}
 
 #[cfg(not(procmacro2_semver_exempt))]
-fn token_tree(input: Cursor) -> PResult<TokenTree> {
-    token_kind(input)
+fn spanned<'a, T>(
+    input: Cursor<'a>,
+    f: fn(Cursor<'a>) -> PResult<'a, T>,
+) -> PResult<'a, (T, ::Span)> {
+    let (a, b) = f(skip_whitespace(input))?;
+    Ok((a, ((b, ::Span::_new(Span { })))))
 }
 
 #[cfg(procmacro2_semver_exempt)]
-fn token_tree(input: Cursor) -> PResult<TokenTree> {
+fn spanned<'a, T>(
+    input: Cursor<'a>,
+    f: fn(Cursor<'a>) -> PResult<'a, T>,
+) -> PResult<'a, (T, ::Span)> {
     let input = skip_whitespace(input);
     let lo = input.off;
-    let (input, mut token) = token_kind(input)?;
-    let hi = input.off;
-    token.set_span(::Span::_new(Span { lo: lo, hi: hi }));
-    Ok((input, token))
+    let (a, b) = f(input)?;
+    let hi = a.off;
+    let span = ::Span::_new(Span { lo: lo, hi: hi });
+    Ok((a, (b, span)))
+}
+
+fn token_tree(input: Cursor) -> PResult<TokenTree> {
+    let (rest, (mut tt, span)) = spanned(input, token_kind)?;
+    tt.set_span(span);
+    Ok((rest, tt))
 }
 
 named!(token_kind -> TokenTree, alt!(
@@ -721,8 +752,6 @@ named!(literal_nocapture -> (), alt!(
     float
     |
     int
-    |
-    doc_comment
 ));
 
 named!(string -> (), alt!(
@@ -1146,31 +1175,53 @@ fn op_char(input: Cursor) -> PResult<char> {
     }
 }
 
-named!(doc_comment -> (), alt!(
+fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
+    let mut trees = Vec::new();
+    let (rest, ((comment, inner), span)) = spanned(input, doc_comment_contents)?;
+    trees.push(TokenTree::Op(Op::new('#', Spacing::Alone)));
+    if inner {
+        trees.push(Op::new('!', Spacing::Alone).into());
+    }
+    let mut stream = vec![
+        TokenTree::Term(::Term::new("doc", span)),
+        TokenTree::Op(Op::new('=', Spacing::Alone)),
+        TokenTree::Literal(::Literal::string(comment)),
+    ];
+    for tt in stream.iter_mut() {
+        tt.set_span(span);
+    }
+    trees.push(Group::new(Delimiter::Bracket, stream.into_iter().collect()).into());
+    for tt in trees.iter_mut() {
+        tt.set_span(span);
+    }
+    Ok((rest, trees))
+}
+
+named!(doc_comment_contents -> (&str, bool), alt!(
     do_parse!(
         punct!("//!") >>
-        take_until_newline_or_eof!() >>
-        (())
+        s: take_until_newline_or_eof!() >>
+        ((s, true))
     )
     |
     do_parse!(
         option!(whitespace) >>
         peek!(tag!("/*!")) >>
-        block_comment >>
-        (())
+        s: block_comment >>
+        ((s, true))
     )
     |
     do_parse!(
         punct!("///") >>
         not!(tag!("/")) >>
-        take_until_newline_or_eof!() >>
-        (())
+        s: take_until_newline_or_eof!() >>
+        ((s, false))
     )
     |
     do_parse!(
         option!(whitespace) >>
         peek!(tuple!(tag!("/**"), not!(tag!("*")))) >>
-        block_comment >>
-        (())
+        s: block_comment >>
+        ((s, false))
     )
 ));

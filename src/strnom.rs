@@ -268,7 +268,7 @@ macro_rules! take_until_newline_or_eof {
         } else {
             match $i.find('\n') {
                 Some(i) => Ok(($i.advance(i), &$i.rest[..i])),
-                None => Ok(($i.advance($i.len()), "")),
+                None => Ok(($i.advance($i.len()), &$i.rest[..$i.len()])),
             }
         }
     }};
@@ -388,38 +388,4 @@ macro_rules! map {
     ($i:expr, $f:expr, $g:expr) => {
         map!($i, call!($f), $g)
     };
-}
-
-macro_rules! many0 {
-    ($i:expr, $f:expr) => {{
-        let ret;
-        let mut res = ::std::vec::Vec::new();
-        let mut input = $i;
-
-        loop {
-            if input.is_empty() {
-                ret = Ok((input, res));
-                break;
-            }
-
-            match $f(input) {
-                Err(LexError) => {
-                    ret = Ok((input, res));
-                    break;
-                }
-                Ok((i, o)) => {
-                    // loop trip must always consume (otherwise infinite loops)
-                    if i.len() == input.len() {
-                        ret = Err(LexError);
-                        break;
-                    }
-
-                    res.push(o);
-                    input = i;
-                }
-            }
-        }
-
-        ret
-    }};
 }
