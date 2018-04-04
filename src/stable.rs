@@ -1,6 +1,5 @@
-#![allow(dead_code)]
+#![cfg_attr(not(procmacro2_semver_exempt), allow(dead_code))]
 
-use std::ascii;
 use std::borrow::Borrow;
 use std::cell::RefCell;
 #[cfg(procmacro2_semver_exempt)]
@@ -8,7 +7,6 @@ use std::cmp;
 use std::collections::HashMap;
 use std::fmt;
 use std::iter;
-use std::marker::PhantomData;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
@@ -105,13 +103,7 @@ impl fmt::Display for TokenStream {
                         Spacing::Joint => joint = true,
                     }
                 }
-                TokenTree::Literal(ref tt) => {
-                    write!(f, "{}", tt)?;
-                    // handle comments
-                    if tt.inner.0.starts_with("/") {
-                        write!(f, "\n")?;
-                    }
-                }
+                TokenTree::Literal(ref tt) => write!(f, "{}", tt)?,
             }
         }
 
@@ -267,7 +259,7 @@ impl FileInfo {
     }
 }
 
-/// Computes the offsets of each line in the given source string.
+/// Computesthe offsets of each line in the given source string.
 #[cfg(procmacro2_semver_exempt)]
 fn lines_offsets(s: &str) -> Vec<usize> {
     let mut lines = vec![0];
@@ -404,16 +396,16 @@ impl Span {
 #[derive(Copy, Clone)]
 pub struct Term {
     intern: usize,
-    not_send_sync: PhantomData<*const ()>,
+    span: Span,
 }
 
 thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
 
 impl Term {
-    pub fn intern(string: &str) -> Term {
+    pub fn new(string: &str, span: Span) -> Term {
         Term {
             intern: SYMBOLS.with(|s| s.borrow_mut().intern(string)),
-            not_send_sync: PhantomData,
+            span: span,
         }
     }
 
@@ -423,6 +415,14 @@ impl Term {
             let s = interner.get(self.intern);
             unsafe { &*(s as *const str) }
         })
+    }
+
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    pub fn set_span(&mut self, span: Span) {
+        self.span = span;
     }
 }
 
@@ -471,20 +471,91 @@ impl Interner {
 }
 
 #[derive(Clone, Debug)]
-pub struct Literal(String);
+pub struct Literal {
+    text: String,
+    span: Span,
+}
+
+macro_rules! suffixed_numbers {
+    ($($name:ident => $kind:ident,)*) => ($(
+        pub fn $name(n: $kind) -> Literal {
+            Literal::_new(format!(concat!("{}", stringify!($kind)), n))
+        }
+    )*)
+}
+
+macro_rules! unsuffixed_numbers {
+    ($($name:ident => $kind:ident,)*) => ($(
+        pub fn $name(n: $kind) -> Literal {
+            Literal::_new(n.to_string())
+        }
+    )*)
+}
 
 impl Literal {
-    pub fn byte_char(byte: u8) -> Literal {
-        match byte {
-            0 => Literal(format!("b'\\0'")),
-            b'\"' => Literal(format!("b'\"'")),
-            n => {
-                let mut escaped = "b'".to_string();
-                escaped.extend(ascii::escape_default(n).map(|c| c as char));
-                escaped.push('\'');
-                Literal(escaped)
-            }
+    fn _new(text: String) -> Literal {
+        Literal {
+            text: text,
+            span: Span::call_site(),
         }
+    }
+
+    suffixed_numbers! {
+        u8_suffixed => u8,
+        u16_suffixed => u16,
+        u32_suffixed => u32,
+        u64_suffixed => u64,
+        usize_suffixed => usize,
+        i8_suffixed => i8,
+        i16_suffixed => i16,
+        i32_suffixed => i32,
+        i64_suffixed => i64,
+        isize_suffixed => isize,
+
+        f32_suffixed => f32,
+        f64_suffixed => f64,
+    }
+
+    unsuffixed_numbers! {
+        u8_unsuffixed => u8,
+        u16_unsuffixed => u16,
+        u32_unsuffixed => u32,
+        u64_unsuffixed => u64,
+        usize_unsuffixed => usize,
+        i8_unsuffixed => i8,
+        i16_unsuffixed => i16,
+        i32_unsuffixed => i32,
+        i64_unsuffixed => i64,
+        isize_unsuffixed => isize,
+    }
+
+    pub fn f32_unsuffixed(f: f32) -> Literal {
+        let mut s = f.to_string();
+        if !s.contains(".") {
+            s.push_str(".0");
+        }
+        Literal::_new(s)
+    }
+
+    pub fn f64_unsuffixed(f: f64) -> Literal {
+        let mut s = f.to_string();
+        if !s.contains(".") {
+            s.push_str(".0");
+        }
+        Literal::_new(s)
+    }
+
+    pub fn string(t: &str) -> Literal {
+        let mut s = t.chars()
+            .flat_map(|c| c.escape_default())
+            .collect::<String>();
+        s.push('"');
+        s.insert(0, '"');
+        Literal::_new(s)
+    }
+
+    pub fn character(t: char) -> Literal {
+        Literal::_new(format!("'{}'", t.escape_default().collect::<String>()))
     }
 
     pub fn byte_string(bytes: &[u8]) -> Literal {
@@ -502,100 +573,21 @@ impl Literal {
             }
         }
         escaped.push('"');
-        Literal(escaped)
+        Literal::_new(escaped)
     }
 
-    pub fn doccomment(s: &str) -> Literal {
-        Literal(s.to_string())
+    pub fn span(&self) -> Span {
+        self.span
     }
 
-    pub fn float(n: f64) -> Literal {
-        if !n.is_finite() {
-            panic!("Invalid float literal {}", n);
-        }
-        let mut s = n.to_string();
-        if !s.contains('.') {
-            s += ".0";
-        }
-        Literal(s)
-    }
-
-    pub fn integer(s: i64) -> Literal {
-        Literal(s.to_string())
-    }
-
-    pub fn raw_string(s: &str, pounds: usize) -> Literal {
-        let mut ret = format!("r");
-        ret.extend((0..pounds).map(|_| "#"));
-        ret.push('"');
-        ret.push_str(s);
-        ret.push('"');
-        ret.extend((0..pounds).map(|_| "#"));
-        Literal(ret)
-    }
-
-    pub fn raw_byte_string(s: &str, pounds: usize) -> Literal {
-        let mut ret = format!("br");
-        ret.extend((0..pounds).map(|_| "#"));
-        ret.push('"');
-        ret.push_str(s);
-        ret.push('"');
-        ret.extend((0..pounds).map(|_| "#"));
-        Literal(ret)
+    pub fn set_span(&mut self, span: Span) {
+        self.span = span;
     }
 }
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-macro_rules! ints {
-    ($($t:ty,)*) => {$(
-        impl From<$t> for Literal {
-            fn from(t: $t) -> Literal {
-                Literal(format!(concat!("{}", stringify!($t)), t))
-            }
-        }
-    )*}
-}
-
-ints! {
-    u8, u16, u32, u64, usize,
-    i8, i16, i32, i64, isize,
-}
-
-macro_rules! floats {
-    ($($t:ty,)*) => {$(
-        impl From<$t> for Literal {
-            fn from(t: $t) -> Literal {
-                assert!(!t.is_nan());
-                assert!(!t.is_infinite());
-                Literal(format!(concat!("{}", stringify!($t)), t))
-            }
-        }
-    )*}
-}
-
-floats! {
-    f32, f64,
-}
-
-impl<'a> From<&'a str> for Literal {
-    fn from(t: &'a str) -> Literal {
-        let mut s = t.chars()
-            .flat_map(|c| c.escape_default())
-            .collect::<String>();
-        s.push('"');
-        s.insert(0, '"');
-        Literal(s)
-    }
-}
-
-impl From<char> for Literal {
-    fn from(t: char) -> Literal {
-        Literal(format!("'{}'", t.escape_default().collect::<String>()))
+        self.text.fmt(f)
     }
 }
 
@@ -710,7 +702,7 @@ fn literal(input: Cursor) -> PResult<::Literal> {
             let end = start + len;
             Ok((
                 a,
-                ::Literal::_new(Literal(input.rest[start..end].to_string())),
+                ::Literal::_new(Literal::_new(input.rest[start..end].to_string())),
             ))
         }
         Err(LexError) => Err(LexError),

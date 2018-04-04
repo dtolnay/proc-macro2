@@ -169,7 +169,6 @@ pub struct LineColumn {
 }
 
 #[derive(Copy, Clone)]
-#[cfg_attr(procmacro2_semver_exempt, derive(PartialEq, Eq))]
 pub struct Span {
     inner: imp::Span,
     _marker: marker::PhantomData<Rc<()>>,
@@ -238,6 +237,11 @@ impl Span {
     #[cfg(procmacro2_semver_exempt)]
     pub fn join(&self, other: Span) -> Option<Span> {
         self.inner.join(other.inner).map(Span::_new)
+    }
+
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn eq(&self, other: &Span) -> bool {
+        self.inner.eq(&other.inner)
     }
 }
 
@@ -405,21 +409,19 @@ impl fmt::Display for Op {
 #[derive(Copy, Clone)]
 pub struct Term {
     inner: imp::Term,
-    span: Span,
     _marker: marker::PhantomData<Rc<()>>,
 }
 
 impl Term {
-    fn _new(inner: imp::Term, span: Span) -> Term {
+    fn _new(inner: imp::Term) -> Term {
         Term {
             inner: inner,
-            span: span,
             _marker: marker::PhantomData,
         }
     }
 
     pub fn new(string: &str, span: Span) -> Term {
-        Term::_new(imp::Term::intern(string), span)
+        Term::_new(imp::Term::new(string, span.inner))
     }
 
     pub fn as_str(&self) -> &str {
@@ -427,11 +429,11 @@ impl Term {
     }
 
     pub fn span(&self) -> Span {
-        self.span
+        Span::_new(self.inner.span())
     }
 
     pub fn set_span(&mut self, span: Span) {
-        self.span = span;
+        self.inner.set_span(span.inner);
     }
 }
 
@@ -450,24 +452,13 @@ impl fmt::Debug for Term {
 #[derive(Clone)]
 pub struct Literal {
     inner: imp::Literal,
-    span: Span,
     _marker: marker::PhantomData<Rc<()>>,
 }
 
-macro_rules! suffixed_int_literals {
+macro_rules! int_literals {
     ($($name:ident => $kind:ident,)*) => ($(
-        #[allow(unused_comparisons)]
         pub fn $name(n: $kind) -> Literal {
-            Literal::_new(n.into())
-        }
-    )*)
-}
-
-macro_rules! unsuffixed_int_literals {
-    ($($name:ident => $kind:ident,)*) => ($(
-        #[allow(unused_comparisons)]
-        pub fn $name(n: $kind) -> Literal {
-            Literal::_new(imp::Literal::integer(n as i64))
+            Literal::_new(imp::Literal::$name(n))
         }
     )*)
 }
@@ -476,12 +467,11 @@ impl Literal {
     fn _new(inner: imp::Literal) -> Literal {
         Literal {
             inner: inner,
-            span: Span::call_site(),
             _marker: marker::PhantomData,
         }
     }
 
-    suffixed_int_literals! {
+    int_literals! {
         u8_suffixed => u8,
         u16_suffixed => u16,
         u32_suffixed => u32,
@@ -492,9 +482,7 @@ impl Literal {
         i32_suffixed => i32,
         i64_suffixed => i64,
         isize_suffixed => isize,
-    }
 
-    unsuffixed_int_literals! {
         u8_unsuffixed => u8,
         u16_unsuffixed => u16,
         u32_unsuffixed => u32,
@@ -509,30 +497,30 @@ impl Literal {
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(imp::Literal::float(f))
+        Literal::_new(imp::Literal::f64_unsuffixed(f))
     }
 
     pub fn f64_suffixed(f: f64) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(f.into())
+        Literal::_new(imp::Literal::f64_suffixed(f))
     }
 
     pub fn f32_unsuffixed(f: f32) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(imp::Literal::float(f as f64))
+        Literal::_new(imp::Literal::f32_unsuffixed(f))
     }
 
     pub fn f32_suffixed(f: f32) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(f.into())
+        Literal::_new(imp::Literal::f32_suffixed(f))
     }
 
     pub fn string(string: &str) -> Literal {
-        Literal::_new(string.into())
+        Literal::_new(imp::Literal::string(string))
     }
 
     pub fn character(ch: char) -> Literal {
-        Literal::_new(ch.into())
+        Literal::_new(imp::Literal::character(ch))
     }
 
     pub fn byte_string(s: &[u8]) -> Literal {
@@ -540,11 +528,11 @@ impl Literal {
     }
 
     pub fn span(&self) -> Span {
-        self.span
+        Span::_new(self.inner.span())
     }
 
     pub fn set_span(&mut self, span: Span) {
-        self.span = span;
+        self.inner.set_span(span.inner);
     }
 }
 
