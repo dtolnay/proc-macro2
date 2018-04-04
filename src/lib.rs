@@ -455,20 +455,10 @@ pub struct Literal {
     _marker: marker::PhantomData<Rc<()>>,
 }
 
-macro_rules! suffixed_int_literals {
+macro_rules! int_literals {
     ($($name:ident => $kind:ident,)*) => ($(
-        #[allow(unused_comparisons)]
         pub fn $name(n: $kind) -> Literal {
-            Literal::_new(n.into())
-        }
-    )*)
-}
-
-macro_rules! unsuffixed_int_literals {
-    ($($name:ident => $kind:ident,)*) => ($(
-        #[allow(unused_comparisons)]
-        pub fn $name(n: $kind) -> Literal {
-            Literal::_new(imp::Literal::integer(n as i64))
+            Literal::_new(imp::Literal::$name(n))
         }
     )*)
 }
@@ -481,7 +471,7 @@ impl Literal {
         }
     }
 
-    suffixed_int_literals! {
+    int_literals! {
         u8_suffixed => u8,
         u16_suffixed => u16,
         u32_suffixed => u32,
@@ -492,9 +482,7 @@ impl Literal {
         i32_suffixed => i32,
         i64_suffixed => i64,
         isize_suffixed => isize,
-    }
 
-    unsuffixed_int_literals! {
         u8_unsuffixed => u8,
         u16_unsuffixed => u16,
         u32_unsuffixed => u32,
@@ -509,30 +497,30 @@ impl Literal {
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(imp::Literal::float(f))
+        Literal::_new(imp::Literal::f64_unsuffixed(f))
     }
 
     pub fn f64_suffixed(f: f64) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(f.into())
+        Literal::_new(imp::Literal::f64_suffixed(f))
     }
 
     pub fn f32_unsuffixed(f: f32) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(imp::Literal::float(f as f64))
+        Literal::_new(imp::Literal::f32_unsuffixed(f))
     }
 
     pub fn f32_suffixed(f: f32) -> Literal {
         assert!(f.is_finite());
-        Literal::_new(f.into())
+        Literal::_new(imp::Literal::f32_suffixed(f))
     }
 
     pub fn string(string: &str) -> Literal {
-        Literal::_new(string.into())
+        Literal::_new(imp::Literal::string(string))
     }
 
     pub fn character(ch: char) -> Literal {
-        Literal::_new(ch.into())
+        Literal::_new(imp::Literal::character(ch))
     }
 
     pub fn byte_string(s: &[u8]) -> Literal {

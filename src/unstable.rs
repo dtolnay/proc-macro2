@@ -1,6 +1,5 @@
-#![allow(dead_code)]
+#![cfg_attr(not(procmacro2_semver_exempt), allow(dead_code))]
 
-use std::ascii;
 use std::fmt;
 use std::iter;
 use std::str::FromStr;
@@ -308,6 +307,22 @@ pub struct Literal {
     span: Span,
 }
 
+macro_rules! suffixed_numbers {
+    ($($name:ident => $kind:ident,)*) => ($(
+        pub fn $name(n: $kind) -> Literal {
+            Literal::_new(proc_macro::Literal::$kind(n))
+        }
+    )*)
+}
+
+macro_rules! unsuffixed_integers {
+    ($($name:ident => $kind:ident,)*) => ($(
+        pub fn $name(n: $kind) -> Literal {
+            Literal::_new(proc_macro::Literal::integer(n as i128))
+        }
+    )*)
+}
+
 impl Literal {
     fn _new(lit: proc_macro::Literal) -> Literal {
         Literal {
@@ -316,29 +331,54 @@ impl Literal {
         }
     }
 
-    pub fn byte_char(byte: u8) -> Literal {
-        match byte {
-            0 => Literal::_new(to_literal("b'\\0'")),
-            b'\"' => Literal::_new(to_literal("b'\"'")),
-            n => {
-                let mut escaped = "b'".to_string();
-                escaped.extend(ascii::escape_default(n).map(|c| c as char));
-                escaped.push('\'');
-                Literal::_new(to_literal(&escaped))
-            }
-        }
+    suffixed_numbers! {
+        u8_suffixed => u8,
+        u16_suffixed => u16,
+        u32_suffixed => u32,
+        u64_suffixed => u64,
+        usize_suffixed => usize,
+        i8_suffixed => i8,
+        i16_suffixed => i16,
+        i32_suffixed => i32,
+        i64_suffixed => i64,
+        isize_suffixed => isize,
+
+        f32_suffixed => f32,
+        f64_suffixed => f64,
+    }
+
+    unsuffixed_integers! {
+        u8_unsuffixed => u8,
+        u16_unsuffixed => u16,
+        u32_unsuffixed => u32,
+        u64_unsuffixed => u64,
+        usize_unsuffixed => usize,
+        i8_unsuffixed => i8,
+        i16_unsuffixed => i16,
+        i32_unsuffixed => i32,
+        i64_unsuffixed => i64,
+        isize_unsuffixed => isize,
+    }
+
+    pub fn f32_unsuffixed(f: f32) -> Literal {
+        Literal::f64_unsuffixed(f.into())
+    }
+
+    pub fn f64_unsuffixed(f: f64) -> Literal {
+        Literal::_new(proc_macro::Literal::float(f))
+    }
+
+
+    pub fn string(t: &str) -> Literal {
+        Literal::_new(proc_macro::Literal::string(t))
+    }
+
+    pub fn character(t: char) -> Literal {
+        Literal::_new(proc_macro::Literal::character(t))
     }
 
     pub fn byte_string(bytes: &[u8]) -> Literal {
         Literal::_new(proc_macro::Literal::byte_string(bytes))
-    }
-
-    pub fn float(s: f64) -> Literal {
-        Literal::_new(proc_macro::Literal::float(s))
-    }
-
-    pub fn integer(s: i64) -> Literal {
-        Literal::_new(proc_macro::Literal::integer(s.into()))
     }
 
     pub fn span(&self) -> Span {
@@ -359,54 +399,5 @@ impl fmt::Display for Literal {
 impl fmt::Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.lit.fmt(f)
-    }
-}
-
-fn to_literal(s: &str) -> proc_macro::Literal {
-    let stream = s.parse::<proc_macro::TokenStream>().unwrap();
-    match stream.into_iter().next().unwrap().kind {
-        proc_macro::TokenNode::Literal(l) => l,
-        _ => unreachable!(),
-    }
-}
-
-macro_rules! ints {
-    ($($t:ident,)*) => {$(
-        impl From<$t> for Literal {
-            fn from(t: $t) -> Literal {
-                Literal::_new(proc_macro::Literal::$t(t))
-            }
-        }
-    )*}
-}
-
-ints! {
-    u8, u16, u32, u64, usize,
-    i8, i16, i32, i64, isize,
-}
-
-macro_rules! floats {
-    ($($t:ident,)*) => {$(
-        impl From<$t> for Literal {
-            fn from(t: $t) -> Literal {
-                Literal::_new(proc_macro::Literal::$t(t))
-            }
-        }
-    )*}
-}
-
-floats! {
-    f32, f64,
-}
-
-impl<'a> From<&'a str> for Literal {
-    fn from(t: &'a str) -> Literal {
-        Literal::_new(proc_macro::Literal::string(t))
-    }
-}
-
-impl From<char> for Literal {
-    fn from(t: char) -> Literal {
-        Literal::_new(proc_macro::Literal::character(t))
     }
 }
