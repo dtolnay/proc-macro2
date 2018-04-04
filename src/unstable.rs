@@ -60,7 +60,7 @@ impl From<TokenTree> for TokenStream {
                     Delimiter::Brace => proc_macro::Delimiter::Brace,
                     Delimiter::None => proc_macro::Delimiter::None,
                 };
-                let span = tt.span();
+                let span = tt.span().inner;
                 let group = proc_macro::TokenNode::Group(delim, tt.stream.inner.0);
                 (span, group)
             }
@@ -69,14 +69,14 @@ impl From<TokenTree> for TokenStream {
                     Spacing::Joint => proc_macro::Spacing::Joint,
                     Spacing::Alone => proc_macro::Spacing::Alone,
                 };
-                (tt.span(), proc_macro::TokenNode::Op(tt.op(), kind))
+                (tt.span().inner, proc_macro::TokenNode::Op(tt.op(), kind))
             }
-            TokenTree::Term(tt) => (tt.span(), proc_macro::TokenNode::Term(tt.inner.0)),
-            TokenTree::Literal(tt) => (tt.span(), proc_macro::TokenNode::Literal(tt.inner.0)),
+            TokenTree::Term(tt) => (tt.inner.span, proc_macro::TokenNode::Term(tt.inner.term)),
+            TokenTree::Literal(tt) => (tt.inner.span, proc_macro::TokenNode::Literal(tt.inner.lit)),
         };
         TokenStream(
             proc_macro::TokenTree {
-                span: span.inner.0,
+                span: span.0,
                 kind,
             }.into(),
         )
@@ -141,11 +141,17 @@ impl Iterator for TokenTreeIter {
                 o.span = span;
                 o.into()
             }
-            proc_macro::TokenNode::Term(s) => ::Term::_new(Term(s), span).into(),
+            proc_macro::TokenNode::Term(s) => {
+                ::Term::_new(Term {
+                    term: s,
+                    span: span.inner,
+                }).into()
+            }
             proc_macro::TokenNode::Literal(l) => {
-                let mut l = ::Literal::_new(Literal(l));
-                l.span = span;
-                l.into()
+                ::Literal::_new(Literal {
+                    lit: l,
+                    span: span.inner,
+                }).into()
             }
         })
     }
@@ -264,87 +270,95 @@ impl fmt::Debug for Span {
 }
 
 #[derive(Copy, Clone)]
-pub struct Term(proc_macro::Term);
+pub struct Term {
+    term: proc_macro::Term,
+    span: Span,
+}
 
 impl Term {
-    pub fn intern(string: &str) -> Term {
-        Term(proc_macro::Term::intern(string))
+    pub fn new(string: &str, span: Span) -> Term {
+        Term {
+            term: proc_macro::Term::intern(string),
+            span,
+        }
     }
 
     pub fn as_str(&self) -> &str {
-        self.0.as_str()
+        self.term.as_str()
+    }
+
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    pub fn set_span(&mut self, span: Span) {
+        self.span = span;
     }
 }
 
 impl fmt::Debug for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.term.fmt(f)
     }
 }
 
 #[derive(Clone)]
-pub struct Literal(proc_macro::Literal);
+pub struct Literal {
+    lit: proc_macro::Literal,
+    span: Span,
+}
 
 impl Literal {
+    fn _new(lit: proc_macro::Literal) -> Literal {
+        Literal {
+            lit,
+            span: Span::call_site(),
+        }
+    }
+
     pub fn byte_char(byte: u8) -> Literal {
         match byte {
-            0 => Literal(to_literal("b'\\0'")),
-            b'\"' => Literal(to_literal("b'\"'")),
+            0 => Literal::_new(to_literal("b'\\0'")),
+            b'\"' => Literal::_new(to_literal("b'\"'")),
             n => {
                 let mut escaped = "b'".to_string();
                 escaped.extend(ascii::escape_default(n).map(|c| c as char));
                 escaped.push('\'');
-                Literal(to_literal(&escaped))
+                Literal::_new(to_literal(&escaped))
             }
         }
     }
 
     pub fn byte_string(bytes: &[u8]) -> Literal {
-        Literal(proc_macro::Literal::byte_string(bytes))
-    }
-
-    pub fn doccomment(s: &str) -> Literal {
-        Literal(to_literal(s))
+        Literal::_new(proc_macro::Literal::byte_string(bytes))
     }
 
     pub fn float(s: f64) -> Literal {
-        Literal(proc_macro::Literal::float(s))
+        Literal::_new(proc_macro::Literal::float(s))
     }
 
     pub fn integer(s: i64) -> Literal {
-        Literal(proc_macro::Literal::integer(s.into()))
+        Literal::_new(proc_macro::Literal::integer(s.into()))
     }
 
-    pub fn raw_string(s: &str, pounds: usize) -> Literal {
-        let mut ret = format!("r");
-        ret.extend((0..pounds).map(|_| "#"));
-        ret.push('"');
-        ret.push_str(s);
-        ret.push('"');
-        ret.extend((0..pounds).map(|_| "#"));
-        Literal(to_literal(&ret))
+    pub fn span(&self) -> Span {
+        self.span
     }
 
-    pub fn raw_byte_string(s: &str, pounds: usize) -> Literal {
-        let mut ret = format!("br");
-        ret.extend((0..pounds).map(|_| "#"));
-        ret.push('"');
-        ret.push_str(s);
-        ret.push('"');
-        ret.extend((0..pounds).map(|_| "#"));
-        Literal(to_literal(&ret))
+    pub fn set_span(&mut self, span: Span) {
+        self.span = span;
     }
 }
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.lit.fmt(f)
     }
 }
 
 impl fmt::Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.lit.fmt(f)
     }
 }
 
@@ -360,7 +374,7 @@ macro_rules! ints {
     ($($t:ident,)*) => {$(
         impl From<$t> for Literal {
             fn from(t: $t) -> Literal {
-                Literal(proc_macro::Literal::$t(t))
+                Literal::_new(proc_macro::Literal::$t(t))
             }
         }
     )*}
@@ -375,7 +389,7 @@ macro_rules! floats {
     ($($t:ident,)*) => {$(
         impl From<$t> for Literal {
             fn from(t: $t) -> Literal {
-                Literal(proc_macro::Literal::$t(t))
+                Literal::_new(proc_macro::Literal::$t(t))
             }
         }
     )*}
@@ -387,12 +401,12 @@ floats! {
 
 impl<'a> From<&'a str> for Literal {
     fn from(t: &'a str) -> Literal {
-        Literal(proc_macro::Literal::string(t))
+        Literal::_new(proc_macro::Literal::string(t))
     }
 }
 
 impl From<char> for Literal {
     fn from(t: char) -> Literal {
-        Literal(proc_macro::Literal::character(t))
+        Literal::_new(proc_macro::Literal::character(t))
     }
 }

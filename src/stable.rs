@@ -8,7 +8,6 @@ use std::cmp;
 use std::collections::HashMap;
 use std::fmt;
 use std::iter;
-use std::marker::PhantomData;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
@@ -105,13 +104,7 @@ impl fmt::Display for TokenStream {
                         Spacing::Joint => joint = true,
                     }
                 }
-                TokenTree::Literal(ref tt) => {
-                    write!(f, "{}", tt)?;
-                    // handle comments
-                    if tt.inner.0.starts_with("/") {
-                        write!(f, "\n")?;
-                    }
-                }
+                TokenTree::Literal(ref tt) => write!(f, "{}", tt)?,
             }
         }
 
@@ -404,16 +397,16 @@ impl Span {
 #[derive(Copy, Clone)]
 pub struct Term {
     intern: usize,
-    not_send_sync: PhantomData<*const ()>,
+    span: Span,
 }
 
 thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
 
 impl Term {
-    pub fn intern(string: &str) -> Term {
+    pub fn new(string: &str, span: Span) -> Term {
         Term {
             intern: SYMBOLS.with(|s| s.borrow_mut().intern(string)),
-            not_send_sync: PhantomData,
+            span,
         }
     }
 
@@ -423,6 +416,14 @@ impl Term {
             let s = interner.get(self.intern);
             unsafe { &*(s as *const str) }
         })
+    }
+
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    pub fn set_span(&mut self, span: Span) {
+        self.span = span;
     }
 }
 
@@ -471,18 +472,28 @@ impl Interner {
 }
 
 #[derive(Clone, Debug)]
-pub struct Literal(String);
+pub struct Literal {
+    text: String,
+    span: Span,
+}
 
 impl Literal {
+    fn _new(text: String) -> Literal {
+        Literal {
+            text,
+            span: Span::call_site(),
+        }
+    }
+
     pub fn byte_char(byte: u8) -> Literal {
         match byte {
-            0 => Literal(format!("b'\\0'")),
-            b'\"' => Literal(format!("b'\"'")),
+            0 => Literal::_new(format!("b'\\0'")),
+            b'\"' => Literal::_new(format!("b'\"'")),
             n => {
                 let mut escaped = "b'".to_string();
                 escaped.extend(ascii::escape_default(n).map(|c| c as char));
                 escaped.push('\'');
-                Literal(escaped)
+                Literal::_new(escaped)
             }
         }
     }
@@ -502,11 +513,7 @@ impl Literal {
             }
         }
         escaped.push('"');
-        Literal(escaped)
-    }
-
-    pub fn doccomment(s: &str) -> Literal {
-        Literal(s.to_string())
+        Literal::_new(escaped)
     }
 
     pub fn float(n: f64) -> Literal {
@@ -517,37 +524,25 @@ impl Literal {
         if !s.contains('.') {
             s += ".0";
         }
-        Literal(s)
+        Literal::_new(s)
     }
 
     pub fn integer(s: i64) -> Literal {
-        Literal(s.to_string())
+        Literal::_new(s.to_string())
     }
 
-    pub fn raw_string(s: &str, pounds: usize) -> Literal {
-        let mut ret = format!("r");
-        ret.extend((0..pounds).map(|_| "#"));
-        ret.push('"');
-        ret.push_str(s);
-        ret.push('"');
-        ret.extend((0..pounds).map(|_| "#"));
-        Literal(ret)
+    pub fn span(&self) -> Span {
+        self.span
     }
 
-    pub fn raw_byte_string(s: &str, pounds: usize) -> Literal {
-        let mut ret = format!("br");
-        ret.extend((0..pounds).map(|_| "#"));
-        ret.push('"');
-        ret.push_str(s);
-        ret.push('"');
-        ret.extend((0..pounds).map(|_| "#"));
-        Literal(ret)
+    pub fn set_span(&mut self, span: Span) {
+        self.span = span;
     }
 }
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.text.fmt(f)
     }
 }
 
@@ -555,7 +550,7 @@ macro_rules! ints {
     ($($t:ty,)*) => {$(
         impl From<$t> for Literal {
             fn from(t: $t) -> Literal {
-                Literal(format!(concat!("{}", stringify!($t)), t))
+                Literal::_new(format!(concat!("{}", stringify!($t)), t))
             }
         }
     )*}
@@ -572,7 +567,7 @@ macro_rules! floats {
             fn from(t: $t) -> Literal {
                 assert!(!t.is_nan());
                 assert!(!t.is_infinite());
-                Literal(format!(concat!("{}", stringify!($t)), t))
+                Literal::_new(format!(concat!("{}", stringify!($t)), t))
             }
         }
     )*}
@@ -589,13 +584,13 @@ impl<'a> From<&'a str> for Literal {
             .collect::<String>();
         s.push('"');
         s.insert(0, '"');
-        Literal(s)
+        Literal::_new(s)
     }
 }
 
 impl From<char> for Literal {
     fn from(t: char) -> Literal {
-        Literal(format!("'{}'", t.escape_default().collect::<String>()))
+        Literal::_new(format!("'{}'", t.escape_default().collect::<String>()))
     }
 }
 
@@ -710,7 +705,7 @@ fn literal(input: Cursor) -> PResult<::Literal> {
             let end = start + len;
             Ok((
                 a,
-                ::Literal::_new(Literal(input.rest[start..end].to_string())),
+                ::Literal::_new(Literal::_new(input.rest[start..end].to_string())),
             ))
         }
         Err(LexError) => Err(LexError),
