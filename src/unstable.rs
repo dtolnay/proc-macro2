@@ -256,6 +256,10 @@ impl Span {
     pub fn join(&self, other: Span) -> Option<Span> {
         self.0.join(other.0).map(Span)
     }
+
+    pub fn eq(&self, other: &Span) -> bool {
+        self.0.eq(&other.0)
+    }
 }
 
 impl fmt::Debug for Span {
