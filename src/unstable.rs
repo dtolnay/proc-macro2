@@ -51,7 +51,7 @@ impl From<TokenStream> for proc_macro::TokenStream {
 
 impl From<TokenTree> for TokenStream {
     fn from(token: TokenTree) -> TokenStream {
-        let (span, kind) = match token {
+        let tt: proc_macro::TokenTree = match token {
             TokenTree::Group(tt) => {
                 let delim = match tt.delimiter() {
                     Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
@@ -59,32 +59,31 @@ impl From<TokenTree> for TokenStream {
                     Delimiter::Brace => proc_macro::Delimiter::Brace,
                     Delimiter::None => proc_macro::Delimiter::None,
                 };
-                let span = tt.span().inner;
-                let group = proc_macro::TokenNode::Group(delim, tt.stream.inner.0);
-                (span, group)
+                let span = tt.span();
+                let mut group = proc_macro::Group::new(delim, tt.stream.inner.0);
+                group.set_span(span.inner.0);
+                group.into()
             }
             TokenTree::Op(tt) => {
-                let kind = match tt.spacing() {
+                let spacing = match tt.spacing() {
                     Spacing::Joint => proc_macro::Spacing::Joint,
                     Spacing::Alone => proc_macro::Spacing::Alone,
                 };
-                (tt.span().inner, proc_macro::TokenNode::Op(tt.op(), kind))
+                let mut op = proc_macro::Op::new(tt.op(), spacing);
+                op.set_span(tt.span().inner.0);
+                op.into()
             }
-            TokenTree::Term(tt) => (tt.inner.span, proc_macro::TokenNode::Term(tt.inner.term)),
-            TokenTree::Literal(tt) => (tt.inner.span, proc_macro::TokenNode::Literal(tt.inner.lit)),
+            TokenTree::Term(tt) => tt.inner.term.into(),
+            TokenTree::Literal(tt) => tt.inner.lit.into(),
         };
-        TokenStream(
-            proc_macro::TokenTree {
-                span: span.0,
-                kind,
-            }.into(),
-        )
+        TokenStream(tt.into())
     }
 }
 
 impl iter::FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
-        let streams = streams.into_iter().map(TokenStream::from);
+        let streams = streams.into_iter().map(TokenStream::from)
+            .flat_map(|t| t.0);
         TokenStream(streams.collect::<proc_macro::TokenStream>())
     }
 }
@@ -101,7 +100,7 @@ impl fmt::Debug for LexError {
     }
 }
 
-pub struct TokenTreeIter(proc_macro::TokenTreeIter);
+pub struct TokenTreeIter(proc_macro::token_stream::IntoIter);
 
 impl IntoIterator for TokenStream {
     type Item = TokenTree;
@@ -117,39 +116,36 @@ impl Iterator for TokenTreeIter {
 
     fn next(&mut self) -> Option<TokenTree> {
         let token = self.0.next()?;
-        let span = ::Span::_new(Span(token.span));
-        Some(match token.kind {
-            proc_macro::TokenNode::Group(delim, s) => {
-                let delim = match delim {
+        Some(match token {
+            proc_macro::TokenTree::Group(tt) => {
+                let delim = match tt.delimiter() {
                     proc_macro::Delimiter::Parenthesis => Delimiter::Parenthesis,
                     proc_macro::Delimiter::Bracket => Delimiter::Bracket,
                     proc_macro::Delimiter::Brace => Delimiter::Brace,
                     proc_macro::Delimiter::None => Delimiter::None,
                 };
-                let stream = ::TokenStream::_new(TokenStream(s));
+                let stream = ::TokenStream::_new(TokenStream(tt.stream()));
                 let mut g = Group::new(delim, stream);
-                g.set_span(span);
+                g.set_span(::Span::_new(Span(tt.span())));
                 g.into()
             }
-            proc_macro::TokenNode::Op(ch, kind) => {
-                let kind = match kind {
+            proc_macro::TokenTree::Op(tt) => {
+                let spacing = match tt.spacing() {
                     proc_macro::Spacing::Joint => Spacing::Joint,
                     proc_macro::Spacing::Alone => Spacing::Alone,
                 };
-                let mut o = Op::new(ch, kind);
-                o.span = span;
+                let mut o = Op::new(tt.op(), spacing);
+                o.set_span(::Span::_new(Span(tt.span())));
                 o.into()
             }
-            proc_macro::TokenNode::Term(s) => {
+            proc_macro::TokenTree::Term(s) => {
                 ::Term::_new(Term {
                     term: s,
-                    span: span.inner,
                 }).into()
             }
-            proc_macro::TokenNode::Literal(l) => {
+            proc_macro::TokenTree::Literal(l) => {
                 ::Literal::_new(Literal {
                     lit: l,
-                    span: span.inner,
                 }).into()
             }
         })
@@ -213,7 +209,7 @@ pub struct LineColumn {
     pub column: usize,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone)]
 pub struct Span(proc_macro::Span);
 
 impl From<proc_macro::Span> for ::Span {
@@ -271,14 +267,12 @@ impl fmt::Debug for Span {
 #[derive(Copy, Clone)]
 pub struct Term {
     term: proc_macro::Term,
-    span: Span,
 }
 
 impl Term {
     pub fn new(string: &str, span: Span) -> Term {
         Term {
-            term: proc_macro::Term::intern(string),
-            span,
+            term: proc_macro::Term::new(string, span.0),
         }
     }
 
@@ -287,11 +281,11 @@ impl Term {
     }
 
     pub fn span(&self) -> Span {
-        self.span
+        Span(self.term.span())
     }
 
     pub fn set_span(&mut self, span: Span) {
-        self.span = span;
+        self.term.set_span(span.0);
     }
 }
 
@@ -304,13 +298,12 @@ impl fmt::Debug for Term {
 #[derive(Clone)]
 pub struct Literal {
     lit: proc_macro::Literal,
-    span: Span,
 }
 
 macro_rules! suffixed_numbers {
     ($($name:ident => $kind:ident,)*) => ($(
         pub fn $name(n: $kind) -> Literal {
-            Literal::_new(proc_macro::Literal::$kind(n))
+            Literal::_new(proc_macro::Literal::$name(n))
         }
     )*)
 }
@@ -318,7 +311,7 @@ macro_rules! suffixed_numbers {
 macro_rules! unsuffixed_integers {
     ($($name:ident => $kind:ident,)*) => ($(
         pub fn $name(n: $kind) -> Literal {
-            Literal::_new(proc_macro::Literal::integer(n as i128))
+            Literal::_new(proc_macro::Literal::$name(n))
         }
     )*)
 }
@@ -327,7 +320,6 @@ impl Literal {
     fn _new(lit: proc_macro::Literal) -> Literal {
         Literal {
             lit,
-            span: Span::call_site(),
         }
     }
 
@@ -361,11 +353,11 @@ impl Literal {
     }
 
     pub fn f32_unsuffixed(f: f32) -> Literal {
-        Literal::f64_unsuffixed(f.into())
+        Literal::_new(proc_macro::Literal::f32_unsuffixed(f))
     }
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
-        Literal::_new(proc_macro::Literal::float(f))
+        Literal::_new(proc_macro::Literal::f64_unsuffixed(f))
     }
 
 
@@ -382,11 +374,11 @@ impl Literal {
     }
 
     pub fn span(&self) -> Span {
-        self.span
+        Span(self.lit.span())
     }
 
     pub fn set_span(&mut self, span: Span) {
-        self.span = span;
+        self.lit.set_span(span.0);
     }
 }
 
