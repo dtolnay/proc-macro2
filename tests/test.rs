@@ -302,3 +302,56 @@ fn raw_identifier() {
     }
     assert!(tts.next().is_none());
 }
+
+#[test]
+fn test_debug() {
+    let tts = TokenStream::from_str("[a + 1]").unwrap();
+
+    #[cfg(not(procmacro2_semver_exempt))]
+    let expected = "\
+TokenStream [
+    Group {
+        delimiter: Bracket,
+        stream: TokenStream [
+            Term {
+                sym: a
+            },
+            Op {
+                op: '+',
+                spacing: Alone
+            },
+            Literal {
+                lit: 1
+            }
+        ]
+    }
+]\
+    ";
+
+    #[cfg(procmacro2_semver_exempt)]
+    let expected = "\
+TokenStream [
+    Group {
+        delimiter: Bracket,
+        stream: TokenStream [
+            Term {
+                sym: a,
+                span: bytes(2..3)
+            },
+            Op {
+                op: '+',
+                spacing: Alone,
+                span: bytes(4..5)
+            },
+            Literal {
+                lit: 1,
+                span: bytes(6..7)
+            }
+        ],
+        span: bytes(1..8)
+    }
+]\
+    ";
+
+    assert_eq!(expected, format!("{:#?}", tts));
+}

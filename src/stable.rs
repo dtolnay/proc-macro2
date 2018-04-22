@@ -16,7 +16,7 @@ use unicode_xid::UnicodeXID;
 
 use {Delimiter, Group, Op, Spacing, TokenTree};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TokenStream {
     inner: Vec<TokenTree>,
 }
@@ -108,6 +108,13 @@ impl fmt::Display for TokenStream {
         }
 
         Ok(())
+    }
+}
+
+impl fmt::Debug for TokenStream {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("TokenStream ")?;
+        f.debug_list().entries(self.clone()).finish()
     }
 }
 
@@ -314,7 +321,7 @@ impl Codemap {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Span {
     #[cfg(procmacro2_semver_exempt)]
     lo: u32,
@@ -393,6 +400,16 @@ impl Span {
     }
 }
 
+impl fmt::Debug for Span {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        #[cfg(procmacro2_semver_exempt)]
+        return write!(f, "bytes({}..{})", self.lo, self.hi);
+
+        #[cfg(not(procmacro2_semver_exempt))]
+        write!(f, "Span")
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct Term {
     intern: usize,
@@ -466,7 +483,11 @@ fn validate_term(string: &str) {
 
 impl fmt::Debug for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Term").field(&self.as_str()).finish()
+        let mut debug = f.debug_struct("Term");
+        debug.field("sym", &format_args!("{}", self.as_str()));
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
+        debug.finish()
     }
 }
 
@@ -508,7 +529,7 @@ impl Interner {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Literal {
     text: String,
     span: Span,
@@ -626,6 +647,16 @@ impl Literal {
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.text.fmt(f)
+    }
+}
+
+impl fmt::Debug for Literal {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug = fmt.debug_struct("Literal");
+        debug.field("lit", &format_args!("{}", self.text));
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
+        debug.finish()
     }
 }
 
