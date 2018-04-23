@@ -1198,6 +1198,11 @@ fn op(input: Cursor) -> PResult<Op> {
 }
 
 fn op_char(input: Cursor) -> PResult<char> {
+    if input.starts_with("//") || input.starts_with("/*") {
+        // Do not accept `/` of a comment as an op.
+        return Err(LexError);
+    }
+
     let mut chars = input.chars();
     let first = match chars.next() {
         Some(ch) => ch,
