@@ -251,7 +251,7 @@ impl fmt::Debug for Span {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum TokenTree {
     Group(Group),
     Term(Term),
@@ -314,7 +314,20 @@ impl fmt::Display for TokenTree {
     }
 }
 
-#[derive(Clone, Debug)]
+impl fmt::Debug for TokenTree {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Each of these has the name in the struct type in the derived debug,
+        // so don't bother with an extra layer of indirection
+        match *self {
+            TokenTree::Group(ref t) => t.fmt(f),
+            TokenTree::Term(ref t) => t.fmt(f),
+            TokenTree::Op(ref t) => t.fmt(f),
+            TokenTree::Literal(ref t) => t.fmt(f),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct Group {
     delimiter: Delimiter,
     stream: TokenStream,
@@ -361,7 +374,18 @@ impl fmt::Display for Group {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+impl fmt::Debug for Group {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug = fmt.debug_struct("Group");
+        debug.field("delimiter", &self.delimiter);
+        debug.field("stream", &self.stream);
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
+        debug.finish()
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct Op {
     op: char,
     spacing: Spacing,
@@ -403,6 +427,17 @@ impl Op {
 impl fmt::Display for Op {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.op.fmt(f)
+    }
+}
+
+impl fmt::Debug for Op {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug = fmt.debug_struct("Op");
+        debug.field("op", &self.op);
+        debug.field("spacing", &self.spacing);
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
+        debug.finish()
     }
 }
 
