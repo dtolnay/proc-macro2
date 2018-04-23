@@ -2,7 +2,7 @@ extern crate proc_macro2;
 
 use std::str::{self, FromStr};
 
-use proc_macro2::{Literal, Span, Term, TokenStream, TokenTree};
+use proc_macro2::{Literal, Spacing, Span, Term, TokenStream, TokenTree};
 
 #[test]
 fn terms() {
@@ -291,6 +291,18 @@ fn tricky_doc_comment() {
     let stream = "//! doc".parse::<proc_macro2::TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.len() == 3, "not length 3 -- {:?}", tokens);
+}
+
+#[test]
+fn op_before_comment() {
+    let mut tts = TokenStream::from_str("~// comment").unwrap().into_iter();
+    match tts.next().unwrap() {
+        TokenTree::Op(tt) => {
+            assert_eq!(tt.op(), '~');
+            assert_eq!(tt.spacing(), Spacing::Alone);
+        }
+        wrong => panic!("wrong token {:?}", wrong),
+    }
 }
 
 #[test]
