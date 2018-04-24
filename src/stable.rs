@@ -665,12 +665,12 @@ fn token_stream(mut input: Cursor) -> PResult<::TokenStream> {
     loop {
         let input_no_ws = skip_whitespace(input);
         if input_no_ws.rest.len() == 0 {
-            break
+            break;
         }
         if let Ok((a, tokens)) = doc_comment(input_no_ws) {
             input = a;
             trees.extend(tokens);
-            continue
+            continue;
         }
 
         let (a, tt) = match token_tree(input_no_ws) {
@@ -689,7 +689,7 @@ fn spanned<'a, T>(
     f: fn(Cursor<'a>) -> PResult<'a, T>,
 ) -> PResult<'a, (T, ::Span)> {
     let (a, b) = f(skip_whitespace(input))?;
-    Ok((a, ((b, ::Span::_new(Span { })))))
+    Ok((a, ((b, ::Span::_new(Span {})))))
 }
 
 #[cfg(procmacro2_semver_exempt)]
@@ -1162,7 +1162,7 @@ fn float_digits(input: Cursor) -> PResult<()> {
 fn int(input: Cursor) -> PResult<()> {
     let (rest, ()) = digits(input)?;
     for suffix in &[
-        "isize", "i8", "i16", "i32", "i64", "i128", "usize", "u8", "u16", "u32", "u64", "u128"
+        "isize", "i8", "i16", "i32", "i64", "i128", "usize", "u8", "u16", "u32", "u64", "u128",
     ] {
         if rest.starts_with(suffix) {
             return word_break(rest.advance(suffix.len()));

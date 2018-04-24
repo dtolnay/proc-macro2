@@ -82,8 +82,7 @@ impl From<TokenTree> for TokenStream {
 
 impl iter::FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
-        let streams = streams.into_iter().map(TokenStream::from)
-            .flat_map(|t| t.0);
+        let streams = streams.into_iter().map(TokenStream::from).flat_map(|t| t.0);
         TokenStream(streams.collect::<proc_macro::TokenStream>())
     }
 }
@@ -138,16 +137,8 @@ impl Iterator for TokenTreeIter {
                 o.set_span(::Span::_new(Span(tt.span())));
                 o.into()
             }
-            proc_macro::TokenTree::Term(s) => {
-                ::Term::_new(Term {
-                    term: s,
-                }).into()
-            }
-            proc_macro::TokenTree::Literal(l) => {
-                ::Literal::_new(Literal {
-                    lit: l,
-                }).into()
-            }
+            proc_macro::TokenTree::Term(s) => ::Term::_new(Term { term: s }).into(),
+            proc_macro::TokenTree::Literal(l) => ::Literal::_new(Literal { lit: l }).into(),
         })
     }
 
@@ -322,9 +313,7 @@ macro_rules! unsuffixed_integers {
 
 impl Literal {
     fn _new(lit: proc_macro::Literal) -> Literal {
-        Literal {
-            lit,
-        }
+        Literal { lit }
     }
 
     suffixed_numbers! {
@@ -363,7 +352,6 @@ impl Literal {
     pub fn f64_unsuffixed(f: f64) -> Literal {
         Literal::_new(proc_macro::Literal::f64_unsuffixed(f))
     }
-
 
     pub fn string(t: &str) -> Literal {
         Literal::_new(proc_macro::Literal::string(t))

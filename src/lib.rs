@@ -588,9 +588,9 @@ pub mod token_stream {
     use std::marker;
     use std::rc::Rc;
 
+    use imp;
     pub use TokenStream;
     use TokenTree;
-    use imp;
 
     pub struct IntoIter {
         inner: imp::TokenTreeIter,

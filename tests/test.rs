@@ -13,7 +13,10 @@ fn terms() {
 
 #[test]
 fn raw_terms() {
-    assert_eq!(Term::new("r#String", Span::call_site()).as_str(), "r#String");
+    assert_eq!(
+        Term::new("r#String", Span::call_site()).as_str(),
+        "r#String"
+    );
     assert_eq!(Term::new("r#fn", Span::call_site()).as_str(), "r#fn");
     assert_eq!(Term::new("r#_", Span::call_site()).as_str(), "r#_");
 }
