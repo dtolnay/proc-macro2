@@ -17,7 +17,7 @@ The upcoming support has features like:
 * Structured input/output
 
 The hope is that libraries ported to `proc_macro2` will be trivial to port to
-the real `proc_macro` crate once the support on nightly is stabilize.
+the real `proc_macro` crate once the support on nightly is stabilized.
 
 ## Usage
 
