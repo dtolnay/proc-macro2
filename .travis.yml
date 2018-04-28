@@ -11,10 +11,10 @@ matrix:
         - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
       script:
         - cargo test
-        - cargo build --features nightly
-        - cargo build --no-default-features
+        - cargo test --features nightly
+        - cargo test --no-default-features
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
-        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build --features nightly
+        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --features nightly
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo doc --no-deps
       after_success:
         - travis-cargo --only nightly doc-upload

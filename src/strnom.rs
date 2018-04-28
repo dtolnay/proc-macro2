@@ -4,7 +4,7 @@ use std::str::{Bytes, CharIndices, Chars};
 
 use unicode_xid::UnicodeXID;
 
-use imp::LexError;
+use stable::LexError;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Cursor<'a> {

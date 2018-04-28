@@ -48,8 +48,6 @@
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;
-
-#[cfg(not(feature = "nightly"))]
 extern crate unicode_xid;
 
 use std::fmt;
@@ -59,12 +57,11 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 #[macro_use]
-#[cfg(not(feature = "nightly"))]
 mod strnom;
+mod stable;
 
-#[path = "stable.rs"]
 #[cfg(not(feature = "nightly"))]
-mod imp;
+use stable as imp;
 #[path = "unstable.rs"]
 #[cfg(feature = "nightly")]
 mod imp;
@@ -84,6 +81,13 @@ impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
         TokenStream {
             inner: inner,
+            _marker: marker::PhantomData,
+        }
+    }
+
+    fn _new_stable(inner: stable::TokenStream) -> TokenStream {
+        TokenStream {
+            inner: inner.into(),
             _marker: marker::PhantomData,
         }
     }
@@ -197,6 +201,13 @@ impl Span {
     fn _new(inner: imp::Span) -> Span {
         Span {
             inner: inner,
+            _marker: marker::PhantomData,
+        }
+    }
+
+    fn _new_stable(inner: stable::Span) -> Span {
+        Span {
+            inner: inner.into(),
             _marker: marker::PhantomData,
         }
     }
@@ -521,6 +532,13 @@ impl Literal {
     fn _new(inner: imp::Literal) -> Literal {
         Literal {
             inner: inner,
+            _marker: marker::PhantomData,
+        }
+    }
+
+    fn _new_stable(inner: stable::Literal) -> Literal {
+        Literal {
+            inner: inner.into(),
             _marker: marker::PhantomData,
         }
     }

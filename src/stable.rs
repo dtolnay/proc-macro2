@@ -65,7 +65,7 @@ impl FromStr for TokenStream {
                 if skip_whitespace(input).len() != 0 {
                     Err(LexError)
                 } else {
-                    Ok(output.inner)
+                    Ok(output)
                 }
             }
             Err(LexError) => Err(LexError),
@@ -89,7 +89,7 @@ impl fmt::Display for TokenStream {
                         Delimiter::Bracket => ("[", "]"),
                         Delimiter::None => ("", ""),
                     };
-                    if tt.stream().inner.inner.len() == 0 {
+                    if tt.stream().into_iter().next().is_none() {
                         write!(f, "{} {}", start, end)?
                     } else {
                         write!(f, "{} {} {}", start, tt.stream(), end)?
@@ -167,24 +167,24 @@ impl IntoIterator for TokenStream {
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct FileName(String);
 
-#[cfg(procmacro2_semver_exempt)]
+pub fn file_name(s: String) -> FileName {
+    FileName(s)
+}
+
 impl fmt::Display for FileName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     name: FileName,
 }
 
-#[cfg(procmacro2_semver_exempt)]
 impl SourceFile {
     /// Get the path to this source file as a string.
     pub fn path(&self) -> &FileName {
@@ -197,14 +197,12 @@ impl SourceFile {
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 impl AsRef<FileName> for SourceFile {
     fn as_ref(&self) -> &FileName {
         self.path()
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("SourceFile")
@@ -214,7 +212,6 @@ impl fmt::Debug for SourceFile {
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LineColumn {
     pub line: usize,
@@ -660,7 +657,7 @@ impl fmt::Debug for Literal {
     }
 }
 
-fn token_stream(mut input: Cursor) -> PResult<::TokenStream> {
+fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     let mut trees = Vec::new();
     loop {
         let input_no_ws = skip_whitespace(input);
@@ -680,7 +677,7 @@ fn token_stream(mut input: Cursor) -> PResult<::TokenStream> {
         trees.push(tt);
         input = a;
     }
-    Ok((input, ::TokenStream::_new(TokenStream { inner: trees })))
+    Ok((input, TokenStream { inner: trees }))
 }
 
 #[cfg(not(procmacro2_semver_exempt))]
@@ -689,7 +686,7 @@ fn spanned<'a, T>(
     f: fn(Cursor<'a>) -> PResult<'a, T>,
 ) -> PResult<'a, (T, ::Span)> {
     let (a, b) = f(skip_whitespace(input))?;
-    Ok((a, ((b, ::Span::_new(Span {})))))
+    Ok((a, ((b, ::Span::_new_stable(Span {})))))
 }
 
 #[cfg(procmacro2_semver_exempt)]
@@ -701,7 +698,7 @@ fn spanned<'a, T>(
     let lo = input.off;
     let (a, b) = f(input)?;
     let hi = a.off;
-    let span = ::Span::_new(Span { lo: lo, hi: hi });
+    let span = ::Span::_new_stable(Span { lo: lo, hi: hi });
     Ok((a, (b, span)))
 }
 
@@ -714,7 +711,7 @@ fn token_tree(input: Cursor) -> PResult<TokenTree> {
 named!(token_kind -> TokenTree, alt!(
     map!(group, TokenTree::Group)
     |
-    map!(literal, TokenTree::Literal) // must be before symbol
+    map!(literal, |l| TokenTree::Literal(::Literal::_new_stable(l))) // must be before symbol
     |
     symbol
     |
@@ -726,19 +723,19 @@ named!(group -> Group, alt!(
         punct!("("),
         token_stream,
         punct!(")")
-    ) => { |ts| Group::new(Delimiter::Parenthesis, ts) }
+    ) => { |ts| Group::new(Delimiter::Parenthesis, ::TokenStream::_new_stable(ts)) }
     |
     delimited!(
         punct!("["),
         token_stream,
         punct!("]")
-    ) => { |ts| Group::new(Delimiter::Bracket, ts) }
+    ) => { |ts| Group::new(Delimiter::Bracket, ::TokenStream::_new_stable(ts)) }
     |
     delimited!(
         punct!("{"),
         token_stream,
         punct!("}")
-    ) => { |ts| Group::new(Delimiter::Brace, ts) }
+    ) => { |ts| Group::new(Delimiter::Brace, ::TokenStream::_new_stable(ts)) }
 ));
 
 fn symbol(mut input: Cursor) -> PResult<TokenTree> {
@@ -792,7 +789,7 @@ static KEYWORDS: &'static [&'static str] = &[
     "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
-fn literal(input: Cursor) -> PResult<::Literal> {
+fn literal(input: Cursor) -> PResult<Literal> {
     let input_no_ws = skip_whitespace(input);
 
     match literal_nocapture(input_no_ws) {
@@ -802,7 +799,7 @@ fn literal(input: Cursor) -> PResult<::Literal> {
             let end = start + len;
             Ok((
                 a,
-                ::Literal::_new(Literal::_new(input.rest[start..end].to_string())),
+                Literal::_new(input.rest[start..end].to_string()),
             ))
         }
         Err(LexError) => Err(LexError),
