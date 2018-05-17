@@ -787,8 +787,6 @@ fn symbol(input: Cursor) -> PResult<TokenTree> {
     let a = &input.rest[..end];
     if a == "r#_" {
         Err(LexError)
-    } else if a == "_" {
-        Ok((input.advance(end), Punct::new('_', Spacing::Alone).into()))
     } else {
         let ident = if raw {
             ::Ident::_new_raw(&a[2..], ::Span::call_site())
