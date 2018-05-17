@@ -2,84 +2,78 @@ extern crate proc_macro2;
 
 use std::str::{self, FromStr};
 
-use proc_macro2::{Literal, Spacing, Span, Term, TokenStream, TokenTree};
+use proc_macro2::{Literal, Spacing, Span, Ident, TokenStream, TokenTree};
 
 #[test]
 fn terms() {
-    assert_eq!(Term::new("String", Span::call_site()).as_str(), "String");
-    assert_eq!(Term::new("fn", Span::call_site()).as_str(), "fn");
-    assert_eq!(Term::new("_", Span::call_site()).as_str(), "_");
+    assert_eq!(Ident::new("String", Span::call_site()).to_string(), "String");
+    assert_eq!(Ident::new("fn", Span::call_site()).to_string(), "fn");
+    assert_eq!(Ident::new("_", Span::call_site()).to_string(), "_");
 }
 
 #[test]
+#[cfg(procmacro2_semver_exempt)]
 fn raw_terms() {
     assert_eq!(
-        Term::new("r#String", Span::call_site()).as_str(),
+        Ident::new_raw("String", Span::call_site()).to_string(),
         "r#String"
     );
-    assert_eq!(Term::new("r#fn", Span::call_site()).as_str(), "r#fn");
-    assert_eq!(Term::new("r#_", Span::call_site()).as_str(), "r#_");
+    assert_eq!(Ident::new_raw("fn", Span::call_site()).to_string(), "r#fn");
+    assert_eq!(Ident::new_raw("_", Span::call_site()).to_string(), "r#_");
 }
 
 #[test]
-fn lifetimes() {
-    assert_eq!(Term::new("'a", Span::call_site()).as_str(), "'a");
-    assert_eq!(Term::new("'static", Span::call_site()).as_str(), "'static");
-    assert_eq!(Term::new("'_", Span::call_site()).as_str(), "'_");
-}
-
-#[test]
-#[should_panic(expected = "Term is not allowed to be empty; use Option<Term>")]
+#[should_panic(expected = "Ident is not allowed to be empty; use Option<Ident>")]
 fn term_empty() {
-    Term::new("", Span::call_site());
+    Ident::new("", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = "Term cannot be a number; use Literal instead")]
+#[should_panic(expected = "Ident cannot be a number; use Literal instead")]
 fn term_number() {
-    Term::new("255", Span::call_site());
+    Ident::new("255", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = "\"a#\" is not a valid Term")]
+#[should_panic(expected = "\"a#\" is not a valid Ident")]
 fn term_invalid() {
-    Term::new("a#", Span::call_site());
+    Ident::new("a#", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = "Term is not allowed to be empty; use Option<Term>")]
+#[should_panic(expected = "not a valid Ident")]
 fn raw_term_empty() {
-    Term::new("r#", Span::call_site());
+    Ident::new("r#", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = "Term cannot be a number; use Literal instead")]
+#[should_panic(expected = "not a valid Ident")]
 fn raw_term_number() {
-    Term::new("r#255", Span::call_site());
+    Ident::new("r#255", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = "\"r#a#\" is not a valid Term")]
+#[should_panic(expected = "\"r#a#\" is not a valid Ident")]
 fn raw_term_invalid() {
-    Term::new("r#a#", Span::call_site());
+    Ident::new("r#a#", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = "Term is not allowed to be empty; use Option<Term>")]
+#[should_panic(expected = "not a valid Ident")]
 fn lifetime_empty() {
-    Term::new("'", Span::call_site());
+    Ident::new("'", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = "Term cannot be a number; use Literal instead")]
+#[should_panic(expected = "not a valid Ident")]
 fn lifetime_number() {
-    Term::new("'255", Span::call_site());
+    Ident::new("'255", Span::call_site());
 }
 
 #[test]
-#[should_panic(expected = r#""\'a#" is not a valid Term"#)]
+#[should_panic(expected = r#""\'a#" is not a valid Ident"#)]
 fn lifetime_invalid() {
-    Term::new("'a#", Span::call_site());
+    Ident::new("'a#", Span::call_site());
 }
 
 #[test]
@@ -127,15 +121,14 @@ fn roundtrip() {
 #[test]
 fn fail() {
     fn fail(p: &str) {
-        if p.parse::<TokenStream>().is_ok() {
-            panic!("should have failed to parse: {}", p);
+        if let Ok(s) = p.parse::<TokenStream>() {
+            panic!("should have failed to parse: {}\n{:#?}", p, s);
         }
     }
     fail("1x");
     fail("1u80");
     fail("1f320");
     fail("' static");
-    fail("'mut");
     fail("r#1");
     fail("r#_");
 }
@@ -264,7 +257,7 @@ fn tricky_doc_comment() {
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.len() == 2, "not length 2 -- {:?}", tokens);
     match tokens[0] {
-        proc_macro2::TokenTree::Op(ref tt) => assert_eq!(tt.op(), '#'),
+        proc_macro2::TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '#'),
         _ => panic!("wrong token {:?}", tokens[0]),
     }
     let mut tokens = match tokens[1] {
@@ -276,11 +269,11 @@ fn tricky_doc_comment() {
     };
 
     match tokens.next().unwrap() {
-        proc_macro2::TokenTree::Term(ref tt) => assert_eq!(tt.as_str(), "doc"),
+        proc_macro2::TokenTree::Ident(ref tt) => assert_eq!(tt.to_string(), "doc"),
         t => panic!("wrong token {:?}", t),
     }
     match tokens.next().unwrap() {
-        proc_macro2::TokenTree::Op(ref tt) => assert_eq!(tt.op(), '='),
+        proc_macro2::TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '='),
         t => panic!("wrong token {:?}", t),
     }
     match tokens.next().unwrap() {
@@ -300,8 +293,8 @@ fn tricky_doc_comment() {
 fn op_before_comment() {
     let mut tts = TokenStream::from_str("~// comment").unwrap().into_iter();
     match tts.next().unwrap() {
-        TokenTree::Op(tt) => {
-            assert_eq!(tt.op(), '~');
+        TokenTree::Punct(tt) => {
+            assert_eq!(tt.as_char(), '~');
             assert_eq!(tt.spacing(), Spacing::Alone);
         }
         wrong => panic!("wrong token {:?}", wrong),
@@ -312,7 +305,7 @@ fn op_before_comment() {
 fn raw_identifier() {
     let mut tts = TokenStream::from_str("r#dyn").unwrap().into_iter();
     match tts.next().unwrap() {
-        TokenTree::Term(raw) => assert_eq!("r#dyn", raw.as_str()),
+        TokenTree::Ident(raw) => assert_eq!("r#dyn", raw.to_string()),
         wrong => panic!("wrong token {:?}", wrong),
     }
     assert!(tts.next().is_none());
@@ -328,10 +321,11 @@ TokenStream [
     Group {
         delimiter: Bracket,
         stream: TokenStream [
-            Term {
-                sym: a
+            Ident {
+                sym: a,
+                raw: false
             },
-            Op {
+            Punct {
                 op: '+',
                 spacing: Alone
             },
@@ -349,11 +343,12 @@ TokenStream [
     Group {
         delimiter: Bracket,
         stream: TokenStream [
-            Term {
+            Ident {
                 sym: a,
-                span: bytes(2..3)
+                span: bytes(2..3),
+                raw: false
             },
-            Op {
+            Punct {
                 op: '+',
                 spacing: Alone,
                 span: bytes(4..5)

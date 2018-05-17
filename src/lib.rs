@@ -43,14 +43,16 @@
 //! [ts]: https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.3.8")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.0")]
 #![cfg_attr(feature = "nightly", feature(proc_macro))]
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;
 extern crate unicode_xid;
 
+use std::cmp::Ordering;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
 use std::rc::Rc;
@@ -124,6 +126,12 @@ impl From<proc_macro::TokenStream> for TokenStream {
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
         inner.inner.into()
+    }
+}
+
+impl Extend<TokenTree> for TokenStream {
+    fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
+        self.inner.extend(streams)
     }
 }
 
@@ -284,8 +292,8 @@ impl fmt::Debug for Span {
 #[derive(Clone)]
 pub enum TokenTree {
     Group(Group),
-    Term(Term),
-    Op(Op),
+    Ident(Ident),
+    Punct(Punct),
     Literal(Literal),
 }
 
@@ -293,8 +301,8 @@ impl TokenTree {
     pub fn span(&self) -> Span {
         match *self {
             TokenTree::Group(ref t) => t.span(),
-            TokenTree::Term(ref t) => t.span(),
-            TokenTree::Op(ref t) => t.span(),
+            TokenTree::Ident(ref t) => t.span(),
+            TokenTree::Punct(ref t) => t.span(),
             TokenTree::Literal(ref t) => t.span(),
         }
     }
@@ -302,8 +310,8 @@ impl TokenTree {
     pub fn set_span(&mut self, span: Span) {
         match *self {
             TokenTree::Group(ref mut t) => t.set_span(span),
-            TokenTree::Term(ref mut t) => t.set_span(span),
-            TokenTree::Op(ref mut t) => t.set_span(span),
+            TokenTree::Ident(ref mut t) => t.set_span(span),
+            TokenTree::Punct(ref mut t) => t.set_span(span),
             TokenTree::Literal(ref mut t) => t.set_span(span),
         }
     }
@@ -315,15 +323,15 @@ impl From<Group> for TokenTree {
     }
 }
 
-impl From<Term> for TokenTree {
-    fn from(g: Term) -> TokenTree {
-        TokenTree::Term(g)
+impl From<Ident> for TokenTree {
+    fn from(g: Ident) -> TokenTree {
+        TokenTree::Ident(g)
     }
 }
 
-impl From<Op> for TokenTree {
-    fn from(g: Op) -> TokenTree {
-        TokenTree::Op(g)
+impl From<Punct> for TokenTree {
+    fn from(g: Punct) -> TokenTree {
+        TokenTree::Punct(g)
     }
 }
 
@@ -337,8 +345,8 @@ impl fmt::Display for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Term(ref t) => t.fmt(f),
-            TokenTree::Op(ref t) => t.fmt(f),
+            TokenTree::Ident(ref t) => t.fmt(f),
+            TokenTree::Punct(ref t) => t.fmt(f),
             TokenTree::Literal(ref t) => t.fmt(f),
         }
     }
@@ -350,8 +358,8 @@ impl fmt::Debug for TokenTree {
         // so don't bother with an extra layer of indirection
         match *self {
             TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Term(ref t) => t.fmt(f),
-            TokenTree::Op(ref t) => t.fmt(f),
+            TokenTree::Ident(ref t) => t.fmt(f),
+            TokenTree::Punct(ref t) => t.fmt(f),
             TokenTree::Literal(ref t) => t.fmt(f),
         }
     }
@@ -415,8 +423,8 @@ impl fmt::Debug for Group {
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct Op {
+#[derive(Clone)]
+pub struct Punct {
     op: char,
     spacing: Spacing,
     span: Span,
@@ -428,16 +436,16 @@ pub enum Spacing {
     Joint,
 }
 
-impl Op {
-    pub fn new(op: char, spacing: Spacing) -> Op {
-        Op {
+impl Punct {
+    pub fn new(op: char, spacing: Spacing) -> Punct {
+        Punct {
             op: op,
             spacing: spacing,
             span: Span::call_site(),
         }
     }
 
-    pub fn op(&self) -> char {
+    pub fn as_char(&self) -> char {
         self.op
     }
 
@@ -454,15 +462,15 @@ impl Op {
     }
 }
 
-impl fmt::Display for Op {
+impl fmt::Display for Punct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.op.fmt(f)
     }
 }
 
-impl fmt::Debug for Op {
+impl fmt::Debug for Punct {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let mut debug = fmt.debug_struct("Op");
+        let mut debug = fmt.debug_struct("Punct");
         debug.field("op", &self.op);
         debug.field("spacing", &self.spacing);
         #[cfg(procmacro2_semver_exempt)]
@@ -471,26 +479,31 @@ impl fmt::Debug for Op {
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct Term {
-    inner: imp::Term,
+#[derive(Clone)]
+pub struct Ident {
+    inner: imp::Ident,
     _marker: marker::PhantomData<Rc<()>>,
 }
 
-impl Term {
-    fn _new(inner: imp::Term) -> Term {
-        Term {
+impl Ident {
+    fn _new(inner: imp::Ident) -> Ident {
+        Ident {
             inner: inner,
             _marker: marker::PhantomData,
         }
     }
 
-    pub fn new(string: &str, span: Span) -> Term {
-        Term::_new(imp::Term::new(string, span.inner))
+    pub fn new(string: &str, span: Span) -> Ident {
+        Ident::_new(imp::Ident::new(string, span.inner))
     }
 
-    pub fn as_str(&self) -> &str {
-        self.inner.as_str()
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn new_raw(string: &str, span: Span) -> Ident {
+        Ident::_new_raw(string, span)
+    }
+
+    fn _new_raw(string: &str, span: Span) -> Ident {
+        Ident::_new(imp::Ident::new_raw(string, span.inner))
     }
 
     pub fn span(&self) -> Span {
@@ -502,13 +515,40 @@ impl Term {
     }
 }
 
-impl fmt::Display for Term {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_str().fmt(f)
+impl PartialEq for Ident {
+    fn eq(&self, other: &Ident) -> bool{
+        self.to_string() == other.to_string()
     }
 }
 
-impl fmt::Debug for Term {
+impl Eq for Ident {
+}
+
+impl PartialOrd for Ident {
+    fn partial_cmp(&self, other: &Ident) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Ident {
+    fn cmp(&self, other: &Ident) -> Ordering {
+        self.to_string().cmp(&other.to_string())
+    }
+}
+
+impl Hash for Ident {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.to_string().hash(hasher)
+    }
+}
+
+impl fmt::Display for Ident {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl fmt::Debug for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.inner.fmt(f)
     }

@@ -14,7 +14,7 @@ use std::vec;
 use strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
 use unicode_xid::UnicodeXID;
 
-use {Delimiter, Group, Op, Spacing, TokenTree};
+use {Delimiter, Group, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub struct TokenStream {
@@ -95,9 +95,9 @@ impl fmt::Display for TokenStream {
                         write!(f, "{} {} {}", start, tt.stream(), end)?
                     }
                 }
-                TokenTree::Term(ref tt) => write!(f, "{}", tt.as_str())?,
-                TokenTree::Op(ref tt) => {
-                    write!(f, "{}", tt.op())?;
+                TokenTree::Ident(ref tt) => write!(f, "{}", tt)?,
+                TokenTree::Punct(ref tt) => {
+                    write!(f, "{}", tt.as_char())?;
                     match tt.spacing() {
                         Spacing::Alone => {}
                         Spacing::Joint => joint = true,
@@ -156,6 +156,12 @@ impl iter::FromIterator<TokenTree> for TokenStream {
     }
 }
 
+impl Extend<TokenTree> for TokenStream {
+    fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
+        self.inner.extend(streams);
+    }
+}
+
 pub type TokenTreeIter = vec::IntoIter<TokenTree>;
 
 impl IntoIterator for TokenStream {
@@ -170,6 +176,7 @@ impl IntoIterator for TokenStream {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct FileName(String);
 
+#[allow(dead_code)]
 pub fn file_name(s: String) -> FileName {
     FileName(s)
 }
@@ -407,22 +414,32 @@ impl fmt::Debug for Span {
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct Term {
+#[derive(Clone)]
+pub struct Ident {
     intern: usize,
     span: Span,
+    raw: bool,
 }
 
 thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
 
-impl Term {
-    pub fn new(string: &str, span: Span) -> Term {
+impl Ident {
+    fn _new(string: &str, raw: bool, span: Span) -> Ident {
         validate_term(string);
 
-        Term {
+        Ident {
             intern: SYMBOLS.with(|s| s.borrow_mut().intern(string)),
             span: span,
+            raw: raw,
         }
+    }
+
+    pub fn new(string: &str, span: Span) -> Ident {
+        Ident::_new(string, false, span)
+    }
+
+    pub fn new_raw(string: &str, span: Span) -> Ident {
+        Ident::_new(string, true, span)
     }
 
     pub fn as_str(&self) -> &str {
@@ -443,20 +460,13 @@ impl Term {
 }
 
 fn validate_term(string: &str) {
-    let validate = if string.starts_with('\'') {
-        &string[1..]
-    } else if string.starts_with("r#") {
-        &string[2..]
-    } else {
-        string
-    };
-
+    let validate = string;
     if validate.is_empty() {
-        panic!("Term is not allowed to be empty; use Option<Term>");
+        panic!("Ident is not allowed to be empty; use Option<Ident>");
     }
 
     if validate.bytes().all(|digit| digit >= b'0' && digit <= b'9') {
-        panic!("Term cannot be a number; use Literal instead");
+        panic!("Ident cannot be a number; use Literal instead");
     }
 
     fn xid_ok(string: &str) -> bool {
@@ -474,16 +484,26 @@ fn validate_term(string: &str) {
     }
 
     if !xid_ok(validate) {
-        panic!("{:?} is not a valid Term", string);
+        panic!("{:?} is not a valid Ident", string);
     }
 }
 
-impl fmt::Debug for Term {
+impl fmt::Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut debug = f.debug_struct("Term");
+        if self.raw {
+            "r#".fmt(f)?;
+        }
+        self.as_str().fmt(f)
+    }
+}
+
+impl fmt::Debug for Ident {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug = f.debug_struct("Ident");
         debug.field("sym", &format_args!("{}", self.as_str()));
         #[cfg(procmacro2_semver_exempt)]
         debug.field("span", &self.span);
+        debug.field("raw", &self.raw);
         debug.finish()
     }
 }
@@ -713,9 +733,9 @@ named!(token_kind -> TokenTree, alt!(
     |
     map!(literal, |l| TokenTree::Literal(::Literal::_new_stable(l))) // must be before symbol
     |
-    symbol
+    map!(op, TokenTree::Punct)
     |
-    map!(op, TokenTree::Op)
+    symbol_leading_ws
 ));
 
 named!(group -> Group, alt!(
@@ -738,17 +758,14 @@ named!(group -> Group, alt!(
     ) => { |ts| Group::new(Delimiter::Brace, ::TokenStream::_new_stable(ts)) }
 ));
 
-fn symbol(mut input: Cursor) -> PResult<TokenTree> {
-    input = skip_whitespace(input);
+fn symbol_leading_ws(input: Cursor) -> PResult<TokenTree> {
+    symbol(skip_whitespace(input))
+}
 
+fn symbol(input: Cursor) -> PResult<TokenTree> {
     let mut chars = input.char_indices();
 
-    let lifetime = input.starts_with("'");
-    if lifetime {
-        chars.next();
-    }
-
-    let raw = !lifetime && input.starts_with("r#");
+    let raw = input.starts_with("r#");
     if raw {
         chars.next();
         chars.next();
@@ -768,26 +785,19 @@ fn symbol(mut input: Cursor) -> PResult<TokenTree> {
     }
 
     let a = &input.rest[..end];
-    if a == "r#_" || lifetime && a != "'static" && KEYWORDS.contains(&&a[1..]) {
+    if a == "r#_" {
         Err(LexError)
     } else if a == "_" {
-        Ok((input.advance(end), Op::new('_', Spacing::Alone).into()))
+        Ok((input.advance(end), Punct::new('_', Spacing::Alone).into()))
     } else {
-        Ok((
-            input.advance(end),
-            ::Term::new(a, ::Span::call_site()).into(),
-        ))
+        let ident = if raw {
+            ::Ident::_new_raw(&a[2..], ::Span::call_site())
+        } else {
+            ::Ident::new(a, ::Span::call_site())
+        };
+        Ok((input.advance(end), ident.into()))
     }
 }
-
-// From https://github.com/rust-lang/rust/blob/master/src/libsyntax_pos/symbol.rs
-static KEYWORDS: &'static [&'static str] = &[
-    "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",
-    "else", "enum", "extern", "false", "final", "fn", "for", "if", "impl", "in", "let", "loop",
-    "macro", "match", "mod", "move", "mut", "offsetof", "override", "priv", "proc", "pub", "pure",
-    "ref", "return", "self", "Self", "sizeof", "static", "struct", "super", "trait", "true",
-    "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
-];
 
 fn literal(input: Cursor) -> PResult<Literal> {
     let input_no_ws = skip_whitespace(input);
@@ -1211,15 +1221,19 @@ fn digits(mut input: Cursor) -> PResult<()> {
     }
 }
 
-fn op(input: Cursor) -> PResult<Op> {
+fn op(input: Cursor) -> PResult<Punct> {
     let input = skip_whitespace(input);
     match op_char(input) {
+        Ok((rest, '\'')) => {
+            symbol(rest)?;
+            Ok((rest, Punct::new('\'', Spacing::Joint)))
+        }
         Ok((rest, ch)) => {
             let kind = match op_char(rest) {
                 Ok(_) => Spacing::Joint,
                 Err(LexError) => Spacing::Alone,
             };
-            Ok((rest, Op::new(ch, kind)))
+            Ok((rest, Punct::new(ch, kind)))
         }
         Err(LexError) => Err(LexError),
     }
@@ -1238,7 +1252,7 @@ fn op_char(input: Cursor) -> PResult<char> {
             return Err(LexError);
         }
     };
-    let recognized = "~!@#$%^&*-=+|;:,<.>/?";
+    let recognized = "~!@#$%^&*-=+|;:,<.>/?'";
     if recognized.contains(first) {
         Ok((input.advance(first.len_utf8()), first))
     } else {
@@ -1249,13 +1263,13 @@ fn op_char(input: Cursor) -> PResult<char> {
 fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
     let mut trees = Vec::new();
     let (rest, ((comment, inner), span)) = spanned(input, doc_comment_contents)?;
-    trees.push(TokenTree::Op(Op::new('#', Spacing::Alone)));
+    trees.push(TokenTree::Punct(Punct::new('#', Spacing::Alone)));
     if inner {
-        trees.push(Op::new('!', Spacing::Alone).into());
+        trees.push(Punct::new('!', Spacing::Alone).into());
     }
     let mut stream = vec![
-        TokenTree::Term(::Term::new("doc", span)),
-        TokenTree::Op(Op::new('=', Spacing::Alone)),
+        TokenTree::Ident(::Ident::new("doc", span)),
+        TokenTree::Punct(Punct::new('=', Spacing::Alone)),
         TokenTree::Literal(::Literal::string(comment)),
     ];
     for tt in stream.iter_mut() {
