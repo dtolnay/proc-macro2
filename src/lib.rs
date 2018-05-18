@@ -516,13 +516,12 @@ impl Ident {
 }
 
 impl PartialEq for Ident {
-    fn eq(&self, other: &Ident) -> bool{
+    fn eq(&self, other: &Ident) -> bool {
         self.to_string() == other.to_string()
     }
 }
 
-impl Eq for Ident {
-}
+impl Eq for Ident {}
 
 impl PartialOrd for Ident {
     fn partial_cmp(&self, other: &Ident) -> Option<Ordering> {

@@ -622,7 +622,8 @@ impl Literal {
     }
 
     pub fn string(t: &str) -> Literal {
-        let mut s = t.chars()
+        let mut s = t
+            .chars()
             .flat_map(|c| c.escape_default())
             .collect::<String>();
         s.push('"');
@@ -805,10 +806,7 @@ fn literal(input: Cursor) -> PResult<Literal> {
             let start = input.len() - input_no_ws.len();
             let len = input_no_ws.len() - a.len();
             let end = start + len;
-            Ok((
-                a,
-                Literal::_new(input.rest[start..end].to_string()),
-            ))
+            Ok((a, Literal::_new(input.rest[start..end].to_string())))
         }
         Err(LexError) => Err(LexError),
     }

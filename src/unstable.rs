@@ -2,8 +2,8 @@
 
 use std::fmt;
 use std::iter;
-use std::str::FromStr;
 use std::panic;
+use std::str::FromStr;
 
 use proc_macro;
 use stable;
@@ -108,7 +108,7 @@ impl From<stable::TokenStream> for TokenStream {
 impl From<TokenTree> for TokenStream {
     fn from(token: TokenTree) -> TokenStream {
         if !nightly_works() {
-            return TokenStream::Stable(token.into())
+            return TokenStream::Stable(token.into());
         }
         let tt: proc_macro::TokenTree = match token {
             TokenTree::Group(tt) => {
@@ -142,13 +142,12 @@ impl From<TokenTree> for TokenStream {
 impl iter::FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(trees: I) -> Self {
         if nightly_works() {
-            let trees = trees.into_iter()
+            let trees = trees
+                .into_iter()
                 .map(TokenStream::from)
-                .flat_map(|t| {
-                    match t {
-                        TokenStream::Nightly(s) => s,
-                        TokenStream::Stable(_) => mismatch(),
-                    }
+                .flat_map(|t| match t {
+                    TokenStream::Nightly(s) => s,
+                    TokenStream::Stable(_) => mismatch(),
                 });
             TokenStream::Nightly(trees.collect())
         } else {
@@ -161,17 +160,17 @@ impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         match self {
             TokenStream::Nightly(tts) => {
-                *tts = tts.clone()
+                *tts = tts
+                    .clone()
                     .into_iter()
                     .chain(
-                        streams.into_iter()
+                        streams
+                            .into_iter()
                             .map(TokenStream::from)
-                            .flat_map(|t| {
-                                match t {
-                                    TokenStream::Nightly(tts) => tts.into_iter(),
-                                    _ => panic!()
-                                }
-                            })
+                            .flat_map(|t| match t {
+                                TokenStream::Nightly(tts) => tts.into_iter(),
+                                _ => panic!(),
+                            }),
                     )
                     .collect();
             }

@@ -2,11 +2,14 @@ extern crate proc_macro2;
 
 use std::str::{self, FromStr};
 
-use proc_macro2::{Literal, Spacing, Span, Ident, TokenStream, TokenTree};
+use proc_macro2::{Ident, Literal, Spacing, Span, TokenStream, TokenTree};
 
 #[test]
 fn terms() {
-    assert_eq!(Ident::new("String", Span::call_site()).to_string(), "String");
+    assert_eq!(
+        Ident::new("String", Span::call_site()).to_string(),
+        "String"
+    );
     assert_eq!(Ident::new("fn", Span::call_site()).to_string(), "fn");
     assert_eq!(Ident::new("_", Span::call_site()).to_string(), "_");
 }
