@@ -521,6 +521,15 @@ impl PartialEq for Ident {
     }
 }
 
+impl<T> PartialEq<T> for Ident
+where
+    T: ?Sized + AsRef<str>,
+{
+    fn eq(&self, other: &T) -> bool {
+        self.to_string() == other.as_ref()
+    }
+}
+
 impl Eq for Ident {}
 
 impl PartialOrd for Ident {
