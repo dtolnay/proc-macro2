@@ -459,6 +459,18 @@ impl Ident {
     }
 }
 
+#[inline]
+fn is_ident_start(c: char) -> bool {
+    ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_' ||
+    (c > '\x7f' && UnicodeXID::is_xid_start(c))
+}
+
+#[inline]
+fn is_ident_continue(c: char) -> bool {
+    ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_' || ('0' <= c && c <= '9') ||
+    (c > '\x7f' && UnicodeXID::is_xid_continue(c))
+}
+
 fn validate_term(string: &str) {
     let validate = string;
     if validate.is_empty() {
@@ -469,21 +481,21 @@ fn validate_term(string: &str) {
         panic!("Ident cannot be a number; use Literal instead");
     }
 
-    fn xid_ok(string: &str) -> bool {
+    fn ident_ok(string: &str) -> bool {
         let mut chars = string.chars();
         let first = chars.next().unwrap();
-        if !(UnicodeXID::is_xid_start(first) || first == '_') {
+        if !is_ident_start(first) {
             return false;
         }
         for ch in chars {
-            if !UnicodeXID::is_xid_continue(ch) {
+            if !is_ident_continue(ch) {
                 return false;
             }
         }
         true
     }
 
-    if !xid_ok(validate) {
+    if !ident_ok(validate) {
         panic!("{:?} is not a valid Ident", string);
     }
 }
@@ -773,13 +785,13 @@ fn symbol(input: Cursor) -> PResult<TokenTree> {
     }
 
     match chars.next() {
-        Some((_, ch)) if UnicodeXID::is_xid_start(ch) || ch == '_' => {}
+        Some((_, ch)) if is_ident_start(ch) => {}
         _ => return Err(LexError),
     }
 
     let mut end = input.len();
     for (i, ch) in chars {
-        if !UnicodeXID::is_xid_continue(ch) {
+        if !is_ident_continue(ch) {
             end = i;
             break;
         }
