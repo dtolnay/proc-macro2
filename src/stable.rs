@@ -25,7 +25,7 @@ pub struct TokenStream {
 pub struct LexError;
 
 impl TokenStream {
-    pub fn empty() -> TokenStream {
+    pub fn new() -> TokenStream {
         TokenStream { inner: Vec::new() }
     }
 
