@@ -103,8 +103,13 @@ impl TokenStream {
     }
 
     /// Returns an empty `TokenStream` containing no token trees.
+    pub fn new() -> TokenStream {
+        TokenStream::_new(imp::TokenStream::new())
+    }
+
+    #[deprecated(since = "0.4.4", note = "please use TokenStream::new")]
     pub fn empty() -> TokenStream {
-        TokenStream::_new(imp::TokenStream::empty())
+        TokenStream::new()
     }
 
     /// Checks if this `TokenStream` is empty.

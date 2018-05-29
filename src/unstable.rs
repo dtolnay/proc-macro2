@@ -40,11 +40,11 @@ fn mismatch() -> ! {
 }
 
 impl TokenStream {
-    pub fn empty() -> TokenStream {
+    pub fn new() -> TokenStream {
         if nightly_works() {
-            TokenStream::Nightly(proc_macro::TokenStream::empty())
+            TokenStream::Nightly(proc_macro::TokenStream::new())
         } else {
-            TokenStream::Stable(stable::TokenStream::empty())
+            TokenStream::Stable(stable::TokenStream::new())
         }
     }
 
