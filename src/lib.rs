@@ -525,7 +525,18 @@ impl Group {
 /// with `Delimiter::None` delimiters.
 impl fmt::Display for Group {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.stream.fmt(f)
+        let (left, right) = match self.delimiter {
+            Delimiter::Parenthesis => ("(", ")"),
+            Delimiter::Brace       => ("{", "}"),
+            Delimiter::Bracket     => ("[", "]"),
+            Delimiter::None        => ("", ""),
+        };
+
+        f.write_str(left)?;
+        self.stream.fmt(f)?;
+        f.write_str(right)?;
+
+        Ok(())
     }
 }
 
