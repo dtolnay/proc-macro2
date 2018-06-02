@@ -527,9 +527,9 @@ impl fmt::Display for Group {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (left, right) = match self.delimiter {
             Delimiter::Parenthesis => ("(", ")"),
-            Delimiter::Brace       => ("{", "}"),
-            Delimiter::Bracket     => ("[", "]"),
-            Delimiter::None        => ("", ""),
+            Delimiter::Brace => ("{", "}"),
+            Delimiter::Bracket => ("[", "]"),
+            Delimiter::None => ("", ""),
         };
 
         f.write_str(left)?;
