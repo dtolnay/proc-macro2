@@ -1,13 +1,11 @@
 #![cfg_attr(not(procmacro2_semver_exempt), allow(dead_code))]
 
-use std::borrow::Borrow;
+#[cfg(procmacro2_semver_exempt)]
 use std::cell::RefCell;
 #[cfg(procmacro2_semver_exempt)]
 use std::cmp;
-use std::collections::HashMap;
 use std::fmt;
 use std::iter;
-use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
 
@@ -416,19 +414,17 @@ impl fmt::Debug for Span {
 
 #[derive(Clone)]
 pub struct Ident {
-    intern: usize,
+    sym: String,
     span: Span,
     raw: bool,
 }
-
-thread_local!(static SYMBOLS: RefCell<Interner> = RefCell::new(Interner::new()));
 
 impl Ident {
     fn _new(string: &str, raw: bool, span: Span) -> Ident {
         validate_term(string);
 
         Ident {
-            intern: SYMBOLS.with(|s| s.borrow_mut().intern(string)),
+            sym: string.to_owned(),
             span: span,
             raw: raw,
         }
@@ -440,14 +436,6 @@ impl Ident {
 
     pub fn new_raw(string: &str, span: Span) -> Ident {
         Ident::_new(string, true, span)
-    }
-
-    pub fn as_str(&self) -> &str {
-        SYMBOLS.with(|interner| {
-            let interner = interner.borrow();
-            let s = interner.get(self.intern);
-            unsafe { &*(s as *const str) }
-        })
     }
 
     pub fn span(&self) -> Span {
@@ -510,7 +498,7 @@ impl fmt::Display for Ident {
         if self.raw {
             "r#".fmt(f)?;
         }
-        self.as_str().fmt(f)
+        self.sym.fmt(f)
     }
 }
 
@@ -533,44 +521,6 @@ impl fmt::Debug for Ident {
         debug.field("sym", &format_args!("{}", self));
         debug.field("span", &self.span);
         debug.finish()
-    }
-}
-
-struct Interner {
-    string_to_index: HashMap<MyRc, usize>,
-    index_to_string: Vec<Rc<String>>,
-}
-
-#[derive(Hash, Eq, PartialEq)]
-struct MyRc(Rc<String>);
-
-impl Borrow<str> for MyRc {
-    fn borrow(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Interner {
-    fn new() -> Interner {
-        Interner {
-            string_to_index: HashMap::new(),
-            index_to_string: Vec::new(),
-        }
-    }
-
-    fn intern(&mut self, s: &str) -> usize {
-        if let Some(&idx) = self.string_to_index.get(s) {
-            return idx;
-        }
-        let s = Rc::new(s.to_string());
-        self.index_to_string.push(s.clone());
-        self.string_to_index
-            .insert(MyRc(s), self.index_to_string.len() - 1);
-        self.index_to_string.len() - 1
-    }
-
-    fn get(&self, idx: usize) -> &str {
-        &self.index_to_string[idx]
     }
 }
 
