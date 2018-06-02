@@ -316,7 +316,20 @@ fn raw_identifier() {
 }
 
 #[test]
-fn test_debug() {
+fn test_debug_ident() {
+    let ident = Ident::new("proc_macro", Span::call_site());
+
+    #[cfg(not(procmacro2_semver_exempt))]
+    let expected = "Ident(proc_macro)";
+
+    #[cfg(procmacro2_semver_exempt)]
+    let expected = "Ident { sym: proc_macro, span: bytes(0..0) }";
+
+    assert_eq!(expected, format!("{:?}", ident));
+}
+
+#[test]
+fn test_debug_tokenstream() {
     let tts = TokenStream::from_str("[a + 1]").unwrap();
 
     #[cfg(not(procmacro2_semver_exempt))]
@@ -326,8 +339,7 @@ TokenStream [
         delimiter: Bracket,
         stream: TokenStream [
             Ident {
-                sym: a,
-                raw: false
+                sym: a
             },
             Punct {
                 op: '+',
@@ -349,8 +361,7 @@ TokenStream [
         stream: TokenStream [
             Ident {
                 sym: a,
-                span: bytes(2..3),
-                raw: false
+                span: bytes(2..3)
             },
             Punct {
                 op: '+',

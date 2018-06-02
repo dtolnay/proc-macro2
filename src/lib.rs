@@ -439,7 +439,13 @@ impl fmt::Debug for TokenTree {
         // so don't bother with an extra layer of indirection
         match *self {
             TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Ident(ref t) => t.fmt(f),
+            TokenTree::Ident(ref t) => {
+                let mut debug = f.debug_struct("Ident");
+                debug.field("sym", &format_args!("{}", t));
+                #[cfg(any(feature = "nightly", procmacro2_semver_exempt))]
+                debug.field("span", &t.span());
+                debug.finish()
+            }
             TokenTree::Punct(ref t) => t.fmt(f),
             TokenTree::Literal(ref t) => t.fmt(f),
         }
