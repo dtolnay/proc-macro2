@@ -329,6 +329,7 @@ fn test_debug_ident() {
 }
 
 #[test]
+#[cfg(not(feature = "nightly"))]
 fn test_debug_tokenstream() {
     let tts = TokenStream::from_str("[a + 1]").unwrap();
 
