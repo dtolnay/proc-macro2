@@ -25,7 +25,7 @@ unicode-xid = "0.1"
 # This requires a nightly compiler.
 #
 # When disabled: emulate the same API as the nightly compiler's proc_macro crate
-# but in a way that works on all stable compilers >=1.15.0.
+# but in a way that works on all stable compilers 1.15+.
 nightly = ["proc-macro"]
 
 proc-macro = []
