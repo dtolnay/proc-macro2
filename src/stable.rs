@@ -8,6 +8,7 @@ use std::fmt;
 use std::iter;
 use std::str::FromStr;
 use std::vec;
+use std::slice;
 
 use strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
 use unicode_xid::UnicodeXID;
@@ -29,6 +30,10 @@ impl TokenStream {
 
     pub fn is_empty(&self) -> bool {
         self.inner.len() == 0
+    }
+
+    pub fn iter(&self) -> TokenTreeBorrowedIter {
+        self.inner.iter()
     }
 }
 
@@ -161,6 +166,7 @@ impl Extend<TokenTree> for TokenStream {
 }
 
 pub type TokenTreeIter = vec::IntoIter<TokenTree>;
+pub type TokenTreeBorrowedIter<'a> = slice::Iter<'a, TokenTree>;
 
 impl IntoIterator for TokenStream {
     type Item = TokenTree;

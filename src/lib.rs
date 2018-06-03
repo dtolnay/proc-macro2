@@ -1031,4 +1031,36 @@ pub mod token_stream {
             }
         }
     }
+
+    /// A borrowed iterator over `TokenStream`'s `TokenTree`s.
+    ///
+    /// The iteration is "shallow", e.g. the iterator doesn't recurse into
+    /// delimited groups, and returns whole groups as token trees.
+    pub struct Iter<'a> {
+        inner: imp::TokenTreeBorrowedIter<'a>,
+        _marker: marker::PhantomData<Rc<()>>,
+    }
+
+    impl <'a> Iterator for Iter<'a> {
+        type Item = &'a TokenTree;
+
+        fn next(&mut self) -> Option<&'a TokenTree> {
+            self.inner.next()
+        }
+    }
+
+    impl <'a> fmt::Debug for Iter<'a> {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            self.inner.fmt(f)
+        }
+    }
+
+    impl TokenStream {
+        pub fn iter(&self) -> Iter {
+            Iter {
+                inner: self.inner.iter(),
+                _marker: marker::PhantomData,
+            }
+        }
+    }
 }
