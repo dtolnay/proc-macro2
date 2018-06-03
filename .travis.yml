@@ -15,6 +15,9 @@ matrix:
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --features nightly
         - cargo update -Z minimal-versions && cargo build
 
+before_script:
+  - set -o errexit
+
 script:
   - cargo test
   - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
