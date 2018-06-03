@@ -381,3 +381,29 @@ TokenStream [
 
     assert_eq!(expected, format!("{:#?}", tts));
 }
+
+#[test]
+fn test_tokenstream_iter() {
+    let tokenstream_res = "f(x)".parse::<TokenStream>();
+    assert!(tokenstream_res.is_ok());
+
+    let tokenstream = tokenstream_res.unwrap();
+    let mut iter = tokenstream.iter();
+    #[cfg(not(procmacro2_semver_exempt))]
+    {
+        assert_eq!("Ident { sym: f }", format!("{:?}", iter.next().unwrap()));
+        assert_eq!(
+            "Group { delimiter: Parenthesis, stream: TokenStream [Ident { sym: x }] }",
+            format!("{:?}", iter.next().unwrap())
+        );
+    }
+    #[cfg(procmacro2_semver_exempt)]
+    {
+        assert_eq!("Ident { sym: f, span: bytes(1..2) }", format!("{:?}", iter.next().unwrap()));
+        assert_eq!(
+            "Group { delimiter: Parenthesis, stream: TokenStream [Ident { sym: x, span: bytes(3..4) }], \
+            span: bytes(2..5) }",
+            format!("{:?}", iter.next().unwrap())
+        );
+    }
+}
