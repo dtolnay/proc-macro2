@@ -381,3 +381,14 @@ TokenStream [
 
     assert_eq!(expected, format!("{:#?}", tts));
 }
+
+#[test]
+fn test_tokenstream_iter() {
+    let tokenstream_res = "f(x)".parse::<TokenStream>();
+    assert!(tokenstream_res.is_ok());
+
+    let tokenstream = tokenstream_res.unwrap();
+    let mut iter = tokenstream.iter();
+    assert_eq!("Ident { sym: f }", format!("{:?}", iter.next().unwrap()));
+    assert_eq!("Group { delimiter: Parenthesis, stream: TokenStream [Ident { sym: x }] }", format!("{:?}", iter.next().unwrap()));
+}
