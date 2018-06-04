@@ -193,6 +193,8 @@ impl fmt::Debug for LexError {
 pub use imp::FileName;
 
 /// The source file of a given `Span`.
+///
+/// This type is semver exempt and not exposed by default.
 #[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile(imp::SourceFile);
@@ -238,6 +240,8 @@ impl fmt::Debug for SourceFile {
 }
 
 /// A line-column pair representing the start or end of a `Span`.
+///
+/// This type is semver exempt and not exposed by default.
 #[cfg(procmacro2_semver_exempt)]
 pub struct LineColumn {
     /// The 1-indexed line in the source file on which the span starts or ends
@@ -280,6 +284,8 @@ impl Span {
     }
 
     /// A span that resolves at the macro definition site.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn def_site() -> Span {
         Span::_new(imp::Span::def_site())
@@ -287,6 +293,8 @@ impl Span {
 
     /// Creates a new span with the same line/column information as `self` but
     /// that resolves symbols as though it were at `other`.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn resolved_at(&self, other: Span) -> Span {
         Span::_new(self.inner.resolved_at(other.inner))
@@ -294,6 +302,8 @@ impl Span {
 
     /// Creates a new span with the same name resolution behavior as `self` but
     /// with the line/column information of `other`.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn located_at(&self, other: Span) -> Span {
         Span::_new(self.inner.located_at(other.inner))
@@ -306,12 +316,16 @@ impl Span {
     }
 
     /// The original source file into which this span points.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile(self.inner.source_file())
     }
 
     /// Get the starting line/column in the source file for this span.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
@@ -322,6 +336,8 @@ impl Span {
     }
 
     /// Get the ending line/column in the source file for this span.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
@@ -334,12 +350,16 @@ impl Span {
     /// Create a new span encompassing `self` and `other`.
     ///
     /// Returns `None` if `self` and `other` are from different files.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn join(&self, other: Span) -> Option<Span> {
         self.inner.join(other.inner).map(Span::_new)
     }
 
     /// Compares to spans to see if they're equal.
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn eq(&self, other: &Span) -> bool {
         self.inner.eq(&other.inner)
@@ -758,6 +778,8 @@ impl Ident {
     }
 
     /// Same as `Ident::new`, but creates a raw identifier (`r#ident`).
+    ///
+    /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     pub fn new_raw(string: &str, span: Span) -> Ident {
         Ident::_new_raw(string, span)
