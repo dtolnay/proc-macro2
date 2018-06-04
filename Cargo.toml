@@ -17,6 +17,9 @@ unstable API.
 [lib]
 doctest = false
 
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
+
 [dependencies]
 unicode-xid = "0.1"
 
