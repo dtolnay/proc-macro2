@@ -118,6 +118,14 @@ impl TokenStream {
     }
 }
 
+/// `TokenStream::default()` returns an empty stream,
+/// i.e. this is equivalent with `TokenStream::new()`.
+impl Default for TokenStream {
+    fn default() -> Self {
+        TokenStream::new()
+    }
+}
+
 /// Attempts to break the string into tokens and parse those tokens into a token
 /// stream.
 ///
