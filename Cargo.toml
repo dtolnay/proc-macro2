@@ -33,3 +33,6 @@ nightly = ["proc-macro"]
 
 proc-macro = []
 default = ["proc-macro"]
+
+[badges]
+travis-ci = { repository = "alexcrichton/proc-macro2" }
