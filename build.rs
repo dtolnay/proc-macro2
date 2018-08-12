@@ -14,6 +14,12 @@ fn maybe_enable_use_proc_macro(target: &str) {
         return
     }
 
+    // There are currently no musl builds of the compiler, so proc_macro is
+    // always missing, so disable this feature.
+    if target.contains("-musl") {
+        return
+    }
+
     // Otherwise, only enable it if our feature is actually enabled.
     if cfg!(feature = "proc-macro") {
         println!("cargo:rustc-cfg=use_proc_macro");
