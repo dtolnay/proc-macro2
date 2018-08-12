@@ -160,18 +160,11 @@ impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         match self {
             TokenStream::Nightly(tts) => {
-                *tts = tts
-                    .clone()
-                    .into_iter()
-                    .chain(
-                        streams
-                            .into_iter()
-                            .map(TokenStream::from)
-                            .flat_map(|t| match t {
-                                TokenStream::Nightly(tts) => tts.into_iter(),
-                                _ => panic!(),
-                            }),
-                    ).collect();
+                tts.extend(
+                    streams
+                        .into_iter()
+                        .map(|t| TokenStream::from(t).unwrap_nightly()),
+                );
             }
             TokenStream::Stable(tts) => tts.extend(streams),
         }
