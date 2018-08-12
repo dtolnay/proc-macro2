@@ -11,13 +11,13 @@ fn main() {
 fn maybe_enable_use_proc_macro(target: &str) {
     // wasm targets don't have the `proc_macro` crate, disable this feature.
     if target.contains("wasm32") {
-        return
+        return;
     }
 
     // There are currently no musl builds of the compiler, so proc_macro is
     // always missing, so disable this feature.
     if target.contains("-musl") {
-        return
+        return;
     }
 
     // Otherwise, only enable it if our feature is actually enabled.

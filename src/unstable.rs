@@ -171,8 +171,7 @@ impl Extend<TokenTree> for TokenStream {
                                 TokenStream::Nightly(tts) => tts.into_iter(),
                                 _ => panic!(),
                             }),
-                    )
-                    .collect();
+                    ).collect();
             }
             TokenStream::Stable(tts) => tts.extend(streams),
         }

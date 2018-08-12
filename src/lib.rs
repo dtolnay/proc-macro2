@@ -44,7 +44,10 @@
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
 #![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.11")]
-#![cfg_attr(feature = "nightly", feature(proc_macro_raw_ident, proc_macro_span))]
+#![cfg_attr(
+    feature = "nightly",
+    feature(proc_macro_raw_ident, proc_macro_span)
+)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
