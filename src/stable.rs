@@ -116,7 +116,7 @@ impl fmt::Debug for TokenStream {
     }
 }
 
-#[cfg(all(not(all(target_arch = "wasm32", target_os = "unknown")), feature = "proc-macro"))]
+#[cfg(use_proc_macro)]
 impl From<::proc_macro::TokenStream> for TokenStream {
     fn from(inner: ::proc_macro::TokenStream) -> TokenStream {
         inner
@@ -126,7 +126,7 @@ impl From<::proc_macro::TokenStream> for TokenStream {
     }
 }
 
-#[cfg(all(not(all(target_arch = "wasm32", target_os = "unknown")), feature = "proc-macro"))]
+#[cfg(use_proc_macro)]
 impl From<TokenStream> for ::proc_macro::TokenStream {
     fn from(inner: TokenStream) -> ::proc_macro::TokenStream {
         inner

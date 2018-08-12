@@ -46,7 +46,7 @@
 #![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.9")]
 #![cfg_attr(feature = "nightly", feature(proc_macro_raw_ident, proc_macro_span))]
 
-#[cfg(all(not(all(target_arch = "wasm32", target_os = "unknown")), feature = "proc-macro"))]
+#[cfg(use_proc_macro)]
 extern crate proc_macro;
 extern crate unicode_xid;
 
@@ -146,14 +146,14 @@ impl FromStr for TokenStream {
     }
 }
 
-#[cfg(all(not(all(target_arch = "wasm32", target_os = "unknown")), feature = "proc-macro"))]
+#[cfg(use_proc_macro)]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> TokenStream {
         TokenStream::_new(inner.into())
     }
 }
 
-#[cfg(all(not(all(target_arch = "wasm32", target_os = "unknown")), feature = "proc-macro"))]
+#[cfg(use_proc_macro)]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
         inner.inner.into()
@@ -318,7 +318,7 @@ impl Span {
     }
 
     /// This method is only available when the `"nightly"` feature is enabled.
-    #[cfg(all(not(all(target_arch = "wasm32", target_os = "unknown")), feature = "nightly", feature = "proc-macro"))]
+    #[cfg(all(feature = "nightly", use_proc_macro))]
     pub fn unstable(self) -> proc_macro::Span {
         self.inner.unstable()
     }
