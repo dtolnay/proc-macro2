@@ -169,6 +169,13 @@ impl Extend<TokenTree> for TokenStream {
     }
 }
 
+impl Extend<TokenStream> for TokenStream {
+    fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
+        self.inner
+            .extend(streams.into_iter().map(|stream| stream.inner))
+    }
+}
+
 /// Collects a number of token trees into a single stream.
 impl FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
