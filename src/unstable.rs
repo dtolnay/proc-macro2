@@ -61,6 +61,13 @@ impl TokenStream {
             TokenStream::Stable(_) => mismatch(),
         }
     }
+
+    fn unwrap_stable(self) -> stable::TokenStream {
+        match self {
+            TokenStream::Nightly(_) => mismatch(),
+            TokenStream::Stable(s) => s,
+        }
+    }
 }
 
 impl FromStr for TokenStream {
@@ -167,6 +174,19 @@ impl Extend<TokenTree> for TokenStream {
                 );
             }
             TokenStream::Stable(tts) => tts.extend(streams),
+        }
+    }
+}
+
+impl Extend<TokenStream> for TokenStream {
+    fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
+        match self {
+            TokenStream::Nightly(tts) => {
+                tts.extend(streams.into_iter().map(|stream| stream.unwrap_nightly()))
+            }
+            TokenStream::Stable(tts) => {
+                tts.extend(streams.into_iter().map(|stream| stream.unwrap_stable()))
+            }
         }
     }
 }
