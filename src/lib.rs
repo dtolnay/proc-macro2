@@ -45,7 +45,7 @@
 // Proc-macro2 types in rustdoc of other crates get linked to here.
 #![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.13")]
 #![cfg_attr(
-    feature = "nightly",
+    super_unstable,
     feature(proc_macro_raw_ident, proc_macro_span)
 )]
 
@@ -65,10 +65,10 @@ use std::str::FromStr;
 mod strnom;
 mod stable;
 
-#[cfg(not(feature = "nightly"))]
+#[cfg(not(wrap_proc_macro))]
 use stable as imp;
 #[path = "unstable.rs"]
-#[cfg(feature = "nightly")]
+#[cfg(wrap_proc_macro)]
 mod imp;
 
 /// An abstract stream of tokens, or more concretely a sequence of token trees.
@@ -328,7 +328,7 @@ impl Span {
     }
 
     /// This method is only available when the `"nightly"` feature is enabled.
-    #[cfg(all(feature = "nightly", use_proc_macro))]
+    #[cfg(super_unstable)]
     pub fn unstable(self) -> proc_macro::Span {
         self.inner.unstable()
     }
