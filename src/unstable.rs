@@ -1,4 +1,4 @@
-#![cfg_attr(not(procmacro2_semver_exempt), allow(dead_code))]
+#![cfg_attr(not(super_unstable), allow(dead_code))]
 
 use std::fmt;
 use std::iter;
@@ -292,11 +292,13 @@ pub use stable::FileName;
 // NOTE: We have to generate our own filename object here because we can't wrap
 // the one provided by proc_macro.
 #[derive(Clone, PartialEq, Eq)]
+#[cfg(super_unstable)]
 pub enum SourceFile {
     Nightly(proc_macro::SourceFile, FileName),
     Stable(stable::SourceFile),
 }
 
+#[cfg(super_unstable)]
 impl SourceFile {
     fn nightly(sf: proc_macro::SourceFile) -> Self {
         let filename = stable::file_name(sf.path().display().to_string());
@@ -319,12 +321,14 @@ impl SourceFile {
     }
 }
 
+#[cfg(super_unstable)]
 impl AsRef<FileName> for SourceFile {
     fn as_ref(&self) -> &FileName {
         self.path()
     }
 }
 
+#[cfg(super_unstable)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -354,6 +358,7 @@ impl Span {
         }
     }
 
+    #[cfg(super_unstable)]
     pub fn def_site() -> Span {
         if nightly_works() {
             Span::Nightly(proc_macro::Span::def_site())
@@ -362,6 +367,7 @@ impl Span {
         }
     }
 
+    #[cfg(super_unstable)]
     pub fn resolved_at(&self, other: Span) -> Span {
         match (self, other) {
             (Span::Nightly(a), Span::Nightly(b)) => Span::Nightly(a.resolved_at(b)),
@@ -370,6 +376,7 @@ impl Span {
         }
     }
 
+    #[cfg(super_unstable)]
     pub fn located_at(&self, other: Span) -> Span {
         match (self, other) {
             (Span::Nightly(a), Span::Nightly(b)) => Span::Nightly(a.located_at(b)),
@@ -385,7 +392,7 @@ impl Span {
         }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(super_unstable)]
     pub fn source_file(&self) -> SourceFile {
         match self {
             Span::Nightly(s) => SourceFile::nightly(s.source_file()),
@@ -393,7 +400,7 @@ impl Span {
         }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(super_unstable)]
     pub fn start(&self) -> LineColumn {
         match self {
             Span::Nightly(s) => {
@@ -407,7 +414,7 @@ impl Span {
         }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(super_unstable)]
     pub fn end(&self) -> LineColumn {
         match self {
             Span::Nightly(s) => {
@@ -421,7 +428,7 @@ impl Span {
         }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(super_unstable)]
     pub fn join(&self, other: Span) -> Option<Span> {
         let ret = match (self, other) {
             (Span::Nightly(a), Span::Nightly(b)) => Span::Nightly(a.join(b)?),
@@ -431,6 +438,7 @@ impl Span {
         Some(ret)
     }
 
+    #[cfg(super_unstable)]
     pub fn eq(&self, other: &Span) -> bool {
         match (self, other) {
             (Span::Nightly(a), Span::Nightly(b)) => a.eq(b),
@@ -484,7 +492,17 @@ impl Ident {
 
     pub fn new_raw(string: &str, span: Span) -> Ident {
         match span {
-            Span::Nightly(s) => Ident::Nightly(proc_macro::Ident::new_raw(string, s)),
+            Span::Nightly(s) => {
+                let p: proc_macro::TokenStream = string.parse().unwrap();
+                let ident = match p.into_iter().next() {
+                    Some(proc_macro::TokenTree::Ident(mut i)) => {
+                        i.set_span(s);
+                        i
+                    }
+                    _ => panic!(),
+                };
+                Ident::Nightly(ident)
+            }
             Span::Stable(s) => Ident::Stable(stable::Ident::new_raw(string, s)),
         }
     }
