@@ -328,7 +328,8 @@ impl Span {
     }
 
     /// This method is only available when the `"nightly"` feature is enabled.
-    #[cfg(super_unstable)]
+    #[doc(hidden)]
+    #[cfg(any(feature = "nightly", super_unstable))]
     pub fn unstable(self) -> proc_macro::Span {
         self.inner.unstable()
     }
