@@ -8,7 +8,7 @@ fn main() {
     let target = env::var("TARGET").unwrap();
 
     if !enable_use_proc_macro(&target) {
-        return
+        return;
     }
     println!("cargo:rustc-cfg=use_proc_macro");
 
@@ -40,7 +40,12 @@ fn enable_use_proc_macro(target: &str) -> bool {
 
 fn rustc_minor_version() -> Option<u32> {
     macro_rules! otry {
-        ($e:expr) => (match $e { Some(e) => e, None => return None })
+        ($e:expr) => {
+            match $e {
+                Some(e) => e,
+                None => return None,
+            }
+        };
     }
     let rustc = otry!(env::var_os("RUSTC"));
     let output = otry!(Command::new(rustc).arg("--version").output().ok());
