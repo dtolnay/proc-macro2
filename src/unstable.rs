@@ -2,7 +2,7 @@
 
 use std::fmt;
 use std::iter;
-use std::panic;
+use std::panic::{self, PanicInfo};
 use std::str::FromStr;
 
 use proc_macro;
@@ -59,11 +59,21 @@ fn nightly_works() -> bool {
     // not occur, they need to call e.g. `proc_macro2::Span::call_site()` from
     // the main thread before launching any other threads.
     INIT.call_once(|| {
+        type PanicHook = Fn(&PanicInfo) + Sync + Send + 'static;
+
+        let null_hook: Box<PanicHook> = Box::new(|_panic_info| { /* ignore */ });
+        let sanity_check = &*null_hook as *const PanicHook;
         let original_hook = panic::take_hook();
-        panic::set_hook(Box::new(|_panic_info| { /* ignore */ }));
+        panic::set_hook(null_hook);
+
         let works = panic::catch_unwind(|| proc_macro::Span::call_site()).is_ok();
         WORKS.store(works as usize + 1, Ordering::SeqCst);
+
+        let hopefully_null_hook = panic::take_hook();
         panic::set_hook(original_hook);
+        if sanity_check != &*hopefully_null_hook {
+            panic!("observed race condition in proc_macro2::nightly_works");
+        }
     });
     nightly_works()
 }
