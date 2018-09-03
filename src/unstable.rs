@@ -573,6 +573,29 @@ impl Ident {
     }
 }
 
+impl PartialEq for Ident {
+    fn eq(&self, other: &Ident) -> bool {
+        match (self, other) {
+            (Ident::Nightly(t), Ident::Nightly(o)) => t.to_string() == o.to_string(),
+            (Ident::Stable(t), Ident::Stable(o)) => t == o,
+            _ => mismatch(),
+        }
+    }
+}
+
+impl<T> PartialEq<T> for Ident
+where
+    T: ?Sized + AsRef<str>,
+{
+    fn eq(&self, other: &T) -> bool {
+        let other = other.as_ref();
+        match self {
+            Ident::Nightly(t) => t.to_string() == other,
+            Ident::Stable(t) => t == other,
+        }
+    }
+}
+
 impl fmt::Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

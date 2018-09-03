@@ -500,6 +500,26 @@ fn validate_term(string: &str) {
     }
 }
 
+impl PartialEq for Ident {
+    fn eq(&self, other: &Ident) -> bool {
+        self.sym == other.sym && self.raw == other.raw
+    }
+}
+
+impl<T> PartialEq<T> for Ident
+where
+    T: ?Sized + AsRef<str>,
+{
+    fn eq(&self, other: &T) -> bool {
+        let other = other.as_ref();
+        if self.raw {
+            other.starts_with("r#") && self.sym == other[2..]
+        } else {
+            self.sym == other
+        }
+    }
+}
+
 impl fmt::Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.raw {

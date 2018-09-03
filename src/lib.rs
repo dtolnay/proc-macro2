@@ -822,7 +822,7 @@ impl Ident {
 
 impl PartialEq for Ident {
     fn eq(&self, other: &Ident) -> bool {
-        self.to_string() == other.to_string()
+        self.inner == other.inner
     }
 }
 
@@ -831,7 +831,7 @@ where
     T: ?Sized + AsRef<str>,
 {
     fn eq(&self, other: &T) -> bool {
-        self.to_string() == other.as_ref()
+        self.inner == other
     }
 }
 
