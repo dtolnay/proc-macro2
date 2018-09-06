@@ -17,14 +17,17 @@ fn main() {
         None => return,
     };
 
-    // Rust 1.30 stabilized the necessary APIs in the `proc_macro` crate
-    if minor >= 30 || cfg!(feature = "nightly") {
+    // Rust 1.29 stabilized the necessary APIs in the `proc_macro` crate
+    if minor >= 29 || cfg!(feature = "nightly") {
         println!("cargo:rustc-cfg=wrap_proc_macro");
 
         if cfg!(procmacro2_semver_exempt) {
             println!("cargo:rustc-cfg=super_unstable");
         }
-    } else {
+    }
+
+    if minor == 29 {
+        println!("cargo:rustc-cfg=slow_extend");
     }
 }
 

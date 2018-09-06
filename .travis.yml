@@ -6,6 +6,7 @@ matrix:
     - rust: 1.15.0
     - rust: stable
     - rust: beta
+      script: cargo test
     - rust: nightly
       install: rustup target add wasm32-unknown-unknown
       script: cargo test --target wasm32-unknown-unknown --no-run

@@ -210,11 +210,29 @@ impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         match self {
             TokenStream::Nightly(tts) => {
-                tts.extend(
-                    streams
+                #[cfg(not(slow_extend))]
+                {
+                    tts.extend(
+                        streams
+                            .into_iter()
+                            .map(|t| TokenStream::from(t).unwrap_nightly()),
+                    );
+                }
+                #[cfg(slow_extend)]
+                {
+                    *tts = tts
+                        .clone()
                         .into_iter()
-                        .map(|t| TokenStream::from(t).unwrap_nightly()),
-                );
+                        .chain(
+                            streams
+                                .into_iter()
+                                .map(TokenStream::from)
+                                .flat_map(|t| match t {
+                                    TokenStream::Nightly(tts) => tts.into_iter(),
+                                    _ => mismatch(),
+                                }),
+                        ).collect();
+                }
             }
             TokenStream::Stable(tts) => tts.extend(streams),
         }
@@ -225,7 +243,24 @@ impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
         match self {
             TokenStream::Nightly(tts) => {
-                tts.extend(streams.into_iter().map(|stream| stream.unwrap_nightly()))
+                #[cfg(not(slow_extend))]
+                {
+                    tts.extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
+                }
+                #[cfg(slow_extend)]
+                {
+                    *tts = tts
+                        .clone()
+                        .into_iter()
+                        .chain(
+                            streams
+                                .into_iter()
+                                .flat_map(|t| match t {
+                                    TokenStream::Nightly(tts) => tts.into_iter(),
+                                    _ => mismatch(),
+                                }),
+                        ).collect();
+                }
             }
             TokenStream::Stable(tts) => {
                 tts.extend(streams.into_iter().map(|stream| stream.unwrap_stable()))
