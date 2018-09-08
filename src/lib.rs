@@ -43,7 +43,7 @@
 //! [ts]: https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.18")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.19")]
 #![cfg_attr(
     super_unstable,
     feature(proc_macro_raw_ident, proc_macro_span)
