@@ -182,6 +182,11 @@ impl FromIterator<TokenTree> for TokenStream {
         TokenStream::_new(streams.into_iter().collect())
     }
 }
+impl FromIterator<TokenStream> for TokenStream {
+    fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
+        TokenStream::_new(streams.into_iter().map(|i| i.inner).collect())
+    }
+}
 
 /// Prints the token stream as a string that is supposed to be losslessly
 /// convertible back into the same token stream (modulo spans), except for

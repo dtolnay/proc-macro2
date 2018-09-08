@@ -206,6 +206,45 @@ impl iter::FromIterator<TokenTree> for TokenStream {
     }
 }
 
+impl iter::FromIterator<TokenStream> for TokenStream {
+    fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
+        let mut streams = streams.into_iter();
+        match streams.next() {
+            #[cfg(slow_extend)]
+            Some(TokenStream::Nightly(first)) => {
+                let stream = iter::once(first).chain(streams.map(|s| {
+                    match s {
+                        TokenStream::Nightly(s) => s,
+                        TokenStream::Stable(_) => mismatch(),
+                    }
+                })).collect();
+                TokenStream::Nightly(stream)
+            }
+            #[cfg(not(slow_extend))]
+            Some(TokenStream::Nightly(mut first)) => {
+                first.extend(streams.map(|s| {
+                    match s {
+                        TokenStream::Nightly(s) => s,
+                        TokenStream::Stable(_) => mismatch(),
+                    }
+                }));
+                TokenStream::Nightly(first)
+            }
+            Some(TokenStream::Stable(mut first)) => {
+                first.extend(streams.map(|s| {
+                    match s {
+                        TokenStream::Stable(s) => s,
+                        TokenStream::Nightly(_) => mismatch(),
+                    }
+                }));
+                TokenStream::Stable(first)
+            }
+            None => TokenStream::new(),
+
+        }
+    }
+}
+
 impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         match self {
