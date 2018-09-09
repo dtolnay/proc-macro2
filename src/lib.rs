@@ -502,9 +502,7 @@ impl fmt::Debug for TokenTree {
 /// `Delimiter`s.
 #[derive(Clone)]
 pub struct Group {
-    delimiter: Delimiter,
-    stream: TokenStream,
-    span: Span,
+    inner: imp::Group,
 }
 
 /// Describes how a sequence of token trees is delimited.
@@ -527,6 +525,18 @@ pub enum Delimiter {
 }
 
 impl Group {
+    fn _new(inner: imp::Group) -> Self {
+        Group {
+            inner: inner,
+        }
+    }
+
+    fn _new_stable(inner: stable::Group) -> Self {
+        Group {
+            inner: inner.into(),
+        }
+    }
+
     /// Creates a new `Group` with the given delimiter and token stream.
     ///
     /// This constructor will set the span for this group to
@@ -534,15 +544,13 @@ impl Group {
     /// method below.
     pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
         Group {
-            delimiter: delimiter,
-            stream: stream,
-            span: Span::call_site(),
+            inner: imp::Group::new(delimiter, stream.inner),
         }
     }
 
     /// Returns the delimiter of this `Group`
     pub fn delimiter(&self) -> Delimiter {
-        self.delimiter
+        self.inner.delimiter()
     }
 
     /// Returns the `TokenStream` of tokens that are delimited in this `Group`.
@@ -550,13 +558,40 @@ impl Group {
     /// Note that the returned token stream does not include the delimiter
     /// returned above.
     pub fn stream(&self) -> TokenStream {
-        self.stream.clone()
+        TokenStream::_new(self.inner.stream())
     }
 
     /// Returns the span for the delimiters of this token stream, spanning the
     /// entire `Group`.
+    ///
+    /// ```text
+    /// pub fn span(&self) -> Span {
+    ///            ^^^^^^^
+    /// ```
     pub fn span(&self) -> Span {
-        self.span
+        Span::_new(self.inner.span())
+    }
+
+    /// Returns the span pointing to the opening delimiter of this group.
+    ///
+    /// ```text
+    /// pub fn span_open(&self) -> Span {
+    ///                 ^
+    /// ```
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn span_open(&self) -> Span {
+        Span::_new(self.inner.span_open())
+    }
+
+    /// Returns the span pointing to the closing delimiter of this group.
+    ///
+    /// ```text
+    /// pub fn span_close(&self) -> Span {
+    ///                        ^
+    /// ```
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn span_close(&self) -> Span {
+        Span::_new(self.inner.span_close())
     }
 
     /// Configures the span for this `Group`'s delimiters, but not its internal
@@ -566,7 +601,7 @@ impl Group {
     /// by this group, but rather it will only set the span of the delimiter
     /// tokens at the level of the `Group`.
     pub fn set_span(&mut self, span: Span) {
-        self.span = span;
+        self.inner.set_span(span.inner)
     }
 }
 
@@ -574,30 +609,14 @@ impl Group {
 /// into the same group (modulo spans), except for possibly `TokenTree::Group`s
 /// with `Delimiter::None` delimiters.
 impl fmt::Display for Group {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (left, right) = match self.delimiter {
-            Delimiter::Parenthesis => ("(", ")"),
-            Delimiter::Brace => ("{", "}"),
-            Delimiter::Bracket => ("[", "]"),
-            Delimiter::None => ("", ""),
-        };
-
-        f.write_str(left)?;
-        self.stream.fmt(f)?;
-        f.write_str(right)?;
-
-        Ok(())
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.inner, formatter)
     }
 }
 
 impl fmt::Debug for Group {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let mut debug = fmt.debug_struct("Group");
-        debug.field("delimiter", &self.delimiter);
-        debug.field("stream", &self.stream);
-        #[cfg(procmacro2_semver_exempt)]
-        debug.field("span", &self.span);
-        debug.finish()
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.inner, formatter)
     }
 }
 

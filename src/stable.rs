@@ -12,7 +12,7 @@ use std::vec;
 use strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
 use unicode_xid::UnicodeXID;
 
-use {Delimiter, Group, Punct, Spacing, TokenTree};
+use {Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub struct TokenStream {
@@ -432,6 +432,75 @@ impl fmt::Debug for Span {
 }
 
 #[derive(Clone)]
+pub struct Group {
+    delimiter: Delimiter,
+    stream: TokenStream,
+    span: Span,
+}
+
+impl Group {
+    pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
+        Group {
+            delimiter: delimiter,
+            stream: stream,
+            span: Span::call_site(),
+        }
+    }
+
+    pub fn delimiter(&self) -> Delimiter {
+        self.delimiter
+    }
+
+    pub fn stream(&self) -> TokenStream {
+        self.stream.clone()
+    }
+
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    pub fn span_open(&self) -> Span {
+        self.span
+    }
+
+    pub fn span_close(&self) -> Span {
+        self.span
+    }
+
+    pub fn set_span(&mut self, span: Span) {
+        self.span = span;
+    }
+}
+
+impl fmt::Display for Group {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (left, right) = match self.delimiter {
+            Delimiter::Parenthesis => ("(", ")"),
+            Delimiter::Brace => ("{", "}"),
+            Delimiter::Bracket => ("[", "]"),
+            Delimiter::None => ("", ""),
+        };
+
+        f.write_str(left)?;
+        self.stream.fmt(f)?;
+        f.write_str(right)?;
+
+        Ok(())
+    }
+}
+
+impl fmt::Debug for Group {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut debug = fmt.debug_struct("Group");
+        debug.field("delimiter", &self.delimiter);
+        debug.field("stream", &self.stream);
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
+        debug.finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct Ident {
     sym: String,
     span: Span,
@@ -747,7 +816,7 @@ fn token_tree(input: Cursor) -> PResult<TokenTree> {
 }
 
 named!(token_kind -> TokenTree, alt!(
-    map!(group, TokenTree::Group)
+    map!(group, |g| TokenTree::Group(::Group::_new_stable(g)))
     |
     map!(literal, |l| TokenTree::Literal(::Literal::_new_stable(l))) // must be before symbol
     |
@@ -761,19 +830,19 @@ named!(group -> Group, alt!(
         punct!("("),
         token_stream,
         punct!(")")
-    ) => { |ts| Group::new(Delimiter::Parenthesis, ::TokenStream::_new_stable(ts)) }
+    ) => { |ts| Group::new(Delimiter::Parenthesis, ts) }
     |
     delimited!(
         punct!("["),
         token_stream,
         punct!("]")
-    ) => { |ts| Group::new(Delimiter::Bracket, ::TokenStream::_new_stable(ts)) }
+    ) => { |ts| Group::new(Delimiter::Bracket, ts) }
     |
     delimited!(
         punct!("{"),
         token_stream,
         punct!("}")
-    ) => { |ts| Group::new(Delimiter::Brace, ::TokenStream::_new_stable(ts)) }
+    ) => { |ts| Group::new(Delimiter::Brace, ts) }
 ));
 
 fn symbol_leading_ws(input: Cursor) -> PResult<TokenTree> {
@@ -1288,7 +1357,8 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
     for tt in stream.iter_mut() {
         tt.set_span(span);
     }
-    trees.push(Group::new(Delimiter::Bracket, stream.into_iter().collect()).into());
+    let group = Group::new(Delimiter::Bracket, stream.into_iter().collect());
+    trees.push(::Group::_new_stable(group).into());
     for tt in trees.iter_mut() {
         tt.set_span(span);
     }
