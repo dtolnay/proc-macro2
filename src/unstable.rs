@@ -8,7 +8,7 @@ use std::str::FromStr;
 use proc_macro;
 use stable;
 
-use {Delimiter, Group, Punct, Spacing, TokenTree};
+use {Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub enum TokenStream {
@@ -161,18 +161,7 @@ impl From<TokenTree> for TokenStream {
             return TokenStream::Stable(token.into());
         }
         let tt: proc_macro::TokenTree = match token {
-            TokenTree::Group(tt) => {
-                let delim = match tt.delimiter() {
-                    Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
-                    Delimiter::Bracket => proc_macro::Delimiter::Bracket,
-                    Delimiter::Brace => proc_macro::Delimiter::Brace,
-                    Delimiter::None => proc_macro::Delimiter::None,
-                };
-                let span = tt.span();
-                let mut group = proc_macro::Group::new(delim, tt.stream.inner.unwrap_nightly());
-                group.set_span(span.inner.unwrap_nightly());
-                group.into()
-            }
+            TokenTree::Group(tt) => tt.inner.unwrap_nightly().into(),
             TokenTree::Punct(tt) => {
                 let spacing = match tt.spacing() {
                     Spacing::Joint => proc_macro::Spacing::Joint,
@@ -364,18 +353,7 @@ impl Iterator for TokenTreeIter {
             TokenTreeIter::Stable(iter) => return iter.next(),
         };
         Some(match token {
-            proc_macro::TokenTree::Group(tt) => {
-                let delim = match tt.delimiter() {
-                    proc_macro::Delimiter::Parenthesis => Delimiter::Parenthesis,
-                    proc_macro::Delimiter::Bracket => Delimiter::Bracket,
-                    proc_macro::Delimiter::Brace => Delimiter::Brace,
-                    proc_macro::Delimiter::None => Delimiter::None,
-                };
-                let stream = ::TokenStream::_new(TokenStream::Nightly(tt.stream()));
-                let mut g = Group::new(delim, stream);
-                g.set_span(::Span::_new(Span::Nightly(tt.span())));
-                g.into()
-            }
+            proc_macro::TokenTree::Group(tt) => ::Group::_new(Group::Nightly(tt)).into(),
             proc_macro::TokenTree::Punct(tt) => {
                 let spacing = match tt.spacing() {
                     proc_macro::Spacing::Joint => Spacing::Joint,
@@ -589,6 +567,112 @@ impl fmt::Debug for Span {
         match self {
             Span::Nightly(s) => s.fmt(f),
             Span::Stable(s) => s.fmt(f),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum Group {
+    Nightly(proc_macro::Group),
+    Stable(stable::Group),
+}
+
+impl Group {
+    pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
+        match stream {
+            TokenStream::Nightly(stream) => {
+                let delimiter = match delimiter {
+                    Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
+                    Delimiter::Bracket => proc_macro::Delimiter::Bracket,
+                    Delimiter::Brace => proc_macro::Delimiter::Brace,
+                    Delimiter::None => proc_macro::Delimiter::None,
+                };
+                Group::Nightly(proc_macro::Group::new(delimiter, stream))
+            }
+            TokenStream::Stable(stream) => {
+                Group::Stable(stable::Group::new(delimiter, stream))
+            }
+        }
+    }
+
+    pub fn delimiter(&self) -> Delimiter {
+        match self {
+            Group::Nightly(g) => match g.delimiter() {
+                proc_macro::Delimiter::Parenthesis => Delimiter::Parenthesis,
+                proc_macro::Delimiter::Bracket => Delimiter::Bracket,
+                proc_macro::Delimiter::Brace => Delimiter::Brace,
+                proc_macro::Delimiter::None => Delimiter::None,
+            }
+            Group::Stable(g) => g.delimiter(),
+        }
+    }
+
+    pub fn stream(&self) -> TokenStream {
+        match self {
+            Group::Nightly(g) => TokenStream::Nightly(g.stream()),
+            Group::Stable(g) => TokenStream::Stable(g.stream()),
+        }
+    }
+
+    pub fn span(&self) -> Span {
+        match self {
+            Group::Nightly(g) => Span::Nightly(g.span()),
+            Group::Stable(g) => Span::Stable(g.span()),
+        }
+    }
+
+    #[cfg(super_unstable)]
+    pub fn span_open(&self) -> Span {
+        match self {
+            Group::Nightly(g) => Span::Nightly(g.span_open()),
+            Group::Stable(g) => Span::Stable(g.span_open()),
+        }
+    }
+
+    #[cfg(super_unstable)]
+    pub fn span_close(&self) -> Span {
+        match self {
+            Group::Nightly(g) => Span::Nightly(g.span_close()),
+            Group::Stable(g) => Span::Stable(g.span_close()),
+        }
+    }
+
+    pub fn set_span(&mut self, span: Span) {
+        match (self, span) {
+            (Group::Nightly(g), Span::Nightly(s)) => g.set_span(s),
+            (Group::Stable(g), Span::Stable(s)) => g.set_span(s),
+            _ => mismatch(),
+        }
+    }
+
+    fn unwrap_nightly(self) -> proc_macro::Group {
+        match self {
+            Group::Nightly(g) => g,
+            Group::Stable(_) => mismatch(),
+        }
+    }
+}
+
+impl From<stable::Group> for Group {
+    fn from(g: stable::Group) -> Self {
+        Group::Stable(g)
+    }
+}
+
+impl fmt::Display for Group {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Group::Nightly(group) => group.fmt(formatter),
+            Group::Stable(group) => group.fmt(formatter),
+        }
+    }
+}
+
+impl fmt::Debug for Group {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Group::Nightly(group) => group.fmt(formatter),
+            Group::Stable(group) => group.fmt(formatter),
         }
     }
 }
