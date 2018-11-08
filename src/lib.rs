@@ -973,6 +973,12 @@ impl Literal {
         isize_suffixed => isize,
     }
 
+    #[cfg(u128)]
+    suffixed_int_literals! {
+        u128_suffixed => u128,
+        i128_suffixed => i128,
+    }
+
     unsuffixed_int_literals! {
         u8_unsuffixed => u8,
         u16_unsuffixed => u16,
@@ -984,6 +990,12 @@ impl Literal {
         i32_unsuffixed => i32,
         i64_unsuffixed => i64,
         isize_unsuffixed => isize,
+    }
+
+    #[cfg(u128)]
+    unsuffixed_int_literals! {
+        u128_unsuffixed => u128,
+        i128_unsuffixed => i128,
     }
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
