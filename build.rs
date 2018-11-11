@@ -27,6 +27,8 @@ fn main() {
 
         if cfg!(procmacro2_semver_exempt) {
             println!("cargo:rustc-cfg=super_unstable");
+            // https://github.com/alexcrichton/proc-macro2/issues/147
+            println!("cargo:rustc-cfg=procmacro2_semver_exempt");
         }
     }
 
