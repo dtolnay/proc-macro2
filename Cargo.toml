@@ -19,6 +19,7 @@ unstable API.
 doctest = false
 
 [package.metadata.docs.rs]
+rustc-args = ["--cfg", "procmacro2_semver_exempt"]
 rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
 
 [dependencies]
