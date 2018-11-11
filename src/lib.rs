@@ -714,11 +714,11 @@ impl fmt::Debug for Punct {
 /// - A lifetime is not an identifier. Use `syn::Lifetime` instead.
 ///
 /// An identifier constructed with `Ident::new` is permitted to be a Rust
-/// keyword, though parsing one through its [`Synom`] implementation rejects
-/// Rust keywords. Use `call!(Ident::parse_any)` when parsing to match the
+/// keyword, though parsing one through its [`Parse`] implementation rejects
+/// Rust keywords. Use `input.call(Ident::parse_any)` when parsing to match the
 /// behaviour of `Ident::new`.
 ///
-/// [`Synom`]: https://docs.rs/syn/0.14/syn/synom/trait.Synom.html
+/// [`Parse`]: https://docs.rs/syn/0.15/syn/parse/trait.Parse.html
 ///
 /// # Examples
 ///
