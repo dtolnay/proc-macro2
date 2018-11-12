@@ -6,6 +6,9 @@ use std::cell::RefCell;
 use std::cmp;
 use std::fmt;
 use std::iter;
+#[cfg(procmacro2_semver_exempt)]
+use std::path::Path;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::vec;
 
@@ -190,40 +193,20 @@ impl IntoIterator for TokenStream {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct FileName(String);
-
-#[allow(dead_code)]
-pub fn file_name(s: String) -> FileName {
-    FileName(s)
-}
-
-impl fmt::Display for FileName {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
-    name: FileName,
+    path: PathBuf,
 }
 
 impl SourceFile {
     /// Get the path to this source file as a string.
-    pub fn path(&self) -> &FileName {
-        &self.name
+    pub fn path(&self) -> PathBuf {
+        self.path.clone()
     }
 
     pub fn is_real(&self) -> bool {
         // XXX(nika): Support real files in the future?
         false
-    }
-}
-
-impl AsRef<FileName> for SourceFile {
-    fn as_ref(&self) -> &FileName {
-        self.path()
     }
 }
 
@@ -382,7 +365,7 @@ impl Span {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
             SourceFile {
-                name: FileName(fi.name.clone()),
+                path: Path::new(&fi.name).to_owned(),
             }
         })
     }
