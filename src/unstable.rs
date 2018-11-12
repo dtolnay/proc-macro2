@@ -3,6 +3,8 @@
 use std::fmt;
 use std::iter;
 use std::panic::{self, PanicInfo};
+#[cfg(super_unstable)]
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use proc_macro;
@@ -382,44 +384,32 @@ impl fmt::Debug for TokenTreeIter {
     }
 }
 
-pub use stable::FileName;
-
-// NOTE: We have to generate our own filename object here because we can't wrap
-// the one provided by proc_macro.
 #[derive(Clone, PartialEq, Eq)]
 #[cfg(super_unstable)]
 pub enum SourceFile {
-    Nightly(proc_macro::SourceFile, FileName),
+    Nightly(proc_macro::SourceFile),
     Stable(stable::SourceFile),
 }
 
 #[cfg(super_unstable)]
 impl SourceFile {
     fn nightly(sf: proc_macro::SourceFile) -> Self {
-        let filename = stable::file_name(sf.path().display().to_string());
-        SourceFile::Nightly(sf, filename)
+        SourceFile::Nightly(sf)
     }
 
     /// Get the path to this source file as a string.
-    pub fn path(&self) -> &FileName {
+    pub fn path(&self) -> PathBuf {
         match self {
-            SourceFile::Nightly(_, f) => f,
+            SourceFile::Nightly(a) => a.path(),
             SourceFile::Stable(a) => a.path(),
         }
     }
 
     pub fn is_real(&self) -> bool {
         match self {
-            SourceFile::Nightly(a, _) => a.is_real(),
+            SourceFile::Nightly(a) => a.is_real(),
             SourceFile::Stable(a) => a.is_real(),
         }
-    }
-}
-
-#[cfg(super_unstable)]
-impl AsRef<FileName> for SourceFile {
-    fn as_ref(&self) -> &FileName {
-        self.path()
     }
 }
 
@@ -427,7 +417,7 @@ impl AsRef<FileName> for SourceFile {
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SourceFile::Nightly(a, _) => a.fmt(f),
+            SourceFile::Nightly(a) => a.fmt(f),
             SourceFile::Stable(a) => a.fmt(f),
         }
     }
