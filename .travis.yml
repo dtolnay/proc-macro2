@@ -3,7 +3,11 @@ sudo: false
 
 matrix:
   include:
-    - rust: 1.15.0
+    - rust: 1.15.0 # oldest supported version
+      script: cargo build
+    - rust: 1.19.0 # first release with the --tests flag
+      script: cargo test --tests
+    - rust: 1.26.0 # first release on which our doc tests pass
     - rust: stable
     - rust: beta
     - rust: nightly
