@@ -27,6 +27,7 @@ before_script:
 
 script:
   - cargo test
+  - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
 
 notifications:
   email:
