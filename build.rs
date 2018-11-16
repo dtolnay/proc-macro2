@@ -22,7 +22,7 @@ fn main() {
     println!("cargo:rustc-cfg=use_proc_macro");
 
     // Rust 1.29 stabilized the necessary APIs in the `proc_macro` crate
-    if minor >= 29 || cfg!(feature = "nightly") {
+    if (minor >= 29 && !cfg!(procmacro2_semver_exempt)) || cfg!(feature = "nightly") {
         println!("cargo:rustc-cfg=wrap_proc_macro");
 
         if cfg!(procmacro2_semver_exempt) {
