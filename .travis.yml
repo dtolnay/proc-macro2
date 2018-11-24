@@ -11,9 +11,6 @@ matrix:
     - rust: stable
     - rust: beta
     - rust: nightly
-      install: rustup target add wasm32-unknown-unknown
-      script: cargo test --target wasm32-unknown-unknown --no-run
-    - rust: nightly
       script:
         - cargo test
         - cargo test --features nightly
@@ -21,6 +18,10 @@ matrix:
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --features nightly
         - cargo update -Z minimal-versions && cargo build
+    - rust: nightly
+      name: WebAssembly
+      install: rustup target add wasm32-unknown-unknown
+      script: cargo test --target wasm32-unknown-unknown --no-run
 
 before_script:
   - set -o errexit
