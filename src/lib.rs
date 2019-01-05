@@ -333,9 +333,11 @@ impl Span {
         Span::_new(self.inner.located_at(other.inner))
     }
 
-    /// This method is only available when the `"nightly"` feature is enabled.
-    #[doc(hidden)]
-    #[cfg(any(feature = "nightly", super_unstable))]
+    /// Convert `proc_macro2::Span` to `proc_macro::Span`.
+    ///
+    /// This method is available when building with a nightly compiler, or when
+    /// building with rustc 1.29+ *without* semver exempt features.
+    #[cfg(wrap_proc_macro)]
     pub fn unstable(self) -> proc_macro::Span {
         self.inner.unstable()
     }
