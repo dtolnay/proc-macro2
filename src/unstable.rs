@@ -473,7 +473,9 @@ impl Span {
     pub fn unstable(self) -> proc_macro::Span {
         match self {
             Span::Nightly(s) => s,
-            Span::Stable(_) => mismatch(),
+            Span::Stable(_) => {
+                panic!("proc_macro::Span is only available in procedural macros")
+            }
         }
     }
 
