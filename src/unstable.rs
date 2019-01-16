@@ -203,35 +203,30 @@ impl iter::FromIterator<TokenStream> for TokenStream {
         match streams.next() {
             #[cfg(slow_extend)]
             Some(TokenStream::Nightly(first)) => {
-                let stream = iter::once(first).chain(streams.map(|s| {
-                    match s {
+                let stream = iter::once(first)
+                    .chain(streams.map(|s| match s {
                         TokenStream::Nightly(s) => s,
                         TokenStream::Stable(_) => mismatch(),
-                    }
-                })).collect();
+                    }))
+                    .collect();
                 TokenStream::Nightly(stream)
             }
             #[cfg(not(slow_extend))]
             Some(TokenStream::Nightly(mut first)) => {
-                first.extend(streams.map(|s| {
-                    match s {
-                        TokenStream::Nightly(s) => s,
-                        TokenStream::Stable(_) => mismatch(),
-                    }
+                first.extend(streams.map(|s| match s {
+                    TokenStream::Nightly(s) => s,
+                    TokenStream::Stable(_) => mismatch(),
                 }));
                 TokenStream::Nightly(first)
             }
             Some(TokenStream::Stable(mut first)) => {
-                first.extend(streams.map(|s| {
-                    match s {
-                        TokenStream::Stable(s) => s,
-                        TokenStream::Nightly(_) => mismatch(),
-                    }
+                first.extend(streams.map(|s| match s {
+                    TokenStream::Stable(s) => s,
+                    TokenStream::Nightly(_) => mismatch(),
                 }));
                 TokenStream::Stable(first)
             }
             None => TokenStream::new(),
-
         }
     }
 }
@@ -250,18 +245,16 @@ impl Extend<TokenTree> for TokenStream {
                 }
                 #[cfg(slow_extend)]
                 {
-                    *tts = tts
-                        .clone()
-                        .into_iter()
-                        .chain(
-                            streams
-                                .into_iter()
-                                .map(TokenStream::from)
-                                .flat_map(|t| match t {
+                    *tts =
+                        tts.clone()
+                            .into_iter()
+                            .chain(streams.into_iter().map(TokenStream::from).flat_map(
+                                |t| match t {
                                     TokenStream::Nightly(tts) => tts.into_iter(),
                                     _ => mismatch(),
-                                }),
-                        ).collect();
+                                },
+                            ))
+                            .collect();
                 }
             }
             TokenStream::Stable(tts) => tts.extend(streams),
@@ -282,14 +275,11 @@ impl Extend<TokenStream> for TokenStream {
                     *tts = tts
                         .clone()
                         .into_iter()
-                        .chain(
-                            streams
-                                .into_iter()
-                                .flat_map(|t| match t {
-                                    TokenStream::Nightly(tts) => tts.into_iter(),
-                                    _ => mismatch(),
-                                }),
-                        ).collect();
+                        .chain(streams.into_iter().flat_map(|t| match t {
+                            TokenStream::Nightly(tts) => tts.into_iter(),
+                            _ => mismatch(),
+                        }))
+                        .collect();
                 }
             }
             TokenStream::Stable(tts) => {
@@ -473,9 +463,7 @@ impl Span {
     pub fn unstable(self) -> proc_macro::Span {
         match self {
             Span::Nightly(s) => s,
-            Span::Stable(_) => {
-                panic!("proc_macro::Span is only available in procedural macros")
-            }
+            Span::Stable(_) => panic!("proc_macro::Span is only available in procedural macros"),
         }
     }
 
@@ -581,9 +569,7 @@ impl Group {
                 };
                 Group::Nightly(proc_macro::Group::new(delimiter, stream))
             }
-            TokenStream::Stable(stream) => {
-                Group::Stable(stable::Group::new(delimiter, stream))
-            }
+            TokenStream::Stable(stream) => Group::Stable(stable::Group::new(delimiter, stream)),
         }
     }
 
@@ -594,7 +580,7 @@ impl Group {
                 proc_macro::Delimiter::Bracket => Delimiter::Bracket,
                 proc_macro::Delimiter::Brace => Delimiter::Brace,
                 proc_macro::Delimiter::None => Delimiter::None,
-            }
+            },
             Group::Stable(g) => g.delimiter(),
         }
     }

@@ -535,9 +535,7 @@ pub enum Delimiter {
 
 impl Group {
     fn _new(inner: imp::Group) -> Self {
-        Group {
-            inner: inner,
-        }
+        Group { inner: inner }
     }
 
     fn _new_stable(inner: stable::Group) -> Self {
