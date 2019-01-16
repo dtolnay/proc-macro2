@@ -337,6 +337,12 @@ impl Span {
     ///
     /// This method is available when building with a nightly compiler, or when
     /// building with rustc 1.29+ *without* semver exempt features.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called from outside of a procedural macro. Unlike
+    /// `proc_macro2::Span`, the `proc_macro::Span` type can only exist within
+    /// the context of a procedural macro invocation.
     #[cfg(wrap_proc_macro)]
     pub fn unstable(self) -> proc_macro::Span {
         self.inner.unstable()
