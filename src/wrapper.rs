@@ -8,19 +8,19 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use proc_macro;
-use stable;
+use fallback;
 
 use {Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub enum TokenStream {
     Nightly(proc_macro::TokenStream),
-    Stable(stable::TokenStream),
+    Stable(fallback::TokenStream),
 }
 
 pub enum LexError {
     Nightly(proc_macro::LexError),
-    Stable(stable::LexError),
+    Stable(fallback::LexError),
 }
 
 fn nightly_works() -> bool {
@@ -89,7 +89,7 @@ impl TokenStream {
         if nightly_works() {
             TokenStream::Nightly(proc_macro::TokenStream::new())
         } else {
-            TokenStream::Stable(stable::TokenStream::new())
+            TokenStream::Stable(fallback::TokenStream::new())
         }
     }
 
@@ -107,7 +107,7 @@ impl TokenStream {
         }
     }
 
-    fn unwrap_stable(self) -> stable::TokenStream {
+    fn unwrap_stable(self) -> fallback::TokenStream {
         match self {
             TokenStream::Nightly(_) => mismatch(),
             TokenStream::Stable(s) => s,
@@ -151,8 +151,8 @@ impl From<TokenStream> for proc_macro::TokenStream {
     }
 }
 
-impl From<stable::TokenStream> for TokenStream {
-    fn from(inner: stable::TokenStream) -> TokenStream {
+impl From<fallback::TokenStream> for TokenStream {
+    fn from(inner: fallback::TokenStream) -> TokenStream {
         TokenStream::Stable(inner)
     }
 }
@@ -304,8 +304,8 @@ impl From<proc_macro::LexError> for LexError {
     }
 }
 
-impl From<stable::LexError> for LexError {
-    fn from(e: stable::LexError) -> LexError {
+impl From<fallback::LexError> for LexError {
+    fn from(e: fallback::LexError) -> LexError {
         LexError::Stable(e)
     }
 }
@@ -321,7 +321,7 @@ impl fmt::Debug for LexError {
 
 pub enum TokenTreeIter {
     Nightly(proc_macro::token_stream::IntoIter),
-    Stable(stable::TokenTreeIter),
+    Stable(fallback::TokenTreeIter),
 }
 
 impl IntoIterator for TokenStream {
@@ -378,7 +378,7 @@ impl fmt::Debug for TokenTreeIter {
 #[cfg(super_unstable)]
 pub enum SourceFile {
     Nightly(proc_macro::SourceFile),
-    Stable(stable::SourceFile),
+    Stable(fallback::SourceFile),
 }
 
 #[cfg(super_unstable)]
@@ -421,7 +421,7 @@ pub struct LineColumn {
 #[derive(Copy, Clone)]
 pub enum Span {
     Nightly(proc_macro::Span),
-    Stable(stable::Span),
+    Stable(fallback::Span),
 }
 
 impl Span {
@@ -429,7 +429,7 @@ impl Span {
         if nightly_works() {
             Span::Nightly(proc_macro::Span::call_site())
         } else {
-            Span::Stable(stable::Span::call_site())
+            Span::Stable(fallback::Span::call_site())
         }
     }
 
@@ -438,7 +438,7 @@ impl Span {
         if nightly_works() {
             Span::Nightly(proc_macro::Span::def_site())
         } else {
-            Span::Stable(stable::Span::def_site())
+            Span::Stable(fallback::Span::def_site())
         }
     }
 
@@ -483,7 +483,7 @@ impl Span {
                 LineColumn { line, column }
             }
             Span::Stable(s) => {
-                let stable::LineColumn { line, column } = s.start();
+                let fallback::LineColumn { line, column } = s.start();
                 LineColumn { line, column }
             }
         }
@@ -497,7 +497,7 @@ impl Span {
                 LineColumn { line, column }
             }
             Span::Stable(s) => {
-                let stable::LineColumn { line, column } = s.end();
+                let fallback::LineColumn { line, column } = s.end();
                 LineColumn { line, column }
             }
         }
@@ -536,8 +536,8 @@ impl From<proc_macro::Span> for ::Span {
     }
 }
 
-impl From<stable::Span> for Span {
-    fn from(inner: stable::Span) -> Span {
+impl From<fallback::Span> for Span {
+    fn from(inner: fallback::Span) -> Span {
         Span::Stable(inner)
     }
 }
@@ -554,7 +554,7 @@ impl fmt::Debug for Span {
 #[derive(Clone)]
 pub enum Group {
     Nightly(proc_macro::Group),
-    Stable(stable::Group),
+    Stable(fallback::Group),
 }
 
 impl Group {
@@ -569,7 +569,7 @@ impl Group {
                 };
                 Group::Nightly(proc_macro::Group::new(delimiter, stream))
             }
-            TokenStream::Stable(stream) => Group::Stable(stable::Group::new(delimiter, stream)),
+            TokenStream::Stable(stream) => Group::Stable(fallback::Group::new(delimiter, stream)),
         }
     }
 
@@ -631,8 +631,8 @@ impl Group {
     }
 }
 
-impl From<stable::Group> for Group {
-    fn from(g: stable::Group) -> Self {
+impl From<fallback::Group> for Group {
+    fn from(g: fallback::Group) -> Self {
         Group::Stable(g)
     }
 }
@@ -658,14 +658,14 @@ impl fmt::Debug for Group {
 #[derive(Clone)]
 pub enum Ident {
     Nightly(proc_macro::Ident),
-    Stable(stable::Ident),
+    Stable(fallback::Ident),
 }
 
 impl Ident {
     pub fn new(string: &str, span: Span) -> Ident {
         match span {
             Span::Nightly(s) => Ident::Nightly(proc_macro::Ident::new(string, s)),
-            Span::Stable(s) => Ident::Stable(stable::Ident::new(string, s)),
+            Span::Stable(s) => Ident::Stable(fallback::Ident::new(string, s)),
         }
     }
 
@@ -682,7 +682,7 @@ impl Ident {
                 };
                 Ident::Nightly(ident)
             }
-            Span::Stable(s) => Ident::Stable(stable::Ident::new_raw(string, s)),
+            Span::Stable(s) => Ident::Stable(fallback::Ident::new_raw(string, s)),
         }
     }
 
@@ -753,7 +753,7 @@ impl fmt::Debug for Ident {
 #[derive(Clone)]
 pub enum Literal {
     Nightly(proc_macro::Literal),
-    Stable(stable::Literal),
+    Stable(fallback::Literal),
 }
 
 macro_rules! suffixed_numbers {
@@ -762,7 +762,7 @@ macro_rules! suffixed_numbers {
             if nightly_works() {
                 Literal::Nightly(proc_macro::Literal::$name(n))
             } else {
-                Literal::Stable(stable::Literal::$name(n))
+                Literal::Stable(fallback::Literal::$name(n))
             }
         }
     )*)
@@ -774,7 +774,7 @@ macro_rules! unsuffixed_integers {
             if nightly_works() {
                 Literal::Nightly(proc_macro::Literal::$name(n))
             } else {
-                Literal::Stable(stable::Literal::$name(n))
+                Literal::Stable(fallback::Literal::$name(n))
             }
         }
     )*)
@@ -826,7 +826,7 @@ impl Literal {
         if nightly_works() {
             Literal::Nightly(proc_macro::Literal::f32_unsuffixed(f))
         } else {
-            Literal::Stable(stable::Literal::f32_unsuffixed(f))
+            Literal::Stable(fallback::Literal::f32_unsuffixed(f))
         }
     }
 
@@ -834,7 +834,7 @@ impl Literal {
         if nightly_works() {
             Literal::Nightly(proc_macro::Literal::f64_unsuffixed(f))
         } else {
-            Literal::Stable(stable::Literal::f64_unsuffixed(f))
+            Literal::Stable(fallback::Literal::f64_unsuffixed(f))
         }
     }
 
@@ -842,7 +842,7 @@ impl Literal {
         if nightly_works() {
             Literal::Nightly(proc_macro::Literal::string(t))
         } else {
-            Literal::Stable(stable::Literal::string(t))
+            Literal::Stable(fallback::Literal::string(t))
         }
     }
 
@@ -850,7 +850,7 @@ impl Literal {
         if nightly_works() {
             Literal::Nightly(proc_macro::Literal::character(t))
         } else {
-            Literal::Stable(stable::Literal::character(t))
+            Literal::Stable(fallback::Literal::character(t))
         }
     }
 
@@ -858,7 +858,7 @@ impl Literal {
         if nightly_works() {
             Literal::Nightly(proc_macro::Literal::byte_string(bytes))
         } else {
-            Literal::Stable(stable::Literal::byte_string(bytes))
+            Literal::Stable(fallback::Literal::byte_string(bytes))
         }
     }
 
@@ -885,8 +885,8 @@ impl Literal {
     }
 }
 
-impl From<stable::Literal> for Literal {
-    fn from(s: stable::Literal) -> Literal {
+impl From<fallback::Literal> for Literal {
+    fn from(s: fallback::Literal) -> Literal {
         Literal::Stable(s)
     }
 }
