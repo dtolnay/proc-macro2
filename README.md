@@ -29,7 +29,6 @@ followed by
 
 ```rust
 extern crate proc_macro;
-extern crate proc_macro2;
 
 #[proc_macro_derive(MyDerive)]
 pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

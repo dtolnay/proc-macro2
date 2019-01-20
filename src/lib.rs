@@ -733,9 +733,7 @@ impl fmt::Debug for Punct {
 /// A span must be provided explicitly which governs the name resolution
 /// behavior of the resulting identifier.
 ///
-/// ```rust
-/// extern crate proc_macro2;
-///
+/// ```edition2018
 /// use proc_macro2::{Ident, Span};
 ///
 /// fn main() {
@@ -747,13 +745,9 @@ impl fmt::Debug for Punct {
 ///
 /// An ident can be interpolated into a token stream using the `quote!` macro.
 ///
-/// ```rust
-/// #[macro_use]
-/// extern crate quote;
-///
-/// extern crate proc_macro2;
-///
+/// ```edition2018
 /// use proc_macro2::{Ident, Span};
+/// use quote::quote;
 ///
 /// fn main() {
 ///     let ident = Ident::new("demo", Span::call_site());
@@ -770,9 +764,7 @@ impl fmt::Debug for Punct {
 /// A string representation of the ident is available through the `to_string()`
 /// method.
 ///
-/// ```rust
-/// # extern crate proc_macro2;
-/// #
+/// ```edition2018
 /// # use proc_macro2::{Ident, Span};
 /// #
 /// # let ident = Ident::new("another_identifier", Span::call_site());
