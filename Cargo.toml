@@ -41,4 +41,7 @@ travis-ci = { repository = "alexcrichton/proc-macro2" }
 # proc-macro2. Quote would implement its traits for types from that proc-macro2,
 # meaning impls would be missing when tested against types from the local
 # proc-macro2.
+#
+# When publishing proc-macro2, Cargo will forbid publishing with a patch
+# section. You need to delete this section and then publish with --allow-dirty.
 proc-macro2 = { path = "." }
