@@ -1,35 +1,72 @@
-//! A "shim crate" intended to multiplex the [`proc_macro`] API on to stable
-//! Rust.
+//! A wrapper around the procedural macro API of the compiler's [`proc_macro`]
+//! crate. This library serves three purposes:
 //!
-//! Procedural macros in Rust operate over the upstream
-//! [`proc_macro::TokenStream`][ts] type. This type currently is quite
-//! conservative and exposed no internal implementation details. Nightly
-//! compilers, however, contain a much richer interface. This richer interface
-//! allows fine-grained inspection of the token stream which avoids
-//! stringification/re-lexing and also preserves span information.
+//! [`proc_macro`]: https://doc.rust-lang.org/proc_macro/
 //!
-//! The upcoming APIs added to [`proc_macro`] upstream are the foundation for
-//! productive procedural macros in the ecosystem. To help prepare the ecosystem
-//! for using them this crate serves to both compile on stable and nightly and
-//! mirrors the API-to-be. The intention is that procedural macros which switch
-//! to use this crate will be trivially able to switch to the upstream
-//! `proc_macro` crate once its API stabilizes.
+//! - **Bring proc-macro-like functionality to other contexts like build.rs and
+//!   main.rs.** Types from `proc_macro` are entirely specific to procedural
+//!   macros and cannot ever exist in code outside of a procedural macro.
+//!   Meanwhile `proc_macro2` types may exist anywhere including non-macro code.
+//!   By developing foundational libraries like [syn] and [quote] against
+//!   `proc_macro2` rather than `proc_macro`, the procedural macro ecosystem
+//!   becomes easily applicable to many other use cases and we avoid
+//!   reimplementing non-macro equivalents of those libraries.
 //!
-//! In the meantime this crate also has a `nightly` Cargo feature which
-//! enables it to reimplement itself with the unstable API of [`proc_macro`].
-//! This'll allow immediate usage of the beneficial upstream API, particularly
-//! around preserving span information.
+//! - **Make procedural macros unit testable.** As a consequence of being
+//!   specific to procedural macros, nothing that uses `proc_macro` can be
+//!   executed from a unit test. In order for helper libraries or components of
+//!   a macro to be testable in isolation, they must be implemented using
+//!   `proc_macro2`.
 //!
-//! # Unstable Features
+//! - **Provide the latest and greatest APIs across all compiler versions.**
+//!   Procedural macros were first introduced to Rust in 1.15.0 with an
+//!   extremely minimal interface. Since then, many improvements have landed to
+//!   make macros more flexible and easier to write. This library tracks the
+//!   procedural macro API of the most recent stable compiler but employs a
+//!   polyfill to provide that API consistently across any compiler since
+//!   1.15.0.
 //!
-//! `proc-macro2` supports exporting some methods from `proc_macro` which are
-//! currently highly unstable, and may not be stabilized in the first pass of
-//! `proc_macro` stabilizations. These features are not exported by default.
-//! Minor versions of `proc-macro2` may make breaking changes to them at any
-//! time.
+//! [syn]: https://github.com/dtolnay/syn
+//! [quote]: https://github.com/dtolnay/quote
 //!
-//! To enable these features, the `procmacro2_semver_exempt` config flag must be
-//! passed to rustc.
+//! # Usage
+//!
+//! The skeleton of a typical procedural macro typically looks like this:
+//!
+//! ```edition2018
+//! extern crate proc_macro;
+//!
+//! # const IGNORE: &str = stringify! {
+//! #[proc_macro_derive(MyDerive)]
+//! # };
+//! pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+//!     let input = proc_macro2::TokenStream::from(input);
+//!
+//!     let output: proc_macro2::TokenStream = {
+//!         /* transform input */
+//!         # input
+//!     };
+//!
+//!     proc_macro::TokenStream::from(output)
+//! }
+//! ```
+//!
+//! If parsing with [Syn], you'll use [`parse_macro_input!`] instead to
+//! propagate parse errors correctly back to the compiler when parsing fails.
+//!
+//! [`parse_macro_input!`]: https://docs.rs/syn/0.15/syn/macro.parse_macro_input.html
+//!
+//! # Unstable features
+//!
+//! The default feature set of proc-macro2 tracks the most recent stable
+//! compiler API. Functionality in `proc_macro` that is not yet stable is not
+//! exposed by proc-macro2 by default.
+//!
+//! To opt into the additional APIs available in the most recent nightly
+//! compiler, the `procmacro2_semver_exempt` config flag must be passed to
+//! rustc. As usual, we will polyfill those nightly-only APIs all the way back
+//! to Rust 1.15.0. As these are unstable APIs that track the nightly compiler,
+//! minor versions of proc-macro2 may make breaking changes to them at any time.
 //!
 //! ```sh
 //! RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build
@@ -39,8 +76,7 @@
 //! depends on your crate. This infectious nature is intentional, as it serves
 //! as a reminder that you are outside of the normal semver guarantees.
 //!
-//! [`proc_macro`]: https://doc.rust-lang.org/proc_macro/
-//! [ts]: https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
+//! Semver exempt methods are marked as such in the proc-macro2 documentation.
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
 #![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.25")]
