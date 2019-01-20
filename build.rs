@@ -24,7 +24,7 @@
 //     Enabled on rustc 1.29 only.
 //
 // "nightly"
-//     Enable the Span::unstable method. This is to support proc_macro_span and
+//     Enable the Span::unwrap method. This is to support proc_macro_span and
 //     proc_macro_diagnostic use on the nightly channel without requiring the
 //     semver exemption opt-in. Enabled when building with nightly.
 //

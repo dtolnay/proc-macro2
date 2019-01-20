@@ -344,8 +344,15 @@ impl Span {
     /// `proc_macro2::Span`, the `proc_macro::Span` type can only exist within
     /// the context of a procedural macro invocation.
     #[cfg(wrap_proc_macro)]
+    pub fn unwrap(self) -> proc_macro::Span {
+        self.inner.unwrap()
+    }
+
+    // Soft deprecated. Please use Span::unwrap.
+    #[cfg(wrap_proc_macro)]
+    #[doc(hidden)]
     pub fn unstable(self) -> proc_macro::Span {
-        self.inner.unstable()
+        self.unwrap()
     }
 
     /// The original source file into which this span points.
