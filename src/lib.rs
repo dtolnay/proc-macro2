@@ -65,11 +65,11 @@ use std::str::FromStr;
 
 #[macro_use]
 mod strnom;
-mod stable;
+mod fallback;
 
 #[cfg(not(wrap_proc_macro))]
-use stable as imp;
-#[path = "unstable.rs"]
+use fallback as imp;
+#[path = "wrapper.rs"]
 #[cfg(wrap_proc_macro)]
 mod imp;
 
@@ -100,7 +100,7 @@ impl TokenStream {
         }
     }
 
-    fn _new_stable(inner: stable::TokenStream) -> TokenStream {
+    fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
         TokenStream {
             inner: inner.into(),
             _marker: marker::PhantomData,
@@ -291,7 +291,7 @@ impl Span {
         }
     }
 
-    fn _new_stable(inner: stable::Span) -> Span {
+    fn _new_stable(inner: fallback::Span) -> Span {
         Span {
             inner: inner.into(),
             _marker: marker::PhantomData,
@@ -538,7 +538,7 @@ impl Group {
         Group { inner: inner }
     }
 
-    fn _new_stable(inner: stable::Group) -> Self {
+    fn _new_stable(inner: fallback::Group) -> Self {
         Group {
             inner: inner.into(),
         }
@@ -952,7 +952,7 @@ impl Literal {
         }
     }
 
-    fn _new_stable(inner: stable::Literal) -> Literal {
+    fn _new_stable(inner: fallback::Literal) -> Literal {
         Literal {
             inner: inner.into(),
             _marker: marker::PhantomData,
