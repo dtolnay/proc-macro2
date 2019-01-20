@@ -44,4 +44,6 @@ travis-ci = { repository = "alexcrichton/proc-macro2" }
 #
 # When publishing proc-macro2, Cargo will forbid publishing with a patch
 # section. You need to delete this section and then publish with --allow-dirty.
+# A PR https://github.com/rust-lang/cargo/pull/6535 proposes to make it no
+# longer an error to publish with a patch section.
 proc-macro2 = { path = "." }
