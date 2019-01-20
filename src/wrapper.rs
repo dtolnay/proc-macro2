@@ -7,8 +7,8 @@ use std::panic::{self, PanicInfo};
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use proc_macro;
 use fallback;
+use proc_macro;
 
 use {Delimiter, Punct, Spacing, TokenTree};
 
@@ -578,7 +578,9 @@ impl Group {
                 };
                 Group::Compiler(proc_macro::Group::new(delimiter, stream))
             }
-            TokenStream::Fallback(stream) => Group::Fallback(fallback::Group::new(delimiter, stream)),
+            TokenStream::Fallback(stream) => {
+                Group::Fallback(fallback::Group::new(delimiter, stream))
+            }
         }
     }
 
