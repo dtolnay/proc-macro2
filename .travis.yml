@@ -3,19 +3,8 @@ sudo: false
 
 matrix:
   include:
-    - rust: 1.15.0 # oldest supported version
-      script:
-        - cargo build
-        - cargo build --no-default-features
-        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build
-        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build --no-default-features
-    - rust: 1.19.0 # first release with the --tests flag
-      script:
-        - cargo test --tests
-        - cargo test --no-default-features --tests
-        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --tests
-        - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --no-default-features --tests
-    - rust: 1.26.0 # first release on which our doc tests pass
+    - rust: 1.15.0
+    - rust: 1.31.0
     - rust: stable
     - rust: beta
     - rust: nightly
