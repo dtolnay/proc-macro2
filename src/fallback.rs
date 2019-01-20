@@ -414,6 +414,12 @@ impl fmt::Debug for Span {
     }
 }
 
+pub fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
+    if cfg!(procmacro2_semver_exempt) {
+        debug.field("span", &span);
+    }
+}
+
 #[derive(Clone)]
 pub struct Group {
     delimiter: Delimiter,

@@ -495,8 +495,7 @@ impl fmt::Debug for TokenTree {
             TokenTree::Ident(ref t) => {
                 let mut debug = f.debug_struct("Ident");
                 debug.field("sym", &format_args!("{}", t));
-                #[cfg(any(feature = "nightly", procmacro2_semver_exempt))]
-                debug.field("span", &t.span());
+                imp::debug_span_field_if_nontrivial(&mut debug, t.span().inner);
                 debug.finish()
             }
             TokenTree::Punct(ref t) => t.fmt(f),
@@ -705,8 +704,7 @@ impl fmt::Debug for Punct {
         let mut debug = fmt.debug_struct("Punct");
         debug.field("op", &self.op);
         debug.field("spacing", &self.spacing);
-        #[cfg(procmacro2_semver_exempt)]
-        debug.field("span", &self.span);
+        imp::debug_span_field_if_nontrivial(&mut debug, self.span.inner);
         debug.finish()
     }
 }
