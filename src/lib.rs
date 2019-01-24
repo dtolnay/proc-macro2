@@ -55,6 +55,12 @@
 //! propagate parse errors correctly back to the compiler when parsing fails.
 //!
 //! [`parse_macro_input!`]: https://docs.rs/syn/0.15/syn/macro.parse_macro_input.html
+//! 
+//! # Opt-in features
+//! 
+//! Location information on spans is currently disabled by default and can be
+//! enabled with the `span-location-info` flag.  This feature is automatically
+//! enabled with `procmacro2_semver_exempt`.
 //!
 //! # Unstable features
 //!
@@ -94,7 +100,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(any(span_location_info))]
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -252,14 +258,14 @@ impl fmt::Debug for LexError {
 /// The source file of a given `Span`.
 ///
 /// This type is semver exempt and not exposed by default.
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_location_info)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     inner: imp::SourceFile,
     _marker: marker::PhantomData<Rc<()>>,
 }
 
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_location_info)]
 impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
@@ -292,7 +298,7 @@ impl SourceFile {
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_location_info)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.inner.fmt(f)
@@ -302,7 +308,7 @@ impl fmt::Debug for SourceFile {
 /// A line-column pair representing the start or end of a `Span`.
 ///
 /// This type is semver exempt and not exposed by default.
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_location_info)]
 pub struct LineColumn {
     /// The 1-indexed line in the source file on which the span starts or ends
     /// (inclusive).
@@ -345,8 +351,9 @@ impl Span {
 
     /// A span that resolves at the macro definition site.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method is available by enabling the `span-location-info` feature
+    /// and disabled by default.
+    #[cfg(span_location_info)]
     pub fn def_site() -> Span {
         Span::_new(imp::Span::def_site())
     }
@@ -354,8 +361,9 @@ impl Span {
     /// Creates a new span with the same line/column information as `self` but
     /// that resolves symbols as though it were at `other`.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method is available by enabling the `span-location-info` feature
+    /// and disabled by default.
+    #[cfg(span_location_info)]
     pub fn resolved_at(&self, other: Span) -> Span {
         Span::_new(self.inner.resolved_at(other.inner))
     }
@@ -363,8 +371,9 @@ impl Span {
     /// Creates a new span with the same name resolution behavior as `self` but
     /// with the line/column information of `other`.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method is available by enabling the `span-location-info` feature
+    /// and disabled by default.
+    #[cfg(span_location_info)]
     pub fn located_at(&self, other: Span) -> Span {
         Span::_new(self.inner.located_at(other.inner))
     }
@@ -393,16 +402,18 @@ impl Span {
 
     /// The original source file into which this span points.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method is available by enabling the `span-location-info` feature
+    /// and disabled by default.
+    #[cfg(span_location_info)]
     pub fn source_file(&self) -> SourceFile {
         SourceFile::_new(self.inner.source_file())
     }
 
     /// Get the starting line/column in the source file for this span.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method is available by enabling the `span-location-info` feature
+    /// and disabled by default.
+    #[cfg(span_location_info)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
         LineColumn {
@@ -413,8 +424,9 @@ impl Span {
 
     /// Get the ending line/column in the source file for this span.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method is available by enabling the `span-location-info` feature
+    /// and disabled by default.
+    #[cfg(span_location_info)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
         LineColumn {

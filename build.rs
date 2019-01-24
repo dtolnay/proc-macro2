@@ -55,14 +55,21 @@ fn main() {
     }
     println!("cargo:rustc-cfg=use_proc_macro");
 
+    let mut span_location_info = cfg!(feature = "span-location-info");
+
     let semver_exempt = cfg!(procmacro2_semver_exempt);
     if semver_exempt {
+        span_location_info = true;
         // https://github.com/alexcrichton/proc-macro2/issues/147
         println!("cargo:rustc-cfg=procmacro2_semver_exempt");
     }
 
+    if span_location_info {
+        println!("cargo:rustc-cfg=span_location_info");
+    }
+
     // Rust 1.29 stabilized the necessary APIs in the `proc_macro` crate
-    if version.nightly || version.minor >= 29 && !semver_exempt {
+    if version.nightly || version.minor >= 29 && !(semver_exempt || span_location_info) {
         println!("cargo:rustc-cfg=wrap_proc_macro");
     }
 

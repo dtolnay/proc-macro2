@@ -29,6 +29,9 @@ quote = "0.6"
 proc-macro = []
 default = ["proc-macro"]
 
+# turns on location info on spans
+span-location-info = []
+
 # This feature no longer means anything.
 nightly = []
 
