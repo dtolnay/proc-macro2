@@ -256,8 +256,6 @@ impl fmt::Debug for LexError {
 }
 
 /// The source file of a given `Span`.
-///
-/// This type is semver exempt and not exposed by default.
 #[cfg(span_location_info)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
@@ -306,8 +304,6 @@ impl fmt::Debug for SourceFile {
 }
 
 /// A line-column pair representing the start or end of a `Span`.
-///
-/// This type is semver exempt and not exposed by default.
 #[cfg(span_location_info)]
 pub struct LineColumn {
     /// The 1-indexed line in the source file on which the span starts or ends
@@ -438,17 +434,13 @@ impl Span {
     /// Create a new span encompassing `self` and `other`.
     ///
     /// Returns `None` if `self` and `other` are from different files.
-    ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_location_info)]
     pub fn join(&self, other: Span) -> Option<Span> {
         self.inner.join(other.inner).map(Span::_new)
     }
 
     /// Compares to spans to see if they're equal.
-    ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_location_info)]
     pub fn eq(&self, other: &Span) -> bool {
         self.inner.eq(&other.inner)
     }
@@ -639,7 +631,7 @@ impl Group {
     /// pub fn span_open(&self) -> Span {
     ///                 ^
     /// ```
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_location_info)]
     pub fn span_open(&self) -> Span {
         Span::_new(self.inner.span_open())
     }
@@ -650,7 +642,7 @@ impl Group {
     /// pub fn span_close(&self) -> Span {
     ///                        ^
     /// ```
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_location_info)]
     pub fn span_close(&self) -> Span {
         Span::_new(self.inner.span_close())
     }

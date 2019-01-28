@@ -1,8 +1,8 @@
-#![cfg_attr(not(any(procmacro2_semver_exempt, span_location_info)), allow(dead_code))]
+#![cfg_attr(not(all(procmacro2_semver_exempt, span_location_info)), allow(dead_code))]
 
 #[cfg(span_location_info)]
 use std::cell::RefCell;
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_location_info)]
 use std::cmp;
 use std::fmt;
 use std::iter;
@@ -388,7 +388,7 @@ impl Span {
         })
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_location_info)]
     pub fn join(&self, other: Span) -> Option<Span> {
         CODEMAP.with(|cm| {
             let cm = cm.borrow();
@@ -448,12 +448,12 @@ impl Group {
         self.span
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_location_info)]
     pub fn span_open(&self) -> Span {
         self.span
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_location_info)]
     pub fn span_close(&self) -> Span {
         self.span
     }

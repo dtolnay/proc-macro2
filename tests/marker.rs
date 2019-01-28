@@ -51,7 +51,7 @@ assert_impl!(Span is not Send or Sync);
 assert_impl!(TokenStream is not Send or Sync);
 assert_impl!(TokenTree is not Send or Sync);
 
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_location_info)]
 mod semver_exempt {
     use super::*;
 
