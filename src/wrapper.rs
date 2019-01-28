@@ -1,5 +1,3 @@
-#![cfg_attr(not(super_unstable), allow(dead_code))]
-
 use std::fmt;
 use std::iter;
 use std::panic::{self, PanicInfo};
@@ -413,6 +411,7 @@ impl fmt::Debug for SourceFile {
     }
 }
 
+#[cfg(any(super_unstable, feature = "span-locations"))]
 pub struct LineColumn {
     pub line: usize,
     pub column: usize,
@@ -475,13 +474,16 @@ impl Span {
         }
     }
 
-    #[cfg(super_unstable)]
+    #[cfg(any(super_unstable, feature = "span-locations"))]
     pub fn start(&self) -> LineColumn {
         match self {
+            #[cfg(nightly)]
             Span::Compiler(s) => {
                 let proc_macro::LineColumn { line, column } = s.start();
                 LineColumn { line, column }
             }
+            #[cfg(not(nightly))]
+            Span::Compiler(_) => LineColumn { line: 0, column: 0 },
             Span::Fallback(s) => {
                 let fallback::LineColumn { line, column } = s.start();
                 LineColumn { line, column }
@@ -489,13 +491,16 @@ impl Span {
         }
     }
 
-    #[cfg(super_unstable)]
+    #[cfg(any(super_unstable, feature = "span-locations"))]
     pub fn end(&self) -> LineColumn {
         match self {
+            #[cfg(nightly)]
             Span::Compiler(s) => {
                 let proc_macro::LineColumn { line, column } = s.end();
                 LineColumn { line, column }
             }
+            #[cfg(not(nightly))]
+            Span::Compiler(_) => LineColumn { line: 0, column: 0 },
             Span::Fallback(s) => {
                 let fallback::LineColumn { line, column } = s.end();
                 LineColumn { line, column }

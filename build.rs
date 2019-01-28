@@ -31,6 +31,12 @@
 // "super_unstable"
 //     Implement the semver exempt API in terms of the nightly-only proc_macro
 //     API. Enabled when using procmacro2_semver_exempt on a nightly compiler.
+//
+// "span_locations"
+//     Provide methods Span::start and Span::end which give the line/column
+//     location of a token. Enabled by procmacro2_semver_exempt or the
+//     "span-locations" Cargo cfg. This is behind a cfg because tracking
+//     location inside spans is a performance hit.
 
 use std::env;
 use std::process::Command;
@@ -50,16 +56,21 @@ fn main() {
         println!("cargo:rustc-cfg=u128");
     }
 
-    if !enable_use_proc_macro(&target) {
-        return;
-    }
-    println!("cargo:rustc-cfg=use_proc_macro");
-
     let semver_exempt = cfg!(procmacro2_semver_exempt);
     if semver_exempt {
         // https://github.com/alexcrichton/proc-macro2/issues/147
         println!("cargo:rustc-cfg=procmacro2_semver_exempt");
     }
+
+    if semver_exempt || cfg!(feature = "span-locations") {
+        println!("cargo:rustc-cfg=span_locations");
+    }
+
+    if !enable_use_proc_macro(&target) {
+        return;
+    }
+
+    println!("cargo:rustc-cfg=use_proc_macro");
 
     // Rust 1.29 stabilized the necessary APIs in the `proc_macro` crate
     if version.nightly || version.minor >= 29 && !semver_exempt {

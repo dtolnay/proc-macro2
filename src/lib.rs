@@ -80,10 +80,8 @@
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
 #![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.26")]
-#![cfg_attr(
-    super_unstable,
-    feature(proc_macro_raw_ident, proc_macro_span, proc_macro_def_site)
-)]
+#![cfg_attr(nightly, feature(proc_macro_span))]
+#![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
@@ -302,7 +300,7 @@ impl fmt::Debug for SourceFile {
 /// A line-column pair representing the start or end of a `Span`.
 ///
 /// This type is semver exempt and not exposed by default.
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_locations)]
 pub struct LineColumn {
     /// The 1-indexed line in the source file on which the span starts or ends
     /// (inclusive).
@@ -401,8 +399,8 @@ impl Span {
 
     /// Get the starting line/column in the source file for this span.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method requires the `"span-locations"` feature to be enabled.
+    #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
         LineColumn {
@@ -413,8 +411,8 @@ impl Span {
 
     /// Get the ending line/column in the source file for this span.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// This method requires the `"span-locations"` feature to be enabled.
+    #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
         LineColumn {

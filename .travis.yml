@@ -11,6 +11,7 @@ matrix:
       script:
         - cargo test
         - cargo test --no-default-features
+        - cargo test --features span-locations
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --no-default-features
         - cargo update -Z minimal-versions && cargo build
@@ -25,6 +26,7 @@ before_script:
 script:
   - cargo test
   - cargo test --no-default-features
+  - cargo test --features span-locations
   - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
   - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --no-default-features
 

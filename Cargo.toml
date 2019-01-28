@@ -29,6 +29,10 @@ quote = "0.6"
 proc-macro = []
 default = ["proc-macro"]
 
+# Expose methods Span::start and Span::end which give the line/column location
+# of a token.
+span-locations = []
+
 # This feature no longer means anything.
 nightly = []
 
