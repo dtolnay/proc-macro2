@@ -25,6 +25,7 @@ fn nightly_works() -> bool {
     use std::sync::atomic::*;
     use std::sync::Once;
 
+    #[allow(deprecated)]
     static WORKS: AtomicUsize = ATOMIC_USIZE_INIT;
     static INIT: Once = Once::new();
 
