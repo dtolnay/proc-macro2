@@ -137,7 +137,7 @@ fn fail() {
     fail("r#_");
 }
 
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_locations)]
 #[test]
 fn span_test() {
     use proc_macro2::TokenTree;
