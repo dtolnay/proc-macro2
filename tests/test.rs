@@ -339,6 +339,27 @@ TokenStream [
         delimiter: Bracket,
         stream: TokenStream [
             Ident {
+                sym: a,
+            },
+            Punct {
+                op: '+',
+                spacing: Alone,
+            },
+            Literal {
+                lit: 1,
+            },
+        ],
+    },
+]\
+    ";
+
+    #[cfg(not(procmacro2_semver_exempt))]
+    let expected_before_trailing_commas = "\
+TokenStream [
+    Group {
+        delimiter: Bracket,
+        stream: TokenStream [
+            Ident {
                 sym: a
             },
             Punct {
@@ -355,6 +376,31 @@ TokenStream [
 
     #[cfg(procmacro2_semver_exempt)]
     let expected = "\
+TokenStream [
+    Group {
+        delimiter: Bracket,
+        stream: TokenStream [
+            Ident {
+                sym: a,
+                span: bytes(2..3),
+            },
+            Punct {
+                op: '+',
+                spacing: Alone,
+                span: bytes(4..5),
+            },
+            Literal {
+                lit: 1,
+                span: bytes(6..7),
+            },
+        ],
+        span: bytes(1..8),
+    },
+]\
+    ";
+
+    #[cfg(procmacro2_semver_exempt)]
+    let expected_before_trailing_commas = "\
 TokenStream [
     Group {
         delimiter: Bracket,
@@ -378,7 +424,12 @@ TokenStream [
 ]\
     ";
 
-    assert_eq!(expected, format!("{:#?}", tts));
+    let actual = format!("{:#?}", tts);
+    if actual.ends_with(",\n]") {
+        assert_eq!(expected, actual);
+    } else {
+        assert_eq!(expected_before_trailing_commas, actual);
+    }
 }
 
 #[test]
