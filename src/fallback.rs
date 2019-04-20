@@ -523,7 +523,7 @@ pub struct Ident {
 
 impl Ident {
     fn _new(string: &str, raw: bool, span: Span) -> Ident {
-        validate_term(string);
+        validate_ident(string);
 
         Ident {
             sym: string.to_owned(),
@@ -566,7 +566,7 @@ fn is_ident_continue(c: char) -> bool {
         || (c > '\x7f' && UnicodeXID::is_xid_continue(c))
 }
 
-fn validate_term(string: &str) {
+fn validate_ident(string: &str) {
     let validate = string;
     if validate.is_empty() {
         panic!("Ident is not allowed to be empty; use Option<Ident>");

@@ -5,7 +5,7 @@ use std::str::{self, FromStr};
 use proc_macro2::{Ident, Literal, Spacing, Span, TokenStream, TokenTree};
 
 #[test]
-fn terms() {
+fn idents() {
     assert_eq!(
         Ident::new("String", Span::call_site()).to_string(),
         "String"
@@ -16,7 +16,7 @@ fn terms() {
 
 #[test]
 #[cfg(procmacro2_semver_exempt)]
-fn raw_terms() {
+fn raw_idents() {
     assert_eq!(
         Ident::new_raw("String", Span::call_site()).to_string(),
         "r#String"
@@ -27,37 +27,37 @@ fn raw_terms() {
 
 #[test]
 #[should_panic(expected = "Ident is not allowed to be empty; use Option<Ident>")]
-fn term_empty() {
+fn ident_empty() {
     Ident::new("", Span::call_site());
 }
 
 #[test]
 #[should_panic(expected = "Ident cannot be a number; use Literal instead")]
-fn term_number() {
+fn ident_number() {
     Ident::new("255", Span::call_site());
 }
 
 #[test]
 #[should_panic(expected = "\"a#\" is not a valid Ident")]
-fn term_invalid() {
+fn ident_invalid() {
     Ident::new("a#", Span::call_site());
 }
 
 #[test]
 #[should_panic(expected = "not a valid Ident")]
-fn raw_term_empty() {
+fn raw_ident_empty() {
     Ident::new("r#", Span::call_site());
 }
 
 #[test]
 #[should_panic(expected = "not a valid Ident")]
-fn raw_term_number() {
+fn raw_ident_number() {
     Ident::new("r#255", Span::call_site());
 }
 
 #[test]
 #[should_panic(expected = "\"r#a#\" is not a valid Ident")]
-fn raw_term_invalid() {
+fn raw_ident_invalid() {
     Ident::new("r#a#", Span::call_site());
 }
 
