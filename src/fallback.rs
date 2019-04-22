@@ -734,17 +734,31 @@ impl Literal {
     }
 
     pub fn string(t: &str) -> Literal {
-        let mut s = t
-            .chars()
-            .flat_map(|c| c.escape_default())
-            .collect::<String>();
-        s.push('"');
-        s.insert(0, '"');
-        Literal::_new(s)
+        let mut text = String::with_capacity(t.len() + 2);
+        text.push('"');
+        for c in t.chars() {
+            if c == '\'' {
+                // escape_default turns this into "\'" which is unnecessary.
+                text.push(c);
+            } else {
+                text.extend(c.escape_default());
+            }
+        }
+        text.push('"');
+        Literal::_new(text)
     }
 
     pub fn character(t: char) -> Literal {
-        Literal::_new(format!("'{}'", t.escape_default().collect::<String>()))
+        let mut text = String::new();
+        text.push('\'');
+        if t == '"' {
+            // escape_default turns this into '\"' which is unnecessary.
+            text.push(t);
+        } else {
+            text.extend(t.escape_default());
+        }
+        text.push('\'');
+        Literal::_new(text)
     }
 
     pub fn byte_string(bytes: &[u8]) -> Literal {

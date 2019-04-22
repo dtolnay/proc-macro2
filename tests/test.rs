@@ -80,9 +80,21 @@ fn lifetime_invalid() {
 }
 
 #[test]
-fn literals() {
+fn literal_string() {
     assert_eq!(Literal::string("foo").to_string(), "\"foo\"");
     assert_eq!(Literal::string("\"").to_string(), "\"\\\"\"");
+    assert_eq!(Literal::string("didn't").to_string(), "\"didn't\"");
+}
+
+#[test]
+fn literal_character() {
+    assert_eq!(Literal::character('x').to_string(), "'x'");
+    assert_eq!(Literal::character('\'').to_string(), "'\\''");
+    assert_eq!(Literal::character('"').to_string(), "'\"'");
+}
+
+#[test]
+fn literal_float() {
     assert_eq!(Literal::f32_unsuffixed(10.0).to_string(), "10.0");
 }
 
