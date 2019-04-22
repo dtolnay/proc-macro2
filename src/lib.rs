@@ -853,7 +853,12 @@ impl Ident {
     /// # Panics
     ///
     /// Panics if the input string is neither a keyword nor a legal variable
-    /// name.
+    /// name. If you are not sure whether the string contains an identifier and
+    /// need to handle an error case, use
+    /// <a href="https://docs.rs/syn/0.15/syn/fn.parse_str.html"><code
+    ///   style="padding-right:0;">syn::parse_str</code></a><code
+    ///   style="padding-left:0;">::&lt;Ident&gt;</code>
+    /// rather than `Ident::new`.
     pub fn new(string: &str, span: Span) -> Ident {
         Ident::_new(imp::Ident::new(string, span.inner))
     }
