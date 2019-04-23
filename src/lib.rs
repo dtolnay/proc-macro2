@@ -79,7 +79,7 @@
 //! Semver exempt methods are marked as such in the proc-macro2 documentation.
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.27")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.28")]
 #![cfg_attr(nightly, feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
 
