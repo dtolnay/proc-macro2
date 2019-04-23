@@ -35,8 +35,8 @@ impl TokenStream {
 
 #[cfg(span_locations)]
 fn get_cursor(src: &str) -> Cursor {
-    // Create a dummy file & add it to the codemap
-    CODEMAP.with(|cm| {
+    // Create a dummy file & add it to the source map
+    SOURCE_MAP.with(|cm| {
         let mut cm = cm.borrow_mut();
         let name = format!("<parsed string {}>", cm.files.len());
         let span = cm.add_file(&name, src);
@@ -56,7 +56,7 @@ impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        // Create a dummy file & add it to the codemap
+        // Create a dummy file & add it to the source map
         let cursor = get_cursor(src);
 
         match token_stream(cursor) {
@@ -225,7 +225,7 @@ pub struct LineColumn {
 
 #[cfg(span_locations)]
 thread_local! {
-    static CODEMAP: RefCell<Codemap> = RefCell::new(Codemap {
+    static SOURCE_MAP: RefCell<SourceMap> = RefCell::new(SourceMap {
         // NOTE: We start with a single dummy file which all call_site() and
         // def_site() spans reference.
         files: vec![{
@@ -295,12 +295,12 @@ fn lines_offsets(s: &str) -> Vec<usize> {
 }
 
 #[cfg(span_locations)]
-struct Codemap {
+struct SourceMap {
     files: Vec<FileInfo>,
 }
 
 #[cfg(span_locations)]
-impl Codemap {
+impl SourceMap {
     fn next_start_pos(&self) -> u32 {
         // Add 1 so there's always space between files.
         //
@@ -384,7 +384,7 @@ impl Span {
 
     #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
-        CODEMAP.with(|cm| {
+        SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
             SourceFile {
@@ -395,7 +395,7 @@ impl Span {
 
     #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
-        CODEMAP.with(|cm| {
+        SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
             fi.offset_line_column(self.lo as usize)
@@ -404,7 +404,7 @@ impl Span {
 
     #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
-        CODEMAP.with(|cm| {
+        SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
             fi.offset_line_column(self.hi as usize)
@@ -413,7 +413,7 @@ impl Span {
 
     #[cfg(procmacro2_semver_exempt)]
     pub fn join(&self, other: Span) -> Option<Span> {
-        CODEMAP.with(|cm| {
+        SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             // If `other` is not within the same FileInfo as us, return None.
             if !cm.fileinfo(*self).span_within(other) {
