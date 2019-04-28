@@ -23,14 +23,11 @@
 //     were added one version later than the rest of the proc_macro token API.
 //     Enabled on rustc 1.29 only.
 //
-// "nightly"
-//     Enable the Span::unwrap method. This is to support proc_macro_span and
-//     proc_macro_diagnostic use on the nightly channel without requiring the
-//     semver exemption opt-in. Enabled when building with nightly.
-//
-// "proc_macro_span_disallowed"
-//     Don't use the proc_macro_span feature when building on the nightly
-//     channel. Detected based on `-Z allow-feature` flag passed in RUSTFLAGS.
+// "proc_macro_span"
+//     Enable non-dummy behavior of Span::start and Span::end methods which
+//     requires an unstable compiler feature. Enabled when building with
+//     nightly, unless `-Z allow-feature` in RUSTFLAGS disallows unstable
+//     features.
 //
 // "super_unstable"
 //     Implement the semver exempt API in terms of the nightly-only proc_macro
@@ -85,11 +82,8 @@ fn main() {
         println!("cargo:rustc-cfg=slow_extend");
     }
 
-    if version.nightly {
-        println!("cargo:rustc-cfg=nightly");
-        if proc_macro_span_disallowed() {
-            println!("cargo:rustc-cfg=proc_macro_span_disallowed");
-        }
+    if version.nightly && !proc_macro_span_disallowed() {
+        println!("cargo:rustc-cfg=proc_macro_span");
     }
 
     if semver_exempt && version.nightly {
