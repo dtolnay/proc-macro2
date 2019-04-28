@@ -28,6 +28,10 @@
 //     proc_macro_diagnostic use on the nightly channel without requiring the
 //     semver exemption opt-in. Enabled when building with nightly.
 //
+// "proc_macro_span_disallowed"
+//     Don't use the proc_macro_span feature when building on the nightly
+//     channel. Detected based on `-Z allow-feature` flag passed in RUSTFLAGS.
+//
 // "super_unstable"
 //     Implement the semver exempt API in terms of the nightly-only proc_macro
 //     API. Enabled when using procmacro2_semver_exempt on a nightly compiler.
@@ -83,6 +87,9 @@ fn main() {
 
     if version.nightly {
         println!("cargo:rustc-cfg=nightly");
+        if proc_macro_span_disallowed() {
+            println!("cargo:rustc-cfg=proc_macro_span_disallowed");
+        }
     }
 
     if semver_exempt && version.nightly {
@@ -130,4 +137,15 @@ fn rustc_version() -> Option<RustcVersion> {
         minor: minor,
         nightly: nightly,
     })
+}
+
+fn proc_macro_span_disallowed() -> bool {
+    if let Some(rustflags) = env::var_os("RUSTFLAGS") {
+        for flag in rustflags.to_string_lossy().split(" ") {
+            if flag.contains("allow-features") && !flag.contains("proc_macro_span") {
+                return true;
+            }
+        }
+    }
+    false
 }

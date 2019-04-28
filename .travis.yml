@@ -14,6 +14,7 @@ matrix:
         - cargo test --features span-locations
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --no-default-features
+        - RUSTFLAGS='-Z allow-features=' cargo test
         - cargo update -Z minimal-versions && cargo build
     - rust: nightly
       name: WebAssembly
