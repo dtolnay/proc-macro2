@@ -82,7 +82,7 @@ fn main() {
         println!("cargo:rustc-cfg=slow_extend");
     }
 
-    if version.nightly && !proc_macro_span_disallowed() {
+    if version.nightly && feature_allowed("proc_macro_span") {
         println!("cargo:rustc-cfg=proc_macro_span");
     }
 
@@ -133,13 +133,25 @@ fn rustc_version() -> Option<RustcVersion> {
     })
 }
 
-fn proc_macro_span_disallowed() -> bool {
+fn feature_allowed(feature: &str) -> bool {
+    // Recognized formats:
+    //
+    //     -Z allow-features=feature1,feature2
+    //
+    //     -Zallow-features=feature1,feature2
+
     if let Some(rustflags) = env::var_os("RUSTFLAGS") {
-        for flag in rustflags.to_string_lossy().split(" ") {
-            if flag.contains("allow-features") && !flag.contains("proc_macro_span") {
-                return true;
+        for mut flag in rustflags.to_string_lossy().split(' ') {
+            if flag.starts_with("-Z") {
+                flag = &flag["-Z".len()..];
+            }
+            if flag.starts_with("allow-features=") {
+                flag = &flag["allow-features=".len()..];
+                return flag.split(',').any(|allowed| allowed == feature);
             }
         }
     }
-    false
+
+    // No allow-features= flag, allowed by default.
+    true
 }
