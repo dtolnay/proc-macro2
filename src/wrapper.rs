@@ -318,6 +318,7 @@ impl fmt::Debug for LexError {
     }
 }
 
+#[derive(Clone)]
 pub enum TokenTreeIter {
     Compiler(proc_macro::token_stream::IntoIter),
     Fallback(fallback::TokenTreeIter),

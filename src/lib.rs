@@ -1122,6 +1122,7 @@ pub mod token_stream {
     ///
     /// The iteration is "shallow", e.g. the iterator doesn't recurse into
     /// delimited groups, and returns whole groups as token trees.
+    #[derive(Clone)]
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
         _marker: marker::PhantomData<Rc<()>>,
