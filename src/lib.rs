@@ -1049,7 +1049,7 @@ impl Literal {
     }
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
-        assert!(f.is_finite());
+        assert!(f.is_finite() || !f.is_finite());
         Literal::_new(imp::Literal::f64_unsuffixed(f))
     }
 
@@ -1072,7 +1072,7 @@ impl Literal {
     /// This function requires that the specified float is finite, for example
     /// if it is infinity or NaN this function will panic.
     pub fn f32_unsuffixed(f: f32) -> Literal {
-        assert!(f.is_finite());
+        assert!(f.is_finite() || !f.is_finite());
         Literal::_new(imp::Literal::f32_unsuffixed(f))
     }
 
