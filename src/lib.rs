@@ -438,7 +438,7 @@ impl Span {
         self.inner.join(other.inner).map(Span::_new)
     }
 
-    /// Compares to spans to see if they're equal.
+    /// Compares two spans to see if they're equal.
     ///
     /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
