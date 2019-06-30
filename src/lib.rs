@@ -1048,11 +1048,37 @@ impl Literal {
         i128_unsuffixed => i128,
     }
 
+    /// Creates a new unsuffixed floating-point literal.
+    ///
+    /// This constructor is similar to those like `Literal::i8_unsuffixed` where
+    /// the float's value is emitted directly into the token but no suffix is
+    /// used, so it may be inferred to be a `f64` later in the compiler.
+    /// Literals created from negative numbers may not survive rountrips through
+    /// `TokenStream` or strings and may be broken into two tokens (`-` and
+    /// positive literal).
+    ///
+    /// # Panics
+    ///
+    /// This function requires that the specified float is finite, for example
+    /// if it is infinity or NaN this function will panic.
     pub fn f64_unsuffixed(f: f64) -> Literal {
         assert!(f.is_finite());
         Literal::_new(imp::Literal::f64_unsuffixed(f))
     }
 
+    /// Creates a new suffixed floating-point literal.
+    ///
+    /// This constructor will create a literal like `1.0f64` where the value
+    /// specified is the preceding part of the token and `f64` is the suffix of
+    /// the token. This token will always be inferred to be an `f64` in the
+    /// compiler. Literals created from negative numbers may not survive
+    /// rountrips through `TokenStream` or strings and may be broken into two
+    /// tokens (`-` and positive literal).
+    ///
+    /// # Panics
+    ///
+    /// This function requires that the specified float is finite, for example
+    /// if it is infinity or NaN this function will panic.
     pub fn f64_suffixed(f: f64) -> Literal {
         assert!(f.is_finite());
         Literal::_new(imp::Literal::f64_suffixed(f))
@@ -1076,27 +1102,45 @@ impl Literal {
         Literal::_new(imp::Literal::f32_unsuffixed(f))
     }
 
+    /// Creates a new suffixed floating-point literal.
+    ///
+    /// This constructor will create a literal like `1.0f32` where the value
+    /// specified is the preceding part of the token and `f32` is the suffix of
+    /// the token. This token will always be inferred to be an `f32` in the
+    /// compiler. Literals created from negative numbers may not survive
+    /// rountrips through `TokenStream` or strings and may be broken into two
+    /// tokens (`-` and positive literal).
+    ///
+    /// # Panics
+    ///
+    /// This function requires that the specified float is finite, for example
+    /// if it is infinity or NaN this function will panic.
     pub fn f32_suffixed(f: f32) -> Literal {
         assert!(f.is_finite());
         Literal::_new(imp::Literal::f32_suffixed(f))
     }
 
+    /// String literal.
     pub fn string(string: &str) -> Literal {
         Literal::_new(imp::Literal::string(string))
     }
 
+    /// Character literal.
     pub fn character(ch: char) -> Literal {
         Literal::_new(imp::Literal::character(ch))
     }
 
+    /// Byte string literal.
     pub fn byte_string(s: &[u8]) -> Literal {
         Literal::_new(imp::Literal::byte_string(s))
     }
 
+    /// Returns the span encompassing this literal.
     pub fn span(&self) -> Span {
         Span::_new(self.inner.span())
     }
 
+    /// Configures the span associated for this literal.
     pub fn set_span(&mut self, span: Span) {
         self.inner.set_span(span.inner);
     }
