@@ -3,7 +3,6 @@ sudo: false
 
 matrix:
   include:
-    - rust: 1.15.0
     - rust: 1.31.0
     - rust: stable
     - rust: beta
