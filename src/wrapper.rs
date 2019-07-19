@@ -22,8 +22,7 @@ fn nightly_works() -> bool {
     use std::sync::atomic::*;
     use std::sync::Once;
 
-    #[allow(deprecated)]
-    static WORKS: AtomicUsize = ATOMIC_USIZE_INIT;
+    static WORKS: AtomicUsize = AtomicUsize::new(0);
     static INIT: Once = Once::new();
 
     match WORKS.load(Ordering::SeqCst) {
