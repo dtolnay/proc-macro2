@@ -60,7 +60,7 @@ fn nightly_works() -> bool {
     // not occur, they need to call e.g. `proc_macro2::Span::call_site()` from
     // the main thread before launching any other threads.
     INIT.call_once(|| {
-        type PanicHook = Fn(&PanicInfo) + Sync + Send + 'static;
+        type PanicHook = dyn Fn(&PanicInfo) + Sync + Send + 'static;
 
         let null_hook: Box<PanicHook> = Box::new(|_panic_info| { /* ignore */ });
         let sanity_check = &*null_hook as *const PanicHook;
