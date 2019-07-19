@@ -60,8 +60,7 @@ fn main() {
 
     println!("cargo:rustc-cfg=use_proc_macro");
 
-    // Rust 1.29 stabilized the necessary APIs in the `proc_macro` crate
-    if version.nightly || version.minor >= 29 && !semver_exempt {
+    if version.nightly || !semver_exempt {
         println!("cargo:rustc-cfg=wrap_proc_macro");
     }
 
