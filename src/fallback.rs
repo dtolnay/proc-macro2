@@ -10,10 +10,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::vec;
 
-use strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
+use crate::strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
+use crate::{Delimiter, Punct, Spacing, TokenTree};
 use unicode_xid::UnicodeXID;
-
-use {Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub struct TokenStream {
@@ -118,8 +117,8 @@ impl fmt::Debug for TokenStream {
 }
 
 #[cfg(use_proc_macro)]
-impl From<::proc_macro::TokenStream> for TokenStream {
-    fn from(inner: ::proc_macro::TokenStream) -> TokenStream {
+impl From<proc_macro::TokenStream> for TokenStream {
+    fn from(inner: proc_macro::TokenStream) -> TokenStream {
         inner
             .to_string()
             .parse()
@@ -128,8 +127,8 @@ impl From<::proc_macro::TokenStream> for TokenStream {
 }
 
 #[cfg(use_proc_macro)]
-impl From<TokenStream> for ::proc_macro::TokenStream {
-    fn from(inner: TokenStream) -> ::proc_macro::TokenStream {
+impl From<TokenStream> for proc_macro::TokenStream {
+    fn from(inner: TokenStream) -> proc_macro::TokenStream {
         inner
             .to_string()
             .parse()
@@ -820,21 +819,21 @@ fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
 fn spanned<'a, T>(
     input: Cursor<'a>,
     f: fn(Cursor<'a>) -> PResult<'a, T>,
-) -> PResult<'a, (T, ::Span)> {
+) -> PResult<'a, (T, crate::Span)> {
     let (a, b) = f(skip_whitespace(input))?;
-    Ok((a, ((b, ::Span::_new_stable(Span::call_site())))))
+    Ok((a, ((b, crate::Span::_new_stable(Span::call_site())))))
 }
 
 #[cfg(span_locations)]
 fn spanned<'a, T>(
     input: Cursor<'a>,
     f: fn(Cursor<'a>) -> PResult<'a, T>,
-) -> PResult<'a, (T, ::Span)> {
+) -> PResult<'a, (T, crate::Span)> {
     let input = skip_whitespace(input);
     let lo = input.off;
     let (a, b) = f(input)?;
     let hi = a.off;
-    let span = ::Span::_new_stable(Span { lo, hi });
+    let span = crate::Span::_new_stable(Span { lo, hi });
     Ok((a, (b, span)))
 }
 
@@ -845,9 +844,9 @@ fn token_tree(input: Cursor) -> PResult<TokenTree> {
 }
 
 named!(token_kind -> TokenTree, alt!(
-    map!(group, |g| TokenTree::Group(::Group::_new_stable(g)))
+    map!(group, |g| TokenTree::Group(crate::Group::_new_stable(g)))
     |
-    map!(literal, |l| TokenTree::Literal(::Literal::_new_stable(l))) // must be before symbol
+    map!(literal, |l| TokenTree::Literal(crate::Literal::_new_stable(l))) // must be before symbol
     |
     map!(op, TokenTree::Punct)
     |
@@ -905,9 +904,9 @@ fn symbol(input: Cursor) -> PResult<TokenTree> {
         Err(LexError)
     } else {
         let ident = if raw {
-            ::Ident::_new_raw(&a[2..], ::Span::call_site())
+            crate::Ident::_new_raw(&a[2..], crate::Span::call_site())
         } else {
-            ::Ident::new(a, ::Span::call_site())
+            crate::Ident::new(a, crate::Span::call_site())
         };
         Ok((input.advance(end), ident.into()))
     }
@@ -1379,15 +1378,15 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
         trees.push(Punct::new('!', Spacing::Alone).into());
     }
     let mut stream = vec![
-        TokenTree::Ident(::Ident::new("doc", span)),
+        TokenTree::Ident(crate::Ident::new("doc", span)),
         TokenTree::Punct(Punct::new('=', Spacing::Alone)),
-        TokenTree::Literal(::Literal::string(comment)),
+        TokenTree::Literal(crate::Literal::string(comment)),
     ];
     for tt in stream.iter_mut() {
         tt.set_span(span);
     }
     let group = Group::new(Delimiter::Bracket, stream.into_iter().collect());
-    trees.push(::Group::_new_stable(group).into());
+    trees.push(crate::Group::_new_stable(group).into());
     for tt in trees.iter_mut() {
         tt.set_span(span);
     }

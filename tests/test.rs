@@ -1,5 +1,3 @@
-extern crate proc_macro2;
-
 use std::str::{self, FromStr};
 
 use proc_macro2::{Ident, Literal, Spacing, Span, TokenStream, TokenTree};

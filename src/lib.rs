@@ -91,7 +91,6 @@
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
-extern crate unicode_xid;
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -1150,9 +1149,8 @@ pub mod token_stream {
     use std::marker;
     use std::rc::Rc;
 
-    use imp;
-    pub use TokenStream;
-    use TokenTree;
+    pub use crate::TokenStream;
+    use crate::{imp, TokenTree};
 
     /// An iterator over `TokenStream`'s `TokenTree`s.
     ///

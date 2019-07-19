@@ -5,10 +5,7 @@ use std::panic::{self, PanicInfo};
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use fallback;
-use proc_macro;
-
-use {Delimiter, Punct, Spacing, TokenTree};
+use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub enum TokenStream {
@@ -318,18 +315,18 @@ impl Iterator for TokenTreeIter {
             TokenTreeIter::Fallback(iter) => return iter.next(),
         };
         Some(match token {
-            proc_macro::TokenTree::Group(tt) => ::Group::_new(Group::Compiler(tt)).into(),
+            proc_macro::TokenTree::Group(tt) => crate::Group::_new(Group::Compiler(tt)).into(),
             proc_macro::TokenTree::Punct(tt) => {
                 let spacing = match tt.spacing() {
                     proc_macro::Spacing::Joint => Spacing::Joint,
                     proc_macro::Spacing::Alone => Spacing::Alone,
                 };
                 let mut o = Punct::new(tt.as_char(), spacing);
-                o.set_span(::Span::_new(Span::Compiler(tt.span())));
+                o.set_span(crate::Span::_new(Span::Compiler(tt.span())));
                 o.into()
             }
-            proc_macro::TokenTree::Ident(s) => ::Ident::_new(Ident::Compiler(s)).into(),
-            proc_macro::TokenTree::Literal(l) => ::Literal::_new(Literal::Compiler(l)).into(),
+            proc_macro::TokenTree::Ident(s) => crate::Ident::_new(Ident::Compiler(s)).into(),
+            proc_macro::TokenTree::Literal(l) => crate::Literal::_new(Literal::Compiler(l)).into(),
         })
     }
 
@@ -510,9 +507,9 @@ impl Span {
     }
 }
 
-impl From<proc_macro::Span> for ::Span {
-    fn from(proc_span: proc_macro::Span) -> ::Span {
-        ::Span::_new(Span::Compiler(proc_span))
+impl From<proc_macro::Span> for crate::Span {
+    fn from(proc_span: proc_macro::Span) -> crate::Span {
+        crate::Span::_new(Span::Compiler(proc_span))
     }
 }
 
