@@ -314,22 +314,19 @@ impl SourceMap {
         let lo = self.next_start_pos();
         // XXX(nika): Shouild we bother doing a checked cast or checked add here?
         let span = Span {
-            lo: lo,
+            lo,
             hi: lo + (src.len() as u32),
         };
 
         #[cfg(procmacro2_semver_exempt)]
         self.files.push(FileInfo {
             name: name.to_owned(),
-            span: span,
-            lines: lines,
+            span,
+            lines,
         });
 
         #[cfg(not(procmacro2_semver_exempt))]
-        self.files.push(FileInfo {
-            span: span,
-            lines: lines,
-        });
+        self.files.push(FileInfo { span, lines });
         let _ = name;
 
         span
@@ -453,8 +450,8 @@ pub struct Group {
 impl Group {
     pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
         Group {
-            delimiter: delimiter,
-            stream: stream,
+            delimiter,
+            stream,
             span: Span::call_site(),
         }
     }
@@ -527,8 +524,8 @@ impl Ident {
 
         Ident {
             sym: string.to_owned(),
-            span: span,
-            raw: raw,
+            span,
+            raw,
         }
     }
 
@@ -671,7 +668,7 @@ macro_rules! unsuffixed_numbers {
 impl Literal {
     fn _new(text: String) -> Literal {
         Literal {
-            text: text,
+            text,
             span: Span::call_site(),
         }
     }
@@ -837,7 +834,7 @@ fn spanned<'a, T>(
     let lo = input.off;
     let (a, b) = f(input)?;
     let hi = a.off;
-    let span = ::Span::_new_stable(Span { lo: lo, hi: hi });
+    let span = ::Span::_new_stable(Span { lo, hi });
     Ok((a, (b, span)))
 }
 

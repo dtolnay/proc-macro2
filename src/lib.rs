@@ -136,7 +136,7 @@ pub struct LexError {
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
         TokenStream {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -268,7 +268,7 @@ pub struct SourceFile {
 impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -328,7 +328,7 @@ pub struct Span {
 impl Span {
     fn _new(inner: imp::Span) -> Span {
         Span {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -411,10 +411,7 @@ impl Span {
     #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
-        LineColumn {
-            line: line,
-            column: column,
-        }
+        LineColumn { line, column }
     }
 
     /// Get the ending line/column in the source file for this span.
@@ -423,10 +420,7 @@ impl Span {
     #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
-        LineColumn {
-            line: line,
-            column: column,
-        }
+        LineColumn { line, column }
     }
 
     /// Create a new span encompassing `self` and `other`.
@@ -583,7 +577,7 @@ pub enum Delimiter {
 
 impl Group {
     fn _new(inner: imp::Group) -> Self {
-        Group { inner: inner }
+        Group { inner }
     }
 
     fn _new_stable(inner: fallback::Group) -> Self {
@@ -709,8 +703,8 @@ impl Punct {
     /// which can be further configured with the `set_span` method below.
     pub fn new(op: char, spacing: Spacing) -> Punct {
         Punct {
-            op: op,
-            spacing: spacing,
+            op,
+            spacing,
             span: Span::call_site(),
         }
     }
@@ -831,7 +825,7 @@ pub struct Ident {
 impl Ident {
     fn _new(inner: imp::Ident) -> Ident {
         Ident {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }
@@ -999,7 +993,7 @@ macro_rules! unsuffixed_int_literals {
 impl Literal {
     fn _new(inner: imp::Literal) -> Literal {
         Literal {
-            inner: inner,
+            inner,
             _marker: marker::PhantomData,
         }
     }

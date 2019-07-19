@@ -102,9 +102,7 @@ fn rustc_version() -> Option<RustcVersion> {
     let version = otry!(str::from_utf8(&output.stdout).ok());
     let nightly = version.contains("nightly");
 
-    Some(RustcVersion {
-        nightly: nightly,
-    })
+    Some(RustcVersion { nightly })
 }
 
 fn feature_allowed(feature: &str) -> bool {
