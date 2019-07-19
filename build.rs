@@ -14,11 +14,6 @@
 //     procmacro2_semver_exempt surface area is implemented by using the
 //     nightly-only proc_macro API.
 //
-// "slow_extend"
-//     Fallback when `impl Extend for TokenStream` is not available. These impls
-//     were added one version later than the rest of the proc_macro token API.
-//     Enabled on rustc 1.29 only.
-//
 // "proc_macro_span"
 //     Enable non-dummy behavior of Span::start and Span::end methods which
 //     requires an unstable compiler feature. Enabled when building with
@@ -68,10 +63,6 @@ fn main() {
     // Rust 1.29 stabilized the necessary APIs in the `proc_macro` crate
     if version.nightly || version.minor >= 29 && !semver_exempt {
         println!("cargo:rustc-cfg=wrap_proc_macro");
-    }
-
-    if version.minor == 29 {
-        println!("cargo:rustc-cfg=slow_extend");
     }
 
     if version.nightly && feature_allowed("proc_macro_span") {

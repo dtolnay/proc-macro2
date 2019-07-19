@@ -200,17 +200,6 @@ impl iter::FromIterator<TokenStream> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
         let mut streams = streams.into_iter();
         match streams.next() {
-            #[cfg(slow_extend)]
-            Some(TokenStream::Compiler(first)) => {
-                let stream = iter::once(first)
-                    .chain(streams.map(|s| match s {
-                        TokenStream::Compiler(s) => s,
-                        TokenStream::Fallback(_) => mismatch(),
-                    }))
-                    .collect();
-                TokenStream::Compiler(stream)
-            }
-            #[cfg(not(slow_extend))]
             Some(TokenStream::Compiler(mut first)) => {
                 first.extend(streams.map(|s| match s {
                     TokenStream::Compiler(s) => s,
@@ -234,27 +223,11 @@ impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         match self {
             TokenStream::Compiler(tts) => {
-                #[cfg(not(slow_extend))]
-                {
-                    tts.extend(
-                        streams
-                            .into_iter()
-                            .map(|t| TokenStream::from(t).unwrap_nightly()),
-                    );
-                }
-                #[cfg(slow_extend)]
-                {
-                    *tts =
-                        tts.clone()
-                            .into_iter()
-                            .chain(streams.into_iter().map(TokenStream::from).flat_map(
-                                |t| match t {
-                                    TokenStream::Compiler(tts) => tts.into_iter(),
-                                    _ => mismatch(),
-                                },
-                            ))
-                            .collect();
-                }
+                tts.extend(
+                    streams
+                        .into_iter()
+                        .map(|t| TokenStream::from(t).unwrap_nightly()),
+                );
             }
             TokenStream::Fallback(tts) => tts.extend(streams),
         }
