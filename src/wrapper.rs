@@ -804,21 +804,17 @@ impl Literal {
         u16_suffixed => u16,
         u32_suffixed => u32,
         u64_suffixed => u64,
+        u128_suffixed => u128,
         usize_suffixed => usize,
         i8_suffixed => i8,
         i16_suffixed => i16,
         i32_suffixed => i32,
         i64_suffixed => i64,
+        i128_suffixed => i128,
         isize_suffixed => isize,
 
         f32_suffixed => f32,
         f64_suffixed => f64,
-    }
-
-    #[cfg(u128)]
-    suffixed_numbers! {
-        i128_suffixed => i128,
-        u128_suffixed => u128,
     }
 
     unsuffixed_integers! {
@@ -826,18 +822,14 @@ impl Literal {
         u16_unsuffixed => u16,
         u32_unsuffixed => u32,
         u64_unsuffixed => u64,
+        u128_unsuffixed => u128,
         usize_unsuffixed => usize,
         i8_unsuffixed => i8,
         i16_unsuffixed => i16,
         i32_unsuffixed => i32,
         i64_unsuffixed => i64,
-        isize_unsuffixed => isize,
-    }
-
-    #[cfg(u128)]
-    unsuffixed_integers! {
         i128_unsuffixed => i128,
-        u128_unsuffixed => u128,
+        isize_unsuffixed => isize,
     }
 
     pub fn f32_unsuffixed(f: f32) -> Literal {

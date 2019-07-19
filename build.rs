@@ -1,9 +1,5 @@
 // rustc-cfg emitted by the build script:
 //
-// "u128"
-//     Include u128 and i128 constructors for proc_macro2::Literal. Enabled on
-//     any compiler 1.26+.
-//
 // "use_proc_macro"
 //     Link to extern crate proc_macro. Available on any compiler and any target
 //     except wasm32. Requires "proc-macro" Cargo cfg to be enabled (default is
@@ -52,10 +48,6 @@ fn main() {
         Some(version) => version,
         None => return,
     };
-
-    if version.minor >= 26 {
-        println!("cargo:rustc-cfg=u128");
-    }
 
     let semver_exempt = cfg!(procmacro2_semver_exempt);
     if semver_exempt {
