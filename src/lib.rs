@@ -151,11 +151,6 @@ impl TokenStream {
         TokenStream::_new(imp::TokenStream::new())
     }
 
-    #[deprecated(since = "0.4.4", note = "please use TokenStream::new")]
-    pub fn empty() -> TokenStream {
-        TokenStream::new()
-    }
-
     /// Checks if this `TokenStream` is empty.
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
