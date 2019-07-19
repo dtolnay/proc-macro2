@@ -1,5 +1,5 @@
 [package]
-name = "proc-macro2"
+name = "proc-macro2-next"
 version = "0.4.30" # remember to update html_root_url
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
 license = "MIT OR Apache-2.0"
@@ -14,6 +14,10 @@ A stable implementation of the upcoming new `proc_macro` API. Comes with an
 option, off by default, to also reimplement itself in terms of the upstream
 unstable API.
 """
+publish = false # contains breaking changes
+
+[lib]
+name = "proc_macro2"
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "procmacro2_semver_exempt"]
@@ -56,4 +60,4 @@ travis-ci = { repository = "alexcrichton/proc-macro2" }
 # the second-most-recent version number, pulling in quote which resolves to a
 # dependency on the just-published most recent version number. Thus the patch
 # will fail to apply because the version numbers are different.
-proc-macro2 = { path = "." }
+proc-macro2-next = { path = "." }
