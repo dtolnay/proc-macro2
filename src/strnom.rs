@@ -95,7 +95,7 @@ pub fn whitespace(input: Cursor) -> PResult<()> {
             }
         }
         match bytes[i] {
-            b' ' | 0x09...0x0d => {
+            b' ' | 0x09..=0x0d => {
                 i += 1;
                 continue;
             }

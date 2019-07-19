@@ -760,7 +760,7 @@ impl Literal {
                 b'\r' => escaped.push_str(r"\r"),
                 b'"' => escaped.push_str("\\\""),
                 b'\\' => escaped.push_str("\\\\"),
-                b'\x20'...b'\x7E' => escaped.push(*b as char),
+                b'\x20'..=b'\x7E' => escaped.push(*b as char),
                 _ => escaped.push_str(&format!("\\x{:02X}", b)),
             }
         }
@@ -1162,8 +1162,8 @@ fn backslash_x_char<I>(chars: &mut I) -> bool
 where
     I: Iterator<Item = (usize, char)>,
 {
-    next_ch!(chars @ '0'...'7');
-    next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F');
+    next_ch!(chars @ '0'..='7');
+    next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
     true
 }
 
@@ -1171,8 +1171,8 @@ fn backslash_x_byte<I>(chars: &mut I) -> bool
 where
     I: Iterator<Item = (usize, u8)>,
 {
-    next_ch!(chars @ b'0'...b'9' | b'a'...b'f' | b'A'...b'F');
-    next_ch!(chars @ b'0'...b'9' | b'a'...b'f' | b'A'...b'F');
+    next_ch!(chars @ b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F');
+    next_ch!(chars @ b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F');
     true
 }
 
@@ -1181,9 +1181,9 @@ where
     I: Iterator<Item = (usize, char)>,
 {
     next_ch!(chars @ '{');
-    next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F');
+    next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
     loop {
-        let c = next_ch!(chars @ '0'...'9' | 'a'...'f' | 'A'...'F' | '_' | '}');
+        let c = next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F' | '_' | '}');
         if c == '}' {
             return true;
         }
@@ -1212,7 +1212,7 @@ fn float_digits(input: Cursor) -> PResult<()> {
     let mut has_exp = false;
     while let Some(&ch) = chars.peek() {
         match ch {
-            '0'...'9' | '_' => {
+            '0'..='9' | '_' => {
                 chars.next();
                 len += 1;
             }
@@ -1257,7 +1257,7 @@ fn float_digits(input: Cursor) -> PResult<()> {
                     chars.next();
                     len += 1;
                 }
-                '0'...'9' => {
+                '0'..='9' => {
                     chars.next();
                     len += 1;
                     has_exp_value = true;
@@ -1307,9 +1307,9 @@ fn digits(mut input: Cursor) -> PResult<()> {
     let mut empty = true;
     for b in input.bytes() {
         let digit = match b {
-            b'0'...b'9' => (b - b'0') as u64,
-            b'a'...b'f' => 10 + (b - b'a') as u64,
-            b'A'...b'F' => 10 + (b - b'A') as u64,
+            b'0'..=b'9' => (b - b'0') as u64,
+            b'a'..=b'f' => 10 + (b - b'a') as u64,
+            b'A'..=b'F' => 10 + (b - b'A') as u64,
             b'_' => {
                 if empty && base == 10 {
                     return Err(LexError);

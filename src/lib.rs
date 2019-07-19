@@ -88,7 +88,6 @@
 #![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.30")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
-#![allow(ellipsis_inclusive_range_patterns, unknown_lints)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
