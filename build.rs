@@ -84,7 +84,6 @@ fn enable_use_proc_macro(target: &str) -> bool {
 }
 
 struct RustcVersion {
-    minor: u32,
     nightly: bool,
 }
 
@@ -102,15 +101,8 @@ fn rustc_version() -> Option<RustcVersion> {
     let output = otry!(Command::new(rustc).arg("--version").output().ok());
     let version = otry!(str::from_utf8(&output.stdout).ok());
     let nightly = version.contains("nightly");
-    let mut pieces = version.split('.');
-    if pieces.next() != Some("rustc 1") {
-        return None;
-    }
-    let minor = otry!(pieces.next());
-    let minor = otry!(minor.parse().ok());
 
     Some(RustcVersion {
-        minor: minor,
         nightly: nightly,
     })
 }
