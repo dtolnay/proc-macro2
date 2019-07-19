@@ -88,20 +88,10 @@ struct RustcVersion {
 }
 
 fn rustc_version() -> Option<RustcVersion> {
-    macro_rules! otry {
-        ($e:expr) => {
-            match $e {
-                Some(e) => e,
-                None => return None,
-            }
-        };
-    }
-
-    let rustc = otry!(env::var_os("RUSTC"));
-    let output = otry!(Command::new(rustc).arg("--version").output().ok());
-    let version = otry!(str::from_utf8(&output.stdout).ok());
+    let rustc = env::var_os("RUSTC")?;
+    let output = Command::new(rustc).arg("--version").output().ok()?;
+    let version = str::from_utf8(&output.stdout).ok()?;
     let nightly = version.contains("nightly");
-
     Some(RustcVersion { nightly })
 }
 
