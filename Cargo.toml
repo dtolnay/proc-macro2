@@ -20,7 +20,7 @@ rustc-args = ["--cfg", "procmacro2_semver_exempt"]
 rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
 
 [dependencies]
-unicode-xid = "0.1"
+unicode-xid = "0.2"
 
 [dev-dependencies]
 quote = "0.6"
