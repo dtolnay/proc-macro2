@@ -28,7 +28,7 @@ rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
 unicode-xid = "0.2"
 
 [dev-dependencies]
-quote = "0.6"
+quote-next = "0.6"
 
 [features]
 proc-macro = []
@@ -62,3 +62,5 @@ travis-ci = { repository = "alexcrichton/proc-macro2" }
 # dependency on the just-published most recent version number. Thus the patch
 # will fail to apply because the version numbers are different.
 proc-macro2-next = { path = "." }
+
+quote-next = { git = "https://github.com/dtolnay/quote" }
