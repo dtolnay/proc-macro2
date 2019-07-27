@@ -107,7 +107,7 @@ mod strnom;
 mod fallback;
 
 #[cfg(not(wrap_proc_macro))]
-use fallback as imp;
+use crate::fallback as imp;
 #[path = "wrapper.rs"]
 #[cfg(wrap_proc_macro)]
 mod imp;
