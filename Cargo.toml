@@ -1,6 +1,6 @@
 [package]
 name = "proc-macro2-next"
-version = "0.4.30" # remember to update html_root_url
+version = "1.0.0-rc1" # remember to update html_root_url
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
@@ -15,7 +15,6 @@ A stable implementation of the upcoming new `proc_macro` API. Comes with an
 option, off by default, to also reimplement itself in terms of the upstream
 unstable API.
 """
-publish = false # contains breaking changes
 
 [lib]
 name = "proc_macro2"
@@ -28,7 +27,7 @@ rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
 unicode-xid = "0.2"
 
 [dev-dependencies]
-quote-next = "0.6"
+quote-next = "1.0.0-rc1"
 
 [features]
 proc-macro = []
@@ -62,5 +61,3 @@ travis-ci = { repository = "alexcrichton/proc-macro2" }
 # dependency on the just-published most recent version number. Thus the patch
 # will fail to apply because the version numbers are different.
 proc-macro2-next = { path = "." }
-
-quote-next = { git = "https://github.com/dtolnay/quote" }
