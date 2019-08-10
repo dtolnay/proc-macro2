@@ -8,7 +8,6 @@ keywords = ["macros"]
 repository = "https://github.com/alexcrichton/proc-macro2"
 homepage = "https://github.com/alexcrichton/proc-macro2"
 documentation = "https://docs.rs/proc-macro2"
-build = "build.rs"
 edition = "2018"
 description = """
 A stable implementation of the upcoming new `proc_macro` API. Comes with an
