@@ -1,6 +1,6 @@
 #[cfg(span_locations)]
 use std::cell::RefCell;
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_locations)]
 use std::cmp;
 use std::fmt;
 use std::iter;
@@ -407,7 +407,12 @@ impl Span {
         })
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(not(span_locations))]
+    pub fn join(&self, _other: Span) -> Option<Span> {
+        Some(Span {})
+    }
+
+    #[cfg(span_locations)]
     pub fn join(&self, other: Span) -> Option<Span> {
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
