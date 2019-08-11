@@ -586,18 +586,22 @@ impl Group {
         }
     }
 
-    #[cfg(super_unstable)]
     pub fn span_open(&self) -> Span {
         match self {
+            #[cfg(proc_macro_span)]
             Group::Compiler(g) => Span::Compiler(g.span_open()),
+            #[cfg(not(proc_macro_span))]
+            Group::Compiler(g) => Span::Compiler(g.span()),
             Group::Fallback(g) => Span::Fallback(g.span_open()),
         }
     }
 
-    #[cfg(super_unstable)]
     pub fn span_close(&self) -> Span {
         match self {
+            #[cfg(proc_macro_span)]
             Group::Compiler(g) => Span::Compiler(g.span_close()),
+            #[cfg(not(proc_macro_span))]
+            Group::Compiler(g) => Span::Compiler(g.span()),
             Group::Fallback(g) => Span::Fallback(g.span_close()),
         }
     }

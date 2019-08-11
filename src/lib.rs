@@ -623,7 +623,6 @@ impl Group {
     /// pub fn span_open(&self) -> Span {
     ///                 ^
     /// ```
-    #[cfg(procmacro2_semver_exempt)]
     pub fn span_open(&self) -> Span {
         Span::_new(self.inner.span_open())
     }
@@ -634,7 +633,6 @@ impl Group {
     /// pub fn span_close(&self) -> Span {
     ///                        ^
     /// ```
-    #[cfg(procmacro2_semver_exempt)]
     pub fn span_close(&self) -> Span {
         Span::_new(self.inner.span_close())
     }

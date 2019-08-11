@@ -472,12 +472,10 @@ impl Group {
         self.span
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn span_open(&self) -> Span {
         self.span
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn span_close(&self) -> Span {
         self.span
     }
