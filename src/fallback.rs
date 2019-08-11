@@ -881,13 +881,26 @@ fn symbol_leading_ws(input: Cursor) -> PResult<TokenTree> {
 }
 
 fn symbol(input: Cursor) -> PResult<TokenTree> {
-    let mut chars = input.char_indices();
-
     let raw = input.starts_with("r#");
-    if raw {
-        chars.next();
-        chars.next();
+    let rest = input.advance((raw as usize) << 1);
+
+    let (rest, sym) = symbol_not_raw(rest)?;
+
+    if !raw {
+        let ident = crate::Ident::new(sym, crate::Span::call_site());
+        return Ok((rest, ident.into()));
     }
+
+    if sym == "_" {
+        return Err(LexError)
+    }
+
+    let ident = crate::Ident::_new_raw(sym, crate::Span::call_site());
+    Ok((rest, ident.into()))
+}
+
+fn symbol_not_raw(input: Cursor) -> PResult<&str> {
+    let mut chars = input.char_indices();
 
     match chars.next() {
         Some((_, ch)) if is_ident_start(ch) => {}
@@ -902,17 +915,7 @@ fn symbol(input: Cursor) -> PResult<TokenTree> {
         }
     }
 
-    let a = &input.rest[..end];
-    if a == "r#_" {
-        Err(LexError)
-    } else {
-        let ident = if raw {
-            crate::Ident::_new_raw(&a[2..], crate::Span::call_site())
-        } else {
-            crate::Ident::new(a, crate::Span::call_site())
-        };
-        Ok((input.advance(end), ident.into()))
-    }
+    Ok((input.advance(end), &input.rest[..end]))
 }
 
 fn literal(input: Cursor) -> PResult<Literal> {
@@ -952,10 +955,12 @@ named!(string -> (), alt!(
     ) => { |_| () }
 ));
 
-named!(quoted_string -> (), delimited!(
-    punct!("\""),
-    cooked_string,
-    tag!("\"")
+named!(quoted_string -> (), do_parse!(
+    punct!("\"") >>
+    cooked_string >>
+    tag!("\"") >>
+    option!(symbol_not_raw) >>
+    (())
 ));
 
 fn cooked_string(input: Cursor) -> PResult<()> {
@@ -1193,10 +1198,10 @@ where
 }
 
 fn float(input: Cursor) -> PResult<()> {
-    let (rest, ()) = float_digits(input)?;
-    for suffix in &["f32", "f64"] {
-        if rest.starts_with(suffix) {
-            return word_break(rest.advance(suffix.len()));
+    let (mut rest, ()) = float_digits(input)?;
+    if let Some(ch) = rest.chars().next() {
+        if is_ident_start(ch) {
+            rest = symbol_not_raw(rest)?.0;
         }
     }
     word_break(rest)
@@ -1225,7 +1230,7 @@ fn float_digits(input: Cursor) -> PResult<()> {
                 chars.next();
                 if chars
                     .peek()
-                    .map(|&ch| ch == '.' || UnicodeXID::is_xid_start(ch))
+                    .map(|&ch| ch == '.' || is_ident_start(ch))
                     .unwrap_or(false)
                 {
                     return Err(LexError);
@@ -1280,12 +1285,10 @@ fn float_digits(input: Cursor) -> PResult<()> {
 }
 
 fn int(input: Cursor) -> PResult<()> {
-    let (rest, ()) = digits(input)?;
-    for suffix in &[
-        "isize", "i8", "i16", "i32", "i64", "i128", "usize", "u8", "u16", "u32", "u64", "u128",
-    ] {
-        if rest.starts_with(suffix) {
-            return word_break(rest.advance(suffix.len()));
+    let (mut rest, ()) = digits(input)?;
+    if let Some(ch) = rest.chars().next() {
+        if is_ident_start(ch) {
+            rest = symbol_not_raw(rest)?.0;
         }
     }
     word_break(rest)

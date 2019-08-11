@@ -97,6 +97,22 @@ fn literal_float() {
 }
 
 #[test]
+fn literal_suffix() {
+    fn token_count(p: &str) -> usize {
+        p.parse::<TokenStream>().unwrap().into_iter().count()
+    }
+
+    assert_eq!(token_count("999u256"), 1);
+    assert_eq!(token_count("999r#u256"), 3);
+    assert_eq!(token_count("1."), 1);
+    assert_eq!(token_count("1.f32"), 3);
+    assert_eq!(token_count("1.0_0"), 1);
+    assert_eq!(token_count("1._0"), 3);
+    assert_eq!(token_count("1._m"), 3);
+    assert_eq!(token_count("\"\"s"), 1);
+}
+
+#[test]
 fn roundtrip() {
     fn roundtrip(p: &str) {
         println!("parse: {}", p);
@@ -123,6 +139,9 @@ fn roundtrip() {
         9
         0
         0xffffffffffffffffffffffffffffffff
+        1x
+        1u80
+        1f320
     ",
     );
     roundtrip("'a");
@@ -139,9 +158,6 @@ fn fail() {
             panic!("should have failed to parse: {}\n{:#?}", p, s);
         }
     }
-    fail("1x");
-    fail("1u80");
-    fail("1f320");
     fail("' static");
     fail("r#1");
     fail("r#_");
