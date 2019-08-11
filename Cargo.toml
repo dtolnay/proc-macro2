@@ -1,6 +1,6 @@
 [package]
 name = "proc-macro2-next"
-version = "1.0.0-rc3" # remember to update html_root_url
+version = "1.0.0-rc4" # remember to update html_root_url
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
