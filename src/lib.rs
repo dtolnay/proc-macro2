@@ -33,7 +33,7 @@
 //!
 //! The skeleton of a typical procedural macro typically looks like this:
 //!
-//! ```edition2018
+//! ```
 //! extern crate proc_macro;
 //!
 //! # const IGNORE: &str = stringify! {
@@ -768,7 +768,7 @@ impl fmt::Debug for Punct {
 /// A span must be provided explicitly which governs the name resolution
 /// behavior of the resulting identifier.
 ///
-/// ```edition2018
+/// ```
 /// use proc_macro2::{Ident, Span};
 ///
 /// fn main() {
@@ -780,7 +780,7 @@ impl fmt::Debug for Punct {
 ///
 /// An ident can be interpolated into a token stream using the `quote!` macro.
 ///
-/// ```edition2018
+/// ```
 /// use proc_macro2::{Ident, Span};
 /// use quote::quote;
 ///
@@ -799,7 +799,7 @@ impl fmt::Debug for Punct {
 /// A string representation of the ident is available through the `to_string()`
 /// method.
 ///
-/// ```edition2018
+/// ```
 /// # use proc_macro2::{Ident, Span};
 /// #
 /// # let ident = Ident::new("another_identifier", Span::call_site());
