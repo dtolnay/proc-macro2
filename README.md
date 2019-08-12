@@ -60,10 +60,10 @@ API. Functionality in `proc_macro` that is not yet stable is not exposed by
 proc-macro2 by default.
 
 To opt into the additional APIs available in the most recent nightly compiler,
-the `procmacro2_semver_exempt` config flag must be passed to rustc. As usual, we
-will polyfill those nightly-only APIs all the way back to Rust 1.15.0. As these
-are unstable APIs that track the nightly compiler, minor versions of proc-macro2
-may make breaking changes to them at any time.
+the `procmacro2_semver_exempt` config flag must be passed to rustc. We will
+polyfill those nightly-only APIs back to Rust 1.31.0. As these are unstable APIs
+that track the nightly compiler, minor versions of proc-macro2 may make breaking
+changes to them at any time.
 
 ```
 RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo build
