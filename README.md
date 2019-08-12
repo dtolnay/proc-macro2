@@ -5,7 +5,7 @@
 [![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/proc-macro2)
 
 A wrapper around the procedural macro API of the compiler's `proc_macro` crate.
-This library serves three purposes:
+This library serves two purposes:
 
 - **Bring proc-macro-like functionality to other contexts like build.rs and
   main.rs.** Types from `proc_macro` are entirely specific to procedural macros
@@ -20,13 +20,6 @@ This library serves three purposes:
   to procedural macros, nothing that uses `proc_macro` can be executed from a
   unit test. In order for helper libraries or components of a macro to be
   testable in isolation, they must be implemented using `proc_macro2`.
-
-- **Provide the latest and greatest APIs across all compiler versions.**
-  Procedural macros were first introduced to Rust in 1.15.0 with an extremely
-  minimal interface. Since then, many improvements have landed to make macros
-  more flexible and easier to write. This library tracks the procedural macro
-  API of the most recent stable compiler but employs a polyfill to provide that
-  API consistently across any compiler since 1.15.0.
 
 [syn]: https://github.com/dtolnay/syn
 [quote]: https://github.com/dtolnay/quote

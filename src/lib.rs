@@ -1,5 +1,5 @@
 //! A wrapper around the procedural macro API of the compiler's [`proc_macro`]
-//! crate. This library serves three purposes:
+//! crate. This library serves two purposes:
 //!
 //! [`proc_macro`]: https://doc.rust-lang.org/proc_macro/
 //!
@@ -17,14 +17,6 @@
 //!   executed from a unit test. In order for helper libraries or components of
 //!   a macro to be testable in isolation, they must be implemented using
 //!   `proc_macro2`.
-//!
-//! - **Provide the latest and greatest APIs across all compiler versions.**
-//!   Procedural macros were first introduced to Rust in 1.15.0 with an
-//!   extremely minimal interface. Since then, many improvements have landed to
-//!   make macros more flexible and easier to write. This library tracks the
-//!   procedural macro API of the most recent stable compiler but employs a
-//!   polyfill to provide that API consistently across any compiler since
-//!   1.15.0.
 //!
 //! [syn]: https://github.com/dtolnay/syn
 //! [quote]: https://github.com/dtolnay/quote
