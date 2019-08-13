@@ -1,6 +1,6 @@
 [package]
-name = "proc-macro2-next"
-version = "1.0.0-rc4" # remember to update html_root_url
+name = "proc-macro2"
+version = "1.0.0" # remember to update html_root_url
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
@@ -26,7 +26,7 @@ rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
 unicode-xid = "0.2"
 
 [dev-dependencies]
-quote-next = "1.0.0-rc1"
+quote = "1.0.0"
 
 [features]
 proc-macro = []
@@ -59,4 +59,4 @@ travis-ci = { repository = "alexcrichton/proc-macro2" }
 # the second-most-recent version number, pulling in quote which resolves to a
 # dependency on the just-published most recent version number. Thus the patch
 # will fail to apply because the version numbers are different.
-proc-macro2-next = { path = "." }
+proc-macro2 = { path = "." }
