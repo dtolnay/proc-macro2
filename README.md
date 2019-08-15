@@ -28,7 +28,7 @@ This library serves two purposes:
 
 ```toml
 [dependencies]
-proc-macro2 = "0.4"
+proc-macro2 = "1.0"
 ```
 
 The skeleton of a typical procedural macro typically looks like this:
@@ -51,7 +51,7 @@ pub fn my_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 If parsing with [Syn], you'll use [`parse_macro_input!`] instead to propagate
 parse errors correctly back to the compiler when parsing fails.
 
-[`parse_macro_input!`]: https://docs.rs/syn/0.15/syn/macro.parse_macro_input.html
+[`parse_macro_input!`]: https://docs.rs/syn/1.0/syn/macro.parse_macro_input.html
 
 ## Unstable features
 
