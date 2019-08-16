@@ -892,7 +892,7 @@ fn symbol(input: Cursor) -> PResult<TokenTree> {
     }
 
     if sym == "_" {
-        return Err(LexError)
+        return Err(LexError);
     }
 
     let ident = crate::Ident::_new_raw(sym, crate::Span::call_site());
