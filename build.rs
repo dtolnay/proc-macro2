@@ -31,18 +31,21 @@
 //     location inside spans is a performance hit.
 
 use std::env;
-use std::process::Command;
+use std::process::{self, Command};
 use std::str;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
-    let target = env::var("TARGET").unwrap();
-
     let version = match rustc_version() {
         Some(version) => version,
         None => return,
     };
+
+    if version.minor < 31 {
+        eprintln!("Minimum supported rustc version is 1.31");
+        process::exit(1);
+    }
 
     let semver_exempt = cfg!(procmacro2_semver_exempt);
     if semver_exempt {
@@ -54,6 +57,7 @@ fn main() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
+    let target = env::var("TARGET").unwrap();
     if !enable_use_proc_macro(&target) {
         return;
     }
@@ -84,6 +88,7 @@ fn enable_use_proc_macro(target: &str) -> bool {
 }
 
 struct RustcVersion {
+    minor: u32,
     nightly: bool,
 }
 
@@ -92,7 +97,12 @@ fn rustc_version() -> Option<RustcVersion> {
     let output = Command::new(rustc).arg("--version").output().ok()?;
     let version = str::from_utf8(&output.stdout).ok()?;
     let nightly = version.contains("nightly");
-    Some(RustcVersion { nightly })
+    let mut pieces = version.split('.');
+    if pieces.next() != Some("rustc 1") {
+        return None;
+    }
+    let minor = pieces.next()?.parse().ok()?;
+    Some(RustcVersion { minor, nightly })
 }
 
 fn feature_allowed(feature: &str) -> bool {
