@@ -672,7 +672,7 @@ pub struct Punct {
 pub enum Spacing {
     /// E.g. `+` is `Alone` in `+ =`, `+ident` or `+()`.
     Alone,
-    /// E.g. `+` is `Joint` in `+=` or `'#`.
+    /// E.g. `+` is `Joint` in `+=` or `'` is `Joint` in `'#`.
     ///
     /// Additionally, single quote `'` can join with identifiers to form
     /// lifetimes `'ident`.
