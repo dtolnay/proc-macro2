@@ -191,6 +191,12 @@ impl From<TokenStream> for proc_macro::TokenStream {
     }
 }
 
+impl From<TokenTree> for TokenStream {
+    fn from(token: TokenTree) -> Self {
+        TokenStream::_new(imp::TokenStream::from(token))
+    }
+}
+
 impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         self.inner.extend(streams)
