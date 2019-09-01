@@ -75,6 +75,17 @@ reminder that you are outside of the normal semver guarantees.
 
 Semver exempt methods are marked as such in the proc-macro2 documentation.
 
+## Thread-Safety.
+
+By default, most of `proc_macro2`'s types are not `Send` or `Sync` -- they cannot be sent or shared between threads. This is because `proc_macro2` wraps `proc_macro`, which internally uses thread-unsafe data structures to represent token streams. However, if you don't need `proc_macro` compatibility, you can disable the `proc-macro` feature in your `Cargo.toml` like so:
+
+```toml
+[dependencies]
+proc-macro2 = { version = "[...]", default_features = false }
+```
+
+This will remove the dependency on `proc_macro`. In versions of `proc-macro2` starting from `1.1.0`, this will also make all proc_macro2 data structures thread safe. (Make sure you disable the `proc-macro` feature in any other crates that depend on `proc_macro2`, though, so that they don't reactivate the feature.)
+
 <br>
 
 #### License

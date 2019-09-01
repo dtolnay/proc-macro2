@@ -71,11 +71,16 @@
 //!
 //! Semver exempt methods are marked as such in the proc-macro2 documentation.
 //!
-//! # Thread-Safety
-//!
-//! Most types in this crate are `!Sync` because the underlying compiler
-//! types make use of thread-local memory, meaning they cannot be accessed from
-//! a different thread.
+//! # Thread-Safety.
+//! 
+//! By default, most of `proc_macro2`'s types are not `Send` or `Sync` -- they cannot be sent or shared between threads. This is because `proc_macro2` wraps `proc_macro`, which internally uses thread-unsafe data structures to represent token streams. However, if you don't need `proc_macro` compatibility, you can disable the `proc-macro` feature in your `Cargo.toml` like so:
+//! 
+//! ```toml
+//! [dependencies]
+//! proc-macro2 = { version = "[...]", default_features = false }
+//! ```
+//! 
+//! This will remove the dependency on `proc_macro`. In versions of `proc-macro2` starting from `1.1.0`, this will also make all proc_macro2 data structures `Send` and `Sync`. (Make sure you disable the `proc-macro` feature in any other crates that depend on `proc_macro2`, though, so that they don't reactivate the feature.)
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
 #![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.2")]
@@ -89,9 +94,11 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
+#[cfg(wrap_proc_macro)]
 use std::marker;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
+#[cfg(wrap_proc_macro)]
 use std::rc::Rc;
 use std::str::FromStr;
 
@@ -115,12 +122,14 @@ mod imp;
 #[derive(Clone)]
 pub struct TokenStream {
     inner: imp::TokenStream,
+    #[cfg(wrap_proc_macro)]
     _marker: marker::PhantomData<Rc<()>>,
 }
 
 /// Error returned from `TokenStream::from_str`.
 pub struct LexError {
     inner: imp::LexError,
+    #[cfg(wrap_proc_macro)]
     _marker: marker::PhantomData<Rc<()>>,
 }
 
@@ -128,6 +137,7 @@ impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
         TokenStream {
             inner,
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -135,6 +145,7 @@ impl TokenStream {
     fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
         TokenStream {
             inner: inner.into(),
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -172,6 +183,7 @@ impl FromStr for TokenStream {
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         let e = src.parse().map_err(|e| LexError {
             inner: e,
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         })?;
         Ok(TokenStream::_new(e))
@@ -253,6 +265,7 @@ impl fmt::Debug for LexError {
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     inner: imp::SourceFile,
+    #[cfg(wrap_proc_macro)]
     _marker: marker::PhantomData<Rc<()>>,
 }
 
@@ -261,6 +274,7 @@ impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
             inner,
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -314,6 +328,7 @@ pub struct LineColumn {
 #[derive(Copy, Clone)]
 pub struct Span {
     inner: imp::Span,
+    #[cfg(wrap_proc_macro)]
     _marker: marker::PhantomData<Rc<()>>,
 }
 
@@ -321,6 +336,7 @@ impl Span {
     fn _new(inner: imp::Span) -> Span {
         Span {
             inner,
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -328,6 +344,7 @@ impl Span {
     fn _new_stable(inner: fallback::Span) -> Span {
         Span {
             inner: inner.into(),
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -812,6 +829,7 @@ impl fmt::Debug for Punct {
 #[derive(Clone)]
 pub struct Ident {
     inner: imp::Ident,
+    #[cfg(wrap_proc_macro)]
     _marker: marker::PhantomData<Rc<()>>,
 }
 
@@ -819,6 +837,7 @@ impl Ident {
     fn _new(inner: imp::Ident) -> Ident {
         Ident {
             inner,
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -940,6 +959,7 @@ impl fmt::Debug for Ident {
 #[derive(Clone)]
 pub struct Literal {
     inner: imp::Literal,
+    #[cfg(wrap_proc_macro)]
     _marker: marker::PhantomData<Rc<()>>,
 }
 
@@ -987,6 +1007,7 @@ impl Literal {
     fn _new(inner: imp::Literal) -> Literal {
         Literal {
             inner,
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -994,6 +1015,7 @@ impl Literal {
     fn _new_stable(inner: fallback::Literal) -> Literal {
         Literal {
             inner: inner.into(),
+            #[cfg(wrap_proc_macro)]
             _marker: marker::PhantomData,
         }
     }
@@ -1141,7 +1163,9 @@ impl fmt::Display for Literal {
 /// Public implementation details for the `TokenStream` type, such as iterators.
 pub mod token_stream {
     use std::fmt;
+    #[cfg(wrap_proc_macro)]
     use std::marker;
+    #[cfg(wrap_proc_macro)]
     use std::rc::Rc;
 
     pub use crate::TokenStream;
@@ -1154,6 +1178,7 @@ pub mod token_stream {
     #[derive(Clone)]
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
+        #[cfg(wrap_proc_macro)]
         _marker: marker::PhantomData<Rc<()>>,
     }
 
@@ -1178,6 +1203,7 @@ pub mod token_stream {
         fn into_iter(self) -> IntoIter {
             IntoIter {
                 inner: self.inner.into_iter(),
+                #[cfg(wrap_proc_macro)]
                 _marker: marker::PhantomData,
             }
         }
