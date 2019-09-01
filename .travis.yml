@@ -9,6 +9,7 @@ matrix:
     - rust: nightly
       script:
         - cargo test
+        - cargo test --no-default-features
         - cargo test --no-default-features -- --ignored # run the ignored test to make sure the `proc-macro` feature is disabled
         - cargo test --features span-locations
         - RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
