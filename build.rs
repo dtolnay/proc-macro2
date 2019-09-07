@@ -96,7 +96,7 @@ fn rustc_version() -> Option<RustcVersion> {
     let rustc = env::var_os("RUSTC")?;
     let output = Command::new(rustc).arg("--version").output().ok()?;
     let version = str::from_utf8(&output.stdout).ok()?;
-    let nightly = version.contains("nightly");
+    let nightly = version.contains("nightly") || version.contains("dev");
     let mut pieces = version.split('.');
     if pieces.next() != Some("rustc 1") {
         return None;
