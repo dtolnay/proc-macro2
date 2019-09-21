@@ -94,6 +94,7 @@ use std::marker;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
+use std::ops::RangeBounds;
 
 #[macro_use]
 mod strnom;
@@ -1123,6 +1124,19 @@ impl Literal {
     /// Configures the span associated for this literal.
     pub fn set_span(&mut self, span: Span) {
         self.inner.set_span(span.inner);
+    }
+
+    /// Returns a `Span` that is a subset of `self.span()` containing only
+    /// the source bytes in range `range`. Returns `None` if the would-be
+    /// trimmed span is outside the bounds of `self`.
+    ///
+    /// Warning: the underlying [`proc_macro::Literal::subspan`] method is
+    /// nightly-only. When called from within a procedural macro not using a
+    /// nightly compiler, this method will always return `None`.
+    ///
+    /// [`proc_macro::Literal::subspan`]: https://doc.rust-lang.org/proc_macro/struct.Literal.html#method.subspan
+    pub fn subspan<R: RangeBounds<usize>>(&self, range: R) -> Option<Span> {
+        self.inner.subspan(range).map(Span::_new)
     }
 }
 

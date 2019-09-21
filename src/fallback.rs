@@ -9,6 +9,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::vec;
+use std::ops::RangeBounds;
 
 use crate::strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
 use crate::{Delimiter, Punct, Spacing, TokenTree};
@@ -776,6 +777,10 @@ impl Literal {
 
     pub fn set_span(&mut self, span: Span) {
         self.span = span;
+    }
+
+    pub fn subspan<R: RangeBounds<usize>>(&self, _range: R) -> Option<Span> {
+        None
     }
 }
 
