@@ -90,11 +90,11 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
+use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
-use std::ops::RangeBounds;
 
 #[macro_use]
 mod strnom;

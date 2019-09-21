@@ -1,10 +1,10 @@
 use std::fmt;
 use std::iter;
+use std::ops::RangeBounds;
 use std::panic::{self, PanicInfo};
 #[cfg(super_unstable)]
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::ops::RangeBounds;
 
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 

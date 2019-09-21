@@ -4,12 +4,12 @@ use std::cell::RefCell;
 use std::cmp;
 use std::fmt;
 use std::iter;
+use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::vec;
-use std::ops::RangeBounds;
 
 use crate::strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
 use crate::{Delimiter, Punct, Spacing, TokenTree};
