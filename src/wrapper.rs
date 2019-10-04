@@ -18,10 +18,9 @@ pub enum TokenStream {
 // In `impl Extend<TokenTree> for TokenStream` which is used heavily by quote,
 // we hold on to the appended tokens and do proc_macro::TokenStream::extend as
 // late as possible to batch together consecutive uses of the Extend impl.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct DeferredTokenStream {
-    stream: proc_macro::TokenStream,
-    extra: Vec<proc_macro::TokenTree>,
+    parts: Vec<proc_macro::TokenTree>,
 }
 
 pub enum LexError {
@@ -93,29 +92,27 @@ fn mismatch() -> ! {
 impl DeferredTokenStream {
     fn new(stream: proc_macro::TokenStream) -> Self {
         DeferredTokenStream {
-            stream,
-            extra: Vec::new(),
+            parts: stream.into_iter().collect()
         }
     }
 
+    fn extend(&mut self, iter: impl Iterator<Item = proc_macro::TokenStream>) {
+        self.parts.extend(iter.flatten());
+    }
+
     fn is_empty(&self) -> bool {
-        self.stream.is_empty() && self.extra.is_empty()
+        self.parts.is_empty()
     }
 
-    fn evaluate_now(&mut self) {
-        self.stream.extend(self.extra.drain(..));
-    }
-
-    fn into_token_stream(mut self) -> proc_macro::TokenStream {
-        self.evaluate_now();
-        self.stream
+    fn into_token_stream(self) -> proc_macro::TokenStream {
+        self.parts.into_iter().collect()
     }
 }
 
 impl TokenStream {
     pub fn new() -> TokenStream {
         if nightly_works() {
-            TokenStream::Compiler(DeferredTokenStream::new(proc_macro::TokenStream::new()))
+            TokenStream::Compiler(DeferredTokenStream::default())
         } else {
             TokenStream::Fallback(fallback::TokenStream::new())
         }
@@ -232,8 +229,7 @@ impl iter::FromIterator<TokenStream> for TokenStream {
         let mut streams = streams.into_iter();
         match streams.next() {
             Some(TokenStream::Compiler(mut first)) => {
-                first.evaluate_now();
-                first.stream.extend(streams.map(|s| match s {
+                first.extend(streams.map(|s| match s {
                     TokenStream::Compiler(s) => s.into_token_stream(),
                     TokenStream::Fallback(_) => mismatch(),
                 }));
@@ -256,8 +252,7 @@ impl Extend<TokenTree> for TokenStream {
         match self {
             TokenStream::Compiler(tts) => {
                 // Here is the reason for DeferredTokenStream.
-                tts.extra
-                    .extend(streams.into_iter().map(into_compiler_token));
+                tts.parts.extend(streams.into_iter().map(into_compiler_token));
             }
             TokenStream::Fallback(tts) => tts.extend(streams),
         }
@@ -268,9 +263,7 @@ impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
         match self {
             TokenStream::Compiler(tts) => {
-                tts.evaluate_now();
-                tts.stream
-                    .extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
+                tts.extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
             }
             TokenStream::Fallback(tts) => {
                 tts.extend(streams.into_iter().map(|stream| stream.unwrap_stable()));
