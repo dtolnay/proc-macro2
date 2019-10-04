@@ -10,8 +10,18 @@ use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub enum TokenStream {
-    Compiler(proc_macro::TokenStream),
+    Compiler(DeferredTokenStream),
     Fallback(fallback::TokenStream),
+}
+
+// Work around https://github.com/rust-lang/rust/issues/65080.
+// In `impl Extend<TokenTree> for TokenStream` which is used heavily by quote,
+// we hold on to the appended tokens and do proc_macro::TokenStream::extend as
+// late as possible to batch together consecutive uses of the Extend impl.
+#[derive(Clone)]
+pub struct DeferredTokenStream {
+    stream: proc_macro::TokenStream,
+    extra: Vec<proc_macro::TokenTree>,
 }
 
 pub enum LexError {
@@ -80,10 +90,32 @@ fn mismatch() -> ! {
     panic!("stable/nightly mismatch")
 }
 
+impl DeferredTokenStream {
+    fn new(stream: proc_macro::TokenStream) -> Self {
+        DeferredTokenStream {
+            stream,
+            extra: Vec::new(),
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.stream.is_empty() && self.extra.is_empty()
+    }
+
+    fn evaluate_now(&mut self) {
+        self.stream.extend(self.extra.drain(..));
+    }
+
+    fn into_token_stream(mut self) -> proc_macro::TokenStream {
+        self.evaluate_now();
+        self.stream
+    }
+}
+
 impl TokenStream {
     pub fn new() -> TokenStream {
         if nightly_works() {
-            TokenStream::Compiler(proc_macro::TokenStream::new())
+            TokenStream::Compiler(DeferredTokenStream::new(proc_macro::TokenStream::new()))
         } else {
             TokenStream::Fallback(fallback::TokenStream::new())
         }
@@ -98,7 +130,7 @@ impl TokenStream {
 
     fn unwrap_nightly(self) -> proc_macro::TokenStream {
         match self {
-            TokenStream::Compiler(s) => s,
+            TokenStream::Compiler(s) => s.into_token_stream(),
             TokenStream::Fallback(_) => mismatch(),
         }
     }
@@ -116,7 +148,9 @@ impl FromStr for TokenStream {
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         if nightly_works() {
-            Ok(TokenStream::Compiler(src.parse()?))
+            Ok(TokenStream::Compiler(DeferredTokenStream::new(
+                src.parse()?,
+            )))
         } else {
             Ok(TokenStream::Fallback(src.parse()?))
         }
@@ -126,7 +160,7 @@ impl FromStr for TokenStream {
 impl fmt::Display for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            TokenStream::Compiler(tts) => tts.fmt(f),
+            TokenStream::Compiler(tts) => tts.clone().into_token_stream().fmt(f),
             TokenStream::Fallback(tts) => tts.fmt(f),
         }
     }
@@ -134,14 +168,14 @@ impl fmt::Display for TokenStream {
 
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> TokenStream {
-        TokenStream::Compiler(inner)
+        TokenStream::Compiler(DeferredTokenStream::new(inner))
     }
 }
 
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
         match inner {
-            TokenStream::Compiler(inner) => inner,
+            TokenStream::Compiler(inner) => inner.into_token_stream(),
             TokenStream::Fallback(inner) => inner.to_string().parse().unwrap(),
         }
     }
@@ -174,7 +208,7 @@ fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
 impl From<TokenTree> for TokenStream {
     fn from(token: TokenTree) -> TokenStream {
         if nightly_works() {
-            TokenStream::Compiler(into_compiler_token(token).into())
+            TokenStream::Compiler(DeferredTokenStream::new(into_compiler_token(token).into()))
         } else {
             TokenStream::Fallback(token.into())
         }
@@ -184,7 +218,9 @@ impl From<TokenTree> for TokenStream {
 impl iter::FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(trees: I) -> Self {
         if nightly_works() {
-            TokenStream::Compiler(trees.into_iter().map(into_compiler_token).collect())
+            TokenStream::Compiler(DeferredTokenStream::new(
+                trees.into_iter().map(into_compiler_token).collect(),
+            ))
         } else {
             TokenStream::Fallback(trees.into_iter().collect())
         }
@@ -196,8 +232,9 @@ impl iter::FromIterator<TokenStream> for TokenStream {
         let mut streams = streams.into_iter();
         match streams.next() {
             Some(TokenStream::Compiler(mut first)) => {
-                first.extend(streams.map(|s| match s {
-                    TokenStream::Compiler(s) => s,
+                first.evaluate_now();
+                first.stream.extend(streams.map(|s| match s {
+                    TokenStream::Compiler(s) => s.into_token_stream(),
                     TokenStream::Fallback(_) => mismatch(),
                 }));
                 TokenStream::Compiler(first)
@@ -218,7 +255,9 @@ impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         match self {
             TokenStream::Compiler(tts) => {
-                tts.extend(streams.into_iter().map(into_compiler_token));
+                // Here is the reason for DeferredTokenStream.
+                tts.extra
+                    .extend(streams.into_iter().map(into_compiler_token));
             }
             TokenStream::Fallback(tts) => tts.extend(streams),
         }
@@ -229,7 +268,9 @@ impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
         match self {
             TokenStream::Compiler(tts) => {
-                tts.extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
+                tts.evaluate_now();
+                tts.stream
+                    .extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
             }
             TokenStream::Fallback(tts) => {
                 tts.extend(streams.into_iter().map(|stream| stream.unwrap_stable()));
@@ -241,7 +282,7 @@ impl Extend<TokenStream> for TokenStream {
 impl fmt::Debug for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            TokenStream::Compiler(tts) => tts.fmt(f),
+            TokenStream::Compiler(tts) => tts.clone().into_token_stream().fmt(f),
             TokenStream::Fallback(tts) => tts.fmt(f),
         }
     }
@@ -280,7 +321,9 @@ impl IntoIterator for TokenStream {
 
     fn into_iter(self) -> TokenTreeIter {
         match self {
-            TokenStream::Compiler(tts) => TokenTreeIter::Compiler(tts.into_iter()),
+            TokenStream::Compiler(tts) => {
+                TokenTreeIter::Compiler(tts.into_token_stream().into_iter())
+            }
             TokenStream::Fallback(tts) => TokenTreeIter::Fallback(tts.into_iter()),
         }
     }
@@ -526,14 +569,14 @@ pub enum Group {
 impl Group {
     pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
         match stream {
-            TokenStream::Compiler(stream) => {
+            TokenStream::Compiler(tts) => {
                 let delimiter = match delimiter {
                     Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
                     Delimiter::Bracket => proc_macro::Delimiter::Bracket,
                     Delimiter::Brace => proc_macro::Delimiter::Brace,
                     Delimiter::None => proc_macro::Delimiter::None,
                 };
-                Group::Compiler(proc_macro::Group::new(delimiter, stream))
+                Group::Compiler(proc_macro::Group::new(delimiter, tts.into_token_stream()))
             }
             TokenStream::Fallback(stream) => {
                 Group::Fallback(fallback::Group::new(delimiter, stream))
@@ -555,7 +598,7 @@ impl Group {
 
     pub fn stream(&self) -> TokenStream {
         match self {
-            Group::Compiler(g) => TokenStream::Compiler(g.stream()),
+            Group::Compiler(g) => TokenStream::Compiler(DeferredTokenStream::new(g.stream())),
             Group::Fallback(g) => TokenStream::Fallback(g.stream()),
         }
     }
