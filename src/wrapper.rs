@@ -229,24 +229,10 @@ impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
         match self {
             TokenStream::Compiler(tts) => {
-                #[cfg(not(slow_extend))]
-                {
-                    tts.extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
-                }
-                #[cfg(slow_extend)]
-                {
-                    *tts = tts
-                        .clone()
-                        .into_iter()
-                        .chain(streams.into_iter().flat_map(|t| match t {
-                            TokenStream::Compiler(tts) => tts.into_iter(),
-                            _ => mismatch(),
-                        }))
-                        .collect();
-                }
+                tts.extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
             }
             TokenStream::Fallback(tts) => {
-                tts.extend(streams.into_iter().map(|stream| stream.unwrap_stable()))
+                tts.extend(streams.into_iter().map(|stream| stream.unwrap_stable()));
             }
         }
     }
