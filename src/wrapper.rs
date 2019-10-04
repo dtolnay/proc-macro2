@@ -153,40 +153,38 @@ impl From<fallback::TokenStream> for TokenStream {
     }
 }
 
+// Assumes nightly_works().
+fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
+    match token {
+        TokenTree::Group(tt) => tt.inner.unwrap_nightly().into(),
+        TokenTree::Punct(tt) => {
+            let spacing = match tt.spacing() {
+                Spacing::Joint => proc_macro::Spacing::Joint,
+                Spacing::Alone => proc_macro::Spacing::Alone,
+            };
+            let mut op = proc_macro::Punct::new(tt.as_char(), spacing);
+            op.set_span(tt.span().inner.unwrap_nightly());
+            op.into()
+        }
+        TokenTree::Ident(tt) => tt.inner.unwrap_nightly().into(),
+        TokenTree::Literal(tt) => tt.inner.unwrap_nightly().into(),
+    }
+}
+
 impl From<TokenTree> for TokenStream {
     fn from(token: TokenTree) -> TokenStream {
-        if !nightly_works() {
-            return TokenStream::Fallback(token.into());
+        if nightly_works() {
+            TokenStream::Compiler(into_compiler_token(token).into())
+        } else {
+            TokenStream::Fallback(token.into())
         }
-        let tt: proc_macro::TokenTree = match token {
-            TokenTree::Group(tt) => tt.inner.unwrap_nightly().into(),
-            TokenTree::Punct(tt) => {
-                let spacing = match tt.spacing() {
-                    Spacing::Joint => proc_macro::Spacing::Joint,
-                    Spacing::Alone => proc_macro::Spacing::Alone,
-                };
-                let mut op = proc_macro::Punct::new(tt.as_char(), spacing);
-                op.set_span(tt.span().inner.unwrap_nightly());
-                op.into()
-            }
-            TokenTree::Ident(tt) => tt.inner.unwrap_nightly().into(),
-            TokenTree::Literal(tt) => tt.inner.unwrap_nightly().into(),
-        };
-        TokenStream::Compiler(tt.into())
     }
 }
 
 impl iter::FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(trees: I) -> Self {
         if nightly_works() {
-            let trees = trees
-                .into_iter()
-                .map(TokenStream::from)
-                .flat_map(|t| match t {
-                    TokenStream::Compiler(s) => s,
-                    TokenStream::Fallback(_) => mismatch(),
-                });
-            TokenStream::Compiler(trees.collect())
+            TokenStream::Compiler(trees.into_iter().map(into_compiler_token).collect())
         } else {
             TokenStream::Fallback(trees.into_iter().collect())
         }
@@ -220,11 +218,7 @@ impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
         match self {
             TokenStream::Compiler(tts) => {
-                tts.extend(
-                    streams
-                        .into_iter()
-                        .map(|t| TokenStream::from(t).unwrap_nightly()),
-                );
+                tts.extend(streams.into_iter().map(into_compiler_token));
             }
             TokenStream::Fallback(tts) => tts.extend(streams),
         }
