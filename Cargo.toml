@@ -42,6 +42,9 @@ nightly = []
 [badges]
 travis-ci = { repository = "alexcrichton/proc-macro2" }
 
+[workspace]
+members = ["benches/bench-libproc-macro"]
+
 [patch.crates-io]
 # Our doc tests depend on quote which depends on proc-macro2. Without this line,
 # the proc-macro2 dependency of quote would be the released version of
