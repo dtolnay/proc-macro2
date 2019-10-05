@@ -15,9 +15,6 @@ option, off by default, to also reimplement itself in terms of the upstream
 unstable API.
 """
 
-[lib]
-name = "proc_macro2"
-
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "procmacro2_semver_exempt"]
 rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
