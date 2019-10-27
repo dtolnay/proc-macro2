@@ -549,7 +549,6 @@ impl Ident {
     }
 }
 
-#[inline]
 fn is_ident_start(c: char) -> bool {
     ('a' <= c && c <= 'z')
         || ('A' <= c && c <= 'Z')
@@ -557,7 +556,6 @@ fn is_ident_start(c: char) -> bool {
         || (c > '\x7f' && UnicodeXID::is_xid_start(c))
 }
 
-#[inline]
 fn is_ident_continue(c: char) -> bool {
     ('a' <= c && c <= 'z')
         || ('A' <= c && c <= 'Z')
