@@ -47,13 +47,13 @@ fn main() {
         process::exit(1);
     }
 
-    let semver_exempt = cfg!(procmacro2_semver_exempt);
+    let semver_exempt = env::var("CARGO_CFG_PROCMACRO2_SEMVER_EXEMPT").is_ok();
     if semver_exempt {
         // https://github.com/alexcrichton/proc-macro2/issues/147
         println!("cargo:rustc-cfg=procmacro2_semver_exempt");
     }
 
-    if semver_exempt || cfg!(feature = "span-locations") {
+    if semver_exempt || env::var("CARGO_FEATURE_SPAN_LOCATIONS").is_ok() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
@@ -84,7 +84,7 @@ fn enable_use_proc_macro(target: &str) -> bool {
     }
 
     // Otherwise, only enable it if our feature is actually enabled.
-    cfg!(feature = "proc-macro")
+    env::var("CARGO_FEATURE_PROC_MACRO").is_ok()
 }
 
 struct RustcVersion {
