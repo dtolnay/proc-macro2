@@ -20,6 +20,9 @@ matrix:
       name: WebAssembly
       install: rustup target add wasm32-unknown-unknown
       script: cargo test --target wasm32-unknown-unknown --no-run
+    - rust: nightly-2019-12-19
+      name: docs.rs
+      script: RUSTDOCFLAGS='--cfg procmacro2_semver_exempt' RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo doc --target x86_64-unknown-linux-gnu
 
 before_script:
   - set -o errexit
