@@ -427,6 +427,32 @@ impl Span {
             })
         })
     }
+
+    #[cfg(not(span_locations))]
+    fn first_byte(self) -> Self {
+        self
+    }
+
+    #[cfg(span_locations)]
+    fn first_byte(self) -> Self {
+        Span {
+            lo: self.lo,
+            hi: cmp::min(self.lo.saturating_add(1), self.hi),
+        }
+    }
+
+    #[cfg(not(span_locations))]
+    fn last_byte(self) -> Self {
+        self
+    }
+
+    #[cfg(span_locations)]
+    fn last_byte(self) -> Self {
+        Span {
+            lo: cmp::max(self.hi.saturating_sub(1), self.lo),
+            hi: self.hi,
+        }
+    }
 }
 
 impl fmt::Debug for Span {
@@ -474,11 +500,11 @@ impl Group {
     }
 
     pub fn span_open(&self) -> Span {
-        self.span
+        self.span.first_byte()
     }
 
     pub fn span_close(&self) -> Span {
-        self.span
+        self.span.last_byte()
     }
 
     pub fn set_span(&mut self, span: Span) {
