@@ -149,12 +149,18 @@ impl FromStr for TokenStream {
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         if nightly_works() {
             Ok(TokenStream::Compiler(DeferredTokenStream::new(
-                src.parse()?,
+                proc_macro_parse(src)?,
             )))
         } else {
             Ok(TokenStream::Fallback(src.parse()?))
         }
     }
+}
+
+// Work around https://github.com/rust-lang/rust/issues/58736.
+fn proc_macro_parse(src: &str) -> Result<proc_macro::TokenStream, LexError> {
+    panic::catch_unwind(|| src.parse().map_err(LexError::Compiler))
+        .unwrap_or(Err(LexError::Fallback(fallback::LexError)))
 }
 
 impl fmt::Display for TokenStream {
