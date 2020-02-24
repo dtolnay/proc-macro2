@@ -754,10 +754,10 @@ impl Literal {
         text.push('"');
         for c in t.chars() {
             if c == '\'' {
-                // escape_default turns this into "\'" which is unnecessary.
+                // escape_debug turns this into "\'" which is unnecessary.
                 text.push(c);
             } else {
-                text.extend(c.escape_default());
+                text.extend(c.escape_debug());
             }
         }
         text.push('"');
@@ -768,10 +768,10 @@ impl Literal {
         let mut text = String::new();
         text.push('\'');
         if t == '"' {
-            // escape_default turns this into '\"' which is unnecessary.
+            // escape_debug turns this into '\"' which is unnecessary.
             text.push(t);
         } else {
-            text.extend(t.escape_default());
+            text.extend(t.escape_debug());
         }
         text.push('\'');
         Literal::_new(text)
