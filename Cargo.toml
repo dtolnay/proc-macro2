@@ -18,6 +18,9 @@ rustc-args = ["--cfg", "procmacro2_semver_exempt"]
 rustdoc-args = ["--cfg", "procmacro2_semver_exempt"]
 targets = ["x86_64-unknown-linux-gnu"]
 
+[package.metadata.playground]
+features = ["span-locations"]
+
 [dependencies]
 unicode-xid = "0.2"
 
