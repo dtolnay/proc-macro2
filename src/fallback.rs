@@ -753,11 +753,10 @@ impl Literal {
         let mut text = String::with_capacity(t.len() + 2);
         text.push('"');
         for c in t.chars() {
-            if c == '\'' {
-                // escape_debug turns this into "\'" which is unnecessary.
-                text.push(c);
-            } else {
-                text.extend(c.escape_debug());
+            match c {
+                // escape_debug turns these into escaped like "\'" which is unnecessary.
+                '\'' | '\\' | '\t' | '\r' | '\n' => text.push(c),
+                _ => text.extend(c.escape_debug()),
             }
         }
         text.push('"');
@@ -767,11 +766,10 @@ impl Literal {
     pub fn character(t: char) -> Literal {
         let mut text = String::new();
         text.push('\'');
-        if t == '"' {
-            // escape_debug turns this into '\"' which is unnecessary.
-            text.push(t);
-        } else {
-            text.extend(t.escape_debug());
+        match t {
+            // escape_debug turns these into escaped like '\"' which is unnecessary.
+            '"' | '\\' | '\t' | '\r' | '\n' => text.push(t),
+            _ => text.extend(t.escape_debug()),
         }
         text.push('\'');
         Literal::_new(text)

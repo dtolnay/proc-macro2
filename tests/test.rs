@@ -82,6 +82,10 @@ fn literal_string() {
     assert_eq!(Literal::string("foo").to_string(), "\"foo\"");
     assert_eq!(Literal::string("\"").to_string(), "\"\\\"\"");
     assert_eq!(Literal::string("didn't").to_string(), "\"didn't\"");
+    assert_eq!(Literal::string("foo\\bar").to_string(), "\"foo\\bar\"");
+    assert_eq!(Literal::string("foo\nbar").to_string(), "\"foo\nbar\"");
+    assert_eq!(Literal::string("foo\tbar").to_string(), "\"foo\tbar\"");
+    assert_eq!(Literal::string("foo\rbar").to_string(), "\"foo\rbar\"");
 }
 
 #[test]
@@ -89,6 +93,10 @@ fn literal_character() {
     assert_eq!(Literal::character('x').to_string(), "'x'");
     assert_eq!(Literal::character('\'').to_string(), "'\\''");
     assert_eq!(Literal::character('"').to_string(), "'\"'");
+    assert_eq!(Literal::character('\\').to_string(), "'\\'");
+    assert_eq!(Literal::character('\n').to_string(), "'\n'");
+    assert_eq!(Literal::character('\t').to_string(), "'\t'");
+    assert_eq!(Literal::character('\r').to_string(), "'\r'");
 }
 
 #[test]
