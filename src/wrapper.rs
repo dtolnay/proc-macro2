@@ -74,7 +74,7 @@ fn nightly_works() -> bool {
         let original_hook = panic::take_hook();
         panic::set_hook(null_hook);
 
-        let works = panic::catch_unwind(|| proc_macro::Span::call_site()).is_ok();
+        let works = panic::catch_unwind(proc_macro::Span::call_site).is_ok();
         WORKS.store(works as usize + 1, Ordering::SeqCst);
 
         let hopefully_null_hook = panic::take_hook();
