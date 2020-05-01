@@ -29,7 +29,7 @@ pub(crate) enum LexError {
     Fallback(fallback::LexError),
 }
 
-fn nightly_works() -> bool {
+fn inside_proc_macro() -> bool {
     use std::sync::atomic::*;
     use std::sync::Once;
 
@@ -80,10 +80,10 @@ fn nightly_works() -> bool {
         let hopefully_null_hook = panic::take_hook();
         panic::set_hook(original_hook);
         if sanity_check != &*hopefully_null_hook {
-            panic!("observed race condition in proc_macro2::nightly_works");
+            panic!("observed race condition in proc_macro2::inside_proc_macro");
         }
     });
-    nightly_works()
+    inside_proc_macro()
 }
 
 fn mismatch() -> ! {
@@ -114,7 +114,7 @@ impl DeferredTokenStream {
 
 impl TokenStream {
     pub fn new() -> TokenStream {
-        if nightly_works() {
+        if inside_proc_macro() {
             TokenStream::Compiler(DeferredTokenStream::new(proc_macro::TokenStream::new()))
         } else {
             TokenStream::Fallback(fallback::TokenStream::new())
@@ -147,7 +147,7 @@ impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        if nightly_works() {
+        if inside_proc_macro() {
             Ok(TokenStream::Compiler(DeferredTokenStream::new(
                 proc_macro_parse(src)?,
             )))
@@ -193,7 +193,7 @@ impl From<fallback::TokenStream> for TokenStream {
     }
 }
 
-// Assumes nightly_works().
+// Assumes inside_proc_macro().
 fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
     match token {
         TokenTree::Group(tt) => tt.inner.unwrap_nightly().into(),
@@ -213,7 +213,7 @@ fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
 
 impl From<TokenTree> for TokenStream {
     fn from(token: TokenTree) -> TokenStream {
-        if nightly_works() {
+        if inside_proc_macro() {
             TokenStream::Compiler(DeferredTokenStream::new(into_compiler_token(token).into()))
         } else {
             TokenStream::Fallback(token.into())
@@ -223,7 +223,7 @@ impl From<TokenTree> for TokenStream {
 
 impl iter::FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(trees: I) -> Self {
-        if nightly_works() {
+        if inside_proc_macro() {
             TokenStream::Compiler(DeferredTokenStream::new(
                 trees.into_iter().map(into_compiler_token).collect(),
             ))
@@ -426,7 +426,7 @@ pub(crate) enum Span {
 
 impl Span {
     pub fn call_site() -> Span {
-        if nightly_works() {
+        if inside_proc_macro() {
             Span::Compiler(proc_macro::Span::call_site())
         } else {
             Span::Fallback(fallback::Span::call_site())
@@ -435,7 +435,7 @@ impl Span {
 
     #[cfg(super_unstable)]
     pub fn def_site() -> Span {
-        if nightly_works() {
+        if inside_proc_macro() {
             Span::Compiler(proc_macro::Span::def_site())
         } else {
             Span::Fallback(fallback::Span::def_site())
@@ -780,7 +780,7 @@ pub(crate) enum Literal {
 macro_rules! suffixed_numbers {
     ($($name:ident => $kind:ident,)*) => ($(
         pub fn $name(n: $kind) -> Literal {
-            if nightly_works() {
+            if inside_proc_macro() {
                 Literal::Compiler(proc_macro::Literal::$name(n))
             } else {
                 Literal::Fallback(fallback::Literal::$name(n))
@@ -792,7 +792,7 @@ macro_rules! suffixed_numbers {
 macro_rules! unsuffixed_integers {
     ($($name:ident => $kind:ident,)*) => ($(
         pub fn $name(n: $kind) -> Literal {
-            if nightly_works() {
+            if inside_proc_macro() {
                 Literal::Compiler(proc_macro::Literal::$name(n))
             } else {
                 Literal::Fallback(fallback::Literal::$name(n))
@@ -836,7 +836,7 @@ impl Literal {
     }
 
     pub fn f32_unsuffixed(f: f32) -> Literal {
-        if nightly_works() {
+        if inside_proc_macro() {
             Literal::Compiler(proc_macro::Literal::f32_unsuffixed(f))
         } else {
             Literal::Fallback(fallback::Literal::f32_unsuffixed(f))
@@ -844,7 +844,7 @@ impl Literal {
     }
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
-        if nightly_works() {
+        if inside_proc_macro() {
             Literal::Compiler(proc_macro::Literal::f64_unsuffixed(f))
         } else {
             Literal::Fallback(fallback::Literal::f64_unsuffixed(f))
@@ -852,7 +852,7 @@ impl Literal {
     }
 
     pub fn string(t: &str) -> Literal {
-        if nightly_works() {
+        if inside_proc_macro() {
             Literal::Compiler(proc_macro::Literal::string(t))
         } else {
             Literal::Fallback(fallback::Literal::string(t))
@@ -860,7 +860,7 @@ impl Literal {
     }
 
     pub fn character(t: char) -> Literal {
-        if nightly_works() {
+        if inside_proc_macro() {
             Literal::Compiler(proc_macro::Literal::character(t))
         } else {
             Literal::Fallback(fallback::Literal::character(t))
@@ -868,7 +868,7 @@ impl Literal {
     }
 
     pub fn byte_string(bytes: &[u8]) -> Literal {
-        if nightly_works() {
+        if inside_proc_macro() {
             Literal::Compiler(proc_macro::Literal::byte_string(bytes))
         } else {
             Literal::Fallback(fallback::Literal::byte_string(bytes))
