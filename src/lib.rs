@@ -99,7 +99,11 @@ use std::str::FromStr;
 mod detection;
 #[macro_use]
 mod strnom;
-mod fallback;
+
+// Public for proc_macro2::fallback::force() and unforce(), but those are quite
+// a niche use case so we omit it from rustdoc.
+#[doc(hidden)]
+pub mod fallback;
 
 #[cfg(not(wrap_proc_macro))]
 use crate::fallback as imp;

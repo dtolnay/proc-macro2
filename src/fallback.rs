@@ -14,6 +14,18 @@ use std::str::FromStr;
 use std::vec;
 use unicode_xid::UnicodeXID;
 
+/// Force use of proc-macro2's fallback implementation of the API for now, even
+/// if the compiler's implementation is available.
+pub fn force() {
+    crate::detection::force_fallback();
+}
+
+/// Resume using the compiler's implementation of the proc macro API if it is
+/// available.
+pub fn unforce() {
+    crate::detection::unforce_fallback();
+}
+
 #[derive(Clone)]
 pub(crate) struct TokenStream {
     inner: Vec<TokenTree>,
