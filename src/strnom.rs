@@ -5,7 +5,7 @@ use std::str::{Bytes, CharIndices, Chars};
 use unicode_xid::UnicodeXID;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub struct Cursor<'a> {
+pub(crate) struct Cursor<'a> {
     pub rest: &'a str,
     #[cfg(span_locations)]
     pub off: u32,
@@ -59,9 +59,9 @@ impl<'a> Cursor<'a> {
     }
 }
 
-pub type PResult<'a, O> = Result<(Cursor<'a>, O), LexError>;
+pub(crate) type PResult<'a, O> = Result<(Cursor<'a>, O), LexError>;
 
-pub fn whitespace(input: Cursor) -> PResult<()> {
+pub(crate) fn whitespace(input: Cursor) -> PResult<()> {
     if input.is_empty() {
         return Err(LexError);
     }
@@ -111,7 +111,7 @@ pub fn whitespace(input: Cursor) -> PResult<()> {
     Ok((input.advance(input.len()), ()))
 }
 
-pub fn block_comment(input: Cursor) -> PResult<&str> {
+pub(crate) fn block_comment(input: Cursor) -> PResult<&str> {
     if !input.starts_with("/*") {
         return Err(LexError);
     }
@@ -136,7 +136,7 @@ pub fn block_comment(input: Cursor) -> PResult<&str> {
     Err(LexError)
 }
 
-pub fn skip_whitespace(input: Cursor) -> Cursor {
+pub(crate) fn skip_whitespace(input: Cursor) -> Cursor {
     match whitespace(input) {
         Ok((rest, _)) => rest,
         Err(LexError) => input,
@@ -148,7 +148,7 @@ fn is_whitespace(ch: char) -> bool {
     ch.is_whitespace() || ch == '\u{200e}' || ch == '\u{200f}'
 }
 
-pub fn word_break(input: Cursor) -> PResult<()> {
+pub(crate) fn word_break(input: Cursor) -> PResult<()> {
     match input.chars().next() {
         Some(ch) if UnicodeXID::is_xid_continue(ch) => Err(LexError),
         Some(_) | None => Ok((input, ())),
@@ -346,7 +346,7 @@ macro_rules! punct {
 }
 
 /// Do not use directly. Use `punct!`.
-pub fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &'a str> {
+pub(crate) fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &'a str> {
     let input = skip_whitespace(input);
     if input.starts_with(token) {
         Ok((input.advance(token.len()), token))

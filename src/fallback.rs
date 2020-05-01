@@ -16,12 +16,12 @@ use crate::{Delimiter, Punct, Spacing, TokenTree};
 use unicode_xid::UnicodeXID;
 
 #[derive(Clone)]
-pub struct TokenStream {
+pub(crate) struct TokenStream {
     inner: Vec<TokenTree>,
 }
 
 #[derive(Debug)]
-pub struct LexError;
+pub(crate) struct LexError;
 
 impl TokenStream {
     pub fn new() -> TokenStream {
@@ -180,7 +180,7 @@ impl Extend<TokenStream> for TokenStream {
     }
 }
 
-pub type TokenTreeIter = vec::IntoIter<TokenTree>;
+pub(crate) type TokenTreeIter = vec::IntoIter<TokenTree>;
 
 impl IntoIterator for TokenStream {
     type Item = TokenTree;
@@ -192,7 +192,7 @@ impl IntoIterator for TokenStream {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct SourceFile {
+pub(crate) struct SourceFile {
     path: PathBuf,
 }
 
@@ -218,7 +218,7 @@ impl fmt::Debug for SourceFile {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct LineColumn {
+pub(crate) struct LineColumn {
     pub line: usize,
     pub column: usize,
 }
@@ -343,7 +343,7 @@ impl SourceMap {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Span {
+pub(crate) struct Span {
     #[cfg(span_locations)]
     lo: u32,
     #[cfg(span_locations)]
@@ -465,14 +465,14 @@ impl fmt::Debug for Span {
     }
 }
 
-pub fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
+pub(crate) fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
     if cfg!(procmacro2_semver_exempt) {
         debug.field("span", &span);
     }
 }
 
 #[derive(Clone)]
-pub struct Group {
+pub(crate) struct Group {
     delimiter: Delimiter,
     stream: TokenStream,
     span: Span,
@@ -541,7 +541,7 @@ impl fmt::Debug for Group {
 }
 
 #[derive(Clone)]
-pub struct Ident {
+pub(crate) struct Ident {
     sym: String,
     span: Span,
     raw: bool,
@@ -671,7 +671,7 @@ impl fmt::Debug for Ident {
 }
 
 #[derive(Clone)]
-pub struct Literal {
+pub(crate) struct Literal {
     text: String,
     span: Span,
 }

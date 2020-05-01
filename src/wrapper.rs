@@ -9,7 +9,7 @@ use std::str::FromStr;
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
-pub enum TokenStream {
+pub(crate) enum TokenStream {
     Compiler(DeferredTokenStream),
     Fallback(fallback::TokenStream),
 }
@@ -19,12 +19,12 @@ pub enum TokenStream {
 // we hold on to the appended tokens and do proc_macro::TokenStream::extend as
 // late as possible to batch together consecutive uses of the Extend impl.
 #[derive(Clone)]
-pub struct DeferredTokenStream {
+pub(crate) struct DeferredTokenStream {
     stream: proc_macro::TokenStream,
     extra: Vec<proc_macro::TokenTree>,
 }
 
-pub enum LexError {
+pub(crate) enum LexError {
     Compiler(proc_macro::LexError),
     Fallback(fallback::LexError),
 }
@@ -316,7 +316,7 @@ impl fmt::Debug for LexError {
 }
 
 #[derive(Clone)]
-pub enum TokenTreeIter {
+pub(crate) enum TokenTreeIter {
     Compiler(proc_macro::token_stream::IntoIter),
     Fallback(fallback::TokenTreeIter),
 }
@@ -375,7 +375,7 @@ impl fmt::Debug for TokenTreeIter {
 
 #[derive(Clone, PartialEq, Eq)]
 #[cfg(super_unstable)]
-pub enum SourceFile {
+pub(crate) enum SourceFile {
     Compiler(proc_macro::SourceFile),
     Fallback(fallback::SourceFile),
 }
@@ -413,13 +413,13 @@ impl fmt::Debug for SourceFile {
 }
 
 #[cfg(any(super_unstable, feature = "span-locations"))]
-pub struct LineColumn {
+pub(crate) struct LineColumn {
     pub line: usize,
     pub column: usize,
 }
 
 #[derive(Copy, Clone)]
-pub enum Span {
+pub(crate) enum Span {
     Compiler(proc_macro::Span),
     Fallback(fallback::Span),
 }
@@ -557,7 +557,7 @@ impl fmt::Debug for Span {
     }
 }
 
-pub fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
+pub(crate) fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
     match span {
         Span::Compiler(s) => {
             debug.field("span", &s);
@@ -567,7 +567,7 @@ pub fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) 
 }
 
 #[derive(Clone)]
-pub enum Group {
+pub(crate) enum Group {
     Compiler(proc_macro::Group),
     Fallback(fallback::Group),
 }
@@ -677,7 +677,7 @@ impl fmt::Debug for Group {
 }
 
 #[derive(Clone)]
-pub enum Ident {
+pub(crate) enum Ident {
     Compiler(proc_macro::Ident),
     Fallback(fallback::Ident),
 }
@@ -772,7 +772,7 @@ impl fmt::Debug for Ident {
 }
 
 #[derive(Clone)]
-pub enum Literal {
+pub(crate) enum Literal {
     Compiler(proc_macro::Literal),
     Fallback(fallback::Literal),
 }
