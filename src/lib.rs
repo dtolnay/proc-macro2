@@ -1155,12 +1155,12 @@ impl fmt::Display for Literal {
 
 /// Public implementation details for the `TokenStream` type, such as iterators.
 pub mod token_stream {
+    use crate::{imp, TokenTree};
     use std::fmt;
     use std::marker;
     use std::rc::Rc;
 
     pub use crate::TokenStream;
-    use crate::{imp, TokenTree};
 
     /// An iterator over `TokenStream`'s `TokenTree`s.
     ///

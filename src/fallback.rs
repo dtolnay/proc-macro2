@@ -1,3 +1,5 @@
+use crate::strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
+use crate::{Delimiter, Punct, Spacing, TokenTree};
 #[cfg(span_locations)]
 use std::cell::RefCell;
 #[cfg(span_locations)]
@@ -10,9 +12,6 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::vec;
-
-use crate::strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
-use crate::{Delimiter, Punct, Spacing, TokenTree};
 use unicode_xid::UnicodeXID;
 
 #[derive(Clone)]

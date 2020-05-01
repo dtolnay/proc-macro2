@@ -1,6 +1,5 @@
-use std::str::{self, FromStr};
-
 use proc_macro2::{Ident, Literal, Spacing, Span, TokenStream, TokenTree};
+use std::str::{self, FromStr};
 
 #[test]
 fn idents() {

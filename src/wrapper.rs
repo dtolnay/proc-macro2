@@ -1,3 +1,5 @@
+use crate::detection::inside_proc_macro;
+use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 use std::fmt;
 use std::iter;
 use std::ops::RangeBounds;
@@ -5,9 +7,6 @@ use std::panic;
 #[cfg(super_unstable)]
 use std::path::PathBuf;
 use std::str::FromStr;
-
-use crate::detection::inside_proc_macro;
-use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 
 #[derive(Clone)]
 pub(crate) enum TokenStream {
