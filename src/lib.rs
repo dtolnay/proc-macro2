@@ -96,6 +96,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
 
+mod detection;
 #[macro_use]
 mod strnom;
 mod fallback;
