@@ -38,6 +38,9 @@ span-locations = []
 # This feature no longer means anything.
 nightly = []
 
+# Force use fallback implementation
+force-fallback = []
+
 [badges]
 travis-ci = { repository = "alexcrichton/proc-macro2" }
 

@@ -100,10 +100,10 @@ use std::str::FromStr;
 mod strnom;
 mod fallback;
 
-#[cfg(not(wrap_proc_macro))]
+#[cfg(any(feature = "force-fallback", not(wrap_proc_macro)))]
 use crate::fallback as imp;
 #[path = "wrapper.rs"]
-#[cfg(wrap_proc_macro)]
+#[cfg(all(not(feature = "force-fallback"), wrap_proc_macro))]
 mod imp;
 
 /// An abstract stream of tokens, or more concretely a sequence of token trees.
@@ -378,13 +378,13 @@ impl Span {
     /// Panics if called from outside of a procedural macro. Unlike
     /// `proc_macro2::Span`, the `proc_macro::Span` type can only exist within
     /// the context of a procedural macro invocation.
-    #[cfg(wrap_proc_macro)]
+    #[cfg(all(not(feature = "force-fallback"), wrap_proc_macro))]
     pub fn unwrap(self) -> proc_macro::Span {
         self.inner.unwrap()
     }
 
     // Soft deprecated. Please use Span::unwrap.
-    #[cfg(wrap_proc_macro)]
+    #[cfg(all(not(feature = "force-fallback"), wrap_proc_macro))]
     #[doc(hidden)]
     pub fn unstable(self) -> proc_macro::Span {
         self.unwrap()
