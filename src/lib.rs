@@ -96,9 +96,11 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
 
-mod detection;
 #[macro_use]
 mod strnom;
+
+#[cfg(wrap_proc_macro)]
+mod detection;
 
 // Public for proc_macro2::fallback::force() and unforce(), but those are quite
 // a niche use case so we omit it from rustdoc.
