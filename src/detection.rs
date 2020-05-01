@@ -16,6 +16,14 @@ pub(crate) fn inside_proc_macro() -> bool {
     inside_proc_macro()
 }
 
+pub(crate) fn force_fallback() {
+    WORKS.store(1, Ordering::SeqCst);
+}
+
+pub(crate) fn unforce_fallback() {
+    initialize();
+}
+
 // Swap in a null panic hook to avoid printing "thread panicked" to stderr,
 // then use catch_unwind to determine whether the compiler's proc_macro is
 // working. When proc-macro2 is used from outside of a procedural macro all
