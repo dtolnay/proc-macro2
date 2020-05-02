@@ -421,6 +421,17 @@ impl Span {
         })
     }
 
+    #[cfg(span_locations)]
+    pub fn range_in_file(&self) -> (usize, usize){
+        SOURCE_MAP.with(|cm| {
+            let cm = cm.borrow();
+            let fi = cm.fileinfo(*self);
+            let lo = fi.span.lo;
+
+            ((self.lo - lo) as usize, (self.hi - lo) as usize)
+        })
+    }
+
     #[cfg(not(span_locations))]
     pub fn join(&self, _other: Span) -> Option<Span> {
         Some(Span {})

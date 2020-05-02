@@ -423,6 +423,16 @@ impl Span {
         LineColumn { line, column }
     }
 
+    /// Get lower and upper limits in the file, real or not, for this span.
+    ///
+    /// Without fallback get (0, 0)
+    ///
+    /// This method requires the `"span-locations"` feature to be enabled.
+    #[cfg(span_locations)]
+    pub fn range_in_file(&self) -> (usize, usize) {
+        self.inner.range_in_file()
+    }
+
     /// Create a new span encompassing `self` and `other`.
     ///
     /// Returns `None` if `self` and `other` are from different files.

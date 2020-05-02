@@ -217,6 +217,22 @@ testing 123
     );
 }
 
+#[cfg(all(span_locations, wrap_proc_macro))]
+#[test]
+fn span_range() {
+    proc_macro2::fallback::force();
+    let source1 = "aaa\nbbb"
+        .parse::<TokenStream>()
+        .unwrap()
+        .into_iter()
+        .collect::<Vec<_>>();
+    assert_eq!(source1[0].span().end().column, 3);
+    assert_eq!(source1[0].span().range_in_file(), (0, 3));
+    assert_eq!(source1[1].span().end().column, 3);
+    assert_eq!(source1[1].span().range_in_file(), (4, 7));
+    proc_macro2::fallback::unforce();
+}
+
 #[cfg(procmacro2_semver_exempt)]
 #[cfg(not(nightly))]
 #[test]

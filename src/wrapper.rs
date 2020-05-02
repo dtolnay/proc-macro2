@@ -452,6 +452,15 @@ impl Span {
         }
     }
 
+    #[cfg(any(super_unstable, feature = "span-locations"))]
+    pub fn range_in_file(&self) -> (usize, usize) {
+        match self {
+            // TODO: it's impossible without rustc impl
+            Span::Compiler(_) => (0, 0),
+            Span::Fallback(s) => s.range_in_file(),
+        }
+    }
+
     pub fn join(&self, other: Span) -> Option<Span> {
         let ret = match (self, other) {
             #[cfg(proc_macro_span)]
