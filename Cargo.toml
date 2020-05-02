@@ -38,9 +38,6 @@ span-locations = []
 # This feature no longer means anything.
 nightly = []
 
-[badges]
-travis-ci = { repository = "alexcrichton/proc-macro2" }
-
 [workspace]
 members = ["benches/bench-libproc-macro"]
 
