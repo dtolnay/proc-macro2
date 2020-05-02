@@ -1,0 +1,56 @@
+name: build and test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Rust ${{ matrix.rust }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [1.31.0, stable, beta]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+      - run: cargo test
+      - run: cargo test --no-default-features
+      - run: cargo test --features span-locations
+      - run: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
+      - run: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --no-default-features
+
+  nightly:
+    name: Rust nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+      - run: cargo test
+      - run: cargo test --no-default-features
+      - run: cargo test --no-default-features -- --ignored # run the ignored test to make sure the `proc-macro` feature is disabled
+      - run: cargo test --features span-locations
+      - run: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
+      - run: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --no-default-features
+      - run: RUSTFLAGS='-Z allow-features=' cargo test
+      - run: cargo update -Z minimal-versions && cargo build
+
+  webassembly:
+    name: WebAssembly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: wasm32-unknown-unknown
+          profile: minimal
+          override: true
+      - run: cargo test --target wasm32-unknown-unknown --no-run
