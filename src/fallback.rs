@@ -74,10 +74,10 @@ impl FromStr for TokenStream {
 
         match token_stream(cursor) {
             Ok((input, output)) => {
-                if !input.is_empty() {
-                    Err(LexError)
-                } else {
+                if input.is_empty() {
                     Ok(output)
+                } else {
+                    Err(LexError)
                 }
             }
             Err(LexError) => Err(LexError),
