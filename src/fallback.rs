@@ -74,7 +74,7 @@ impl FromStr for TokenStream {
 
         match token_stream(cursor) {
             Ok((input, output)) => {
-                if skip_whitespace(input).len() != 0 {
+                if !input.is_empty() {
                     Err(LexError)
                 } else {
                     Ok(output)
@@ -840,22 +840,20 @@ impl fmt::Debug for Literal {
 fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     let mut trees = Vec::new();
     loop {
-        let input_no_ws = skip_whitespace(input);
-        if input_no_ws.rest.len() == 0 {
-            break;
+        input = skip_whitespace(input);
+        match doc_comment(input) {
+            Ok((a, tt)) => {
+                trees.extend(tt);
+                input = a;
+            }
+            Err(_) => match token_tree(input) {
+                Ok((a, tt)) => {
+                    trees.push(tt);
+                    input = a;
+                },
+                Err(_) => break,
+            }
         }
-        if let Ok((a, tokens)) = doc_comment(input_no_ws) {
-            input = a;
-            trees.extend(tokens);
-            continue;
-        }
-
-        let (a, tt) = match token_tree(input_no_ws) {
-            Ok(p) => p,
-            Err(_) => break,
-        };
-        trees.push(tt);
-        input = a;
     }
     Ok((input, TokenStream { inner: trees }))
 }
@@ -865,7 +863,7 @@ fn spanned<'a, T>(
     input: Cursor<'a>,
     f: fn(Cursor<'a>) -> PResult<'a, T>,
 ) -> PResult<'a, (T, crate::Span)> {
-    let (a, b) = f(skip_whitespace(input))?;
+    let (a, b) = f(input)?;
     Ok((a, ((b, crate::Span::_new_stable(Span::call_site())))))
 }
 
@@ -874,7 +872,6 @@ fn spanned<'a, T>(
     input: Cursor<'a>,
     f: fn(Cursor<'a>) -> PResult<'a, T>,
 ) -> PResult<'a, (T, crate::Span)> {
-    let input = skip_whitespace(input);
     let lo = input.off;
     let (a, b) = f(input)?;
     let hi = a.off;
@@ -895,7 +892,7 @@ named!(token_kind -> TokenTree, alt!(
     |
     map!(op, TokenTree::Punct)
     |
-    symbol_leading_ws
+    symbol
 ));
 
 named!(group -> Group, alt!(
@@ -917,10 +914,6 @@ named!(group -> Group, alt!(
         punct!("}")
     ) => { |ts| Group::new(Delimiter::Brace, ts) }
 ));
-
-fn symbol_leading_ws(input: Cursor) -> PResult<TokenTree> {
-    symbol(skip_whitespace(input))
-}
 
 fn symbol(input: Cursor) -> PResult<TokenTree> {
     let raw = input.starts_with("r#");
@@ -961,14 +954,10 @@ fn symbol_not_raw(input: Cursor) -> PResult<&str> {
 }
 
 fn literal(input: Cursor) -> PResult<Literal> {
-    let input_no_ws = skip_whitespace(input);
-
-    match literal_nocapture(input_no_ws) {
+    match literal_nocapture(input) {
         Ok((a, ())) => {
-            let start = input.len() - input_no_ws.len();
-            let len = input_no_ws.len() - a.len();
-            let end = start + len;
-            Ok((a, Literal::_new(input.rest[start..end].to_string())))
+            let end = input.len() - a.len();
+            Ok((a, Literal::_new(input.rest[..end].to_string())))
         }
         Err(LexError) => Err(LexError),
     }
@@ -1380,7 +1369,6 @@ fn digits(mut input: Cursor) -> PResult<()> {
 }
 
 fn op(input: Cursor) -> PResult<Punct> {
-    let input = skip_whitespace(input);
     match op_char(input) {
         Ok((rest, '\'')) => {
             symbol(rest)?;
