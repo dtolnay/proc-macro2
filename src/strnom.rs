@@ -251,15 +251,6 @@ macro_rules! call {
     };
 }
 
-macro_rules! option {
-    ($i:expr, $f:expr) => {
-        match $f($i) {
-            Ok((i, o)) => Ok((i, Some(o))),
-            Err(LexError) => Ok(($i, None)),
-        }
-    };
-}
-
 macro_rules! tag {
     ($i:expr, $tag:expr) => {
         if $i.starts_with($tag) {

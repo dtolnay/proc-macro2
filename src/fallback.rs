@@ -990,13 +990,16 @@ named!(string -> (), alt!(
     )
 ));
 
-named!(quoted_string -> (), do_parse!(
-    punct!("\"") >>
-    cooked_string >>
-    tag!("\"") >>
-    option!(symbol_not_raw) >>
-    (())
-));
+fn quoted_string(input: Cursor) -> PResult<()> {
+    let input = skip_whitespace(input);
+    let input = input.expect("\"")?;
+    let (input, ()) = cooked_string(input)?;
+    let input = input.expect("\"")?;
+    match symbol_not_raw(input) {
+        Ok((input, _)) => Ok((input, ())),
+        Err(LexError) => Ok((input, ())),
+    }
+}
 
 fn cooked_string(input: Cursor) -> PResult<()> {
     let mut chars = input.char_indices().peekable();
