@@ -1,4 +1,4 @@
-use crate::strnom::{block_comment, skip_whitespace, whitespace, word_break, Cursor, PResult};
+use crate::strnom::{block_comment, skip_whitespace, word_break, Cursor, PResult};
 use crate::{Delimiter, Punct, Spacing, TokenTree};
 #[cfg(span_locations)]
 use std::cell::RefCell;
@@ -1435,31 +1435,33 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
     Ok((rest, trees))
 }
 
-named!(doc_comment_contents -> (&str, bool), alt!(
-    do_parse!(
-        punct!("//!") >>
-        s: take_until_newline_or_eof!() >>
-        ((s, true))
-    )
-    |
-    do_parse!(
-        option!(whitespace) >>
-        peek!(tag!("/*!")) >>
-        s: block_comment >>
-        ((s, true))
-    )
-    |
-    do_parse!(
-        punct!("///") >>
-        not!(tag!("/")) >>
-        s: take_until_newline_or_eof!() >>
-        ((s, false))
-    )
-    |
-    do_parse!(
-        option!(whitespace) >>
-        peek!(pair!(tag!("/**"), not!(tag!("*")))) >>
-        s: block_comment >>
-        ((s, false))
-    )
-));
+fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
+    let input = skip_whitespace(input);
+    if input.starts_with("//!") {
+        let input = input.advance(3);
+        let (input, s) = take_until_newline_or_eof(input);
+        Ok((input, (s, true)))
+    } else if input.starts_with("/*!") {
+        let (input, s) = block_comment(input)?;
+        Ok((input, (s, true)))
+    } else if input.starts_with("///") {
+        let input = input.advance(3);
+        if input.starts_with("/") {
+            return Err(LexError);
+        }
+        let (input, s) = take_until_newline_or_eof(input);
+        Ok((input, (s, false)))
+    } else if input.starts_with("/**") && !input.advance(3).starts_with("*") {
+        let (input, s) = block_comment(input)?;
+        Ok((input, (s, false)))
+    } else {
+        Err(LexError)
+    }
+}
+
+fn take_until_newline_or_eof(input: Cursor) -> (Cursor, &str) {
+    match input.find('\n') {
+        Some(i) => (input.advance(i), &input.rest[..i]),
+        None => (input.advance(input.len()), input.rest),
+    }
+}

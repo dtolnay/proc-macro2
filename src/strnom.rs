@@ -237,15 +237,6 @@ macro_rules! do_parse {
     };
 }
 
-macro_rules! peek {
-    ($i:expr, $submac:ident!( $($args:tt)* )) => {
-        match $submac!($i, $($args)*) {
-            Ok((_, o)) => Ok(($i, o)),
-            Err(LexError) => Err(LexError),
-        }
-    };
-}
-
 macro_rules! call {
     ($i:expr, $fun:expr $(, $args:expr)*) => {
         $fun($i $(, $args)*)
@@ -257,36 +248,6 @@ macro_rules! option {
         match $f($i) {
             Ok((i, o)) => Ok((i, Some(o))),
             Err(LexError) => Ok(($i, None)),
-        }
-    };
-}
-
-macro_rules! take_until_newline_or_eof {
-    ($i:expr,) => {
-        match $i.find('\n') {
-            Some(i) => Ok(($i.advance(i), &$i.rest[..i])),
-            None => Ok(($i.advance($i.len()), $i.rest)),
-        }
-    };
-}
-
-macro_rules! pair {
-    ($i:expr, $first:ident!( $($arg1:tt)* ), $second:ident!( $($arg2:tt)* )) => {
-        match $first!($i, $($arg1)*) {
-            Err(LexError) => Err(LexError),
-            Ok((i, o1)) => match $second!(i, $($arg2)*) {
-                Err(LexError) => Err(LexError),
-                Ok((i, o2)) => Ok((i, (o1, o2))),
-            },
-        }
-    };
-}
-
-macro_rules! not {
-    ($i:expr, $submac:ident!( $($args:tt)* )) => {
-        match $submac!($i, $($args)*) {
-            Ok((_, _)) => Err(LexError),
-            Err(LexError) => Ok(($i, ())),
         }
     };
 }
