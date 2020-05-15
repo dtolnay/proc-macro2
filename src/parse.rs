@@ -379,7 +379,8 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
     'outer: while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
-                return Ok(input.advance(offset + 1));
+                let input = input.advance(offset + 1);
+                return Ok(literal_suffix(input));
             }
             b'\r' => {
                 if let Some((_, b'\n')) = bytes.next() {
@@ -433,7 +434,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
         match ch {
             '"' if input.advance(byte_offset + 1).starts_with(&input.rest[..n]) => {
                 let rest = input.advance(byte_offset + 1 + n);
-                return Ok(rest);
+                return Ok(literal_suffix(rest));
             }
             '\r' => {}
             _ => {}
