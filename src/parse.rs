@@ -219,7 +219,6 @@ fn token_kind(input: Cursor) -> PResult<TokenTree> {
 }
 
 fn group(input: Cursor) -> PResult<Group> {
-    let input = skip_whitespace(input);
     if let Ok(input) = input.expect("(") {
         let (input, ts) = token_stream(input)?;
         let input = skip_whitespace(input);
@@ -307,7 +306,6 @@ fn literal_nocapture(input: Cursor) -> PResult<()> {
 }
 
 fn string(input: Cursor) -> PResult<()> {
-    let input = skip_whitespace(input);
     if let Ok(input) = input.expect("\"") {
         let (input, ()) = cooked_string(input)?;
         let input = input.expect("\"")?;
@@ -367,7 +365,6 @@ fn cooked_string(input: Cursor) -> PResult<()> {
 }
 
 fn byte_string(input: Cursor) -> PResult<()> {
-    let input = skip_whitespace(input);
     if let Ok(input) = input.expect("b\"") {
         let (input, ()) = cooked_byte_string(input)?;
         let input = input.expect("\"")?;
@@ -449,7 +446,6 @@ fn raw_string(input: Cursor) -> PResult<()> {
 }
 
 fn byte(input: Cursor) -> PResult<()> {
-    let input = skip_whitespace(input);
     let input = input.expect("b'")?;
     let (input, ()) = cooked_byte(input)?;
     let input = input.expect("'")?;
@@ -484,7 +480,6 @@ fn cooked_byte(input: Cursor) -> PResult<()> {
 }
 
 fn character(input: Cursor) -> PResult<()> {
-    let input = skip_whitespace(input);
     let input = input.expect("'")?;
     let (input, ()) = cooked_char(input)?;
     let input = input.expect("'")?;
@@ -760,7 +755,6 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
 }
 
 fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
-    let input = skip_whitespace(input);
     if input.starts_with("//!") {
         let input = input.advance(3);
         let (input, s) = take_until_newline_or_eof(input);
