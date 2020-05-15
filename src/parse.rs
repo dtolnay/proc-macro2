@@ -492,10 +492,10 @@ macro_rules! next_ch {
     ($chars:ident @ $pat:pat $(| $rest:pat)*) => {
         match $chars.next() {
             Some((_, ch)) => match ch {
-                $pat $(| $rest)*  => ch,
+                $pat $(| $rest)* => ch,
                 _ => return false,
             },
-            None => return false
+            None => return false,
         }
     };
 }
