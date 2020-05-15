@@ -298,7 +298,7 @@ macro_rules! not {
 macro_rules! tag {
     ($i:expr, $tag:expr) => {
         if $i.starts_with($tag) {
-            Ok(($i.advance($tag.len()), &$i.rest[..$tag.len()]))
+            Ok(($i.advance($tag.len()), ()))
         } else {
             Err(LexError)
         }
