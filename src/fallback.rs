@@ -885,15 +885,17 @@ fn token_tree(input: Cursor) -> PResult<TokenTree> {
     Ok((rest, tt))
 }
 
-named!(token_kind -> TokenTree, alt!(
-    map!(group, |g| TokenTree::Group(crate::Group::_new_stable(g)))
-    |
-    map!(literal, |l| TokenTree::Literal(crate::Literal::_new_stable(l))) // must be before symbol
-    |
-    map!(op, TokenTree::Punct)
-    |
-    symbol
-));
+fn token_kind(input: Cursor) -> PResult<TokenTree> {
+    if let Ok((input, g)) = group(input) {
+        Ok((input, TokenTree::Group(crate::Group::_new_stable(g))))
+    } else if let Ok((input, l)) = literal(input) { // must be before symbol
+        Ok((input, TokenTree::Literal(crate::Literal::_new_stable(l))))
+    } else if let Ok((input, p)) = op(input) {
+        Ok((input, TokenTree::Punct(p)))
+    } else {
+        symbol(input)
+    }
+}
 
 fn group(input: Cursor) -> PResult<Group> {
     let input = skip_whitespace(input);
