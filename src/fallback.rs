@@ -1158,12 +1158,13 @@ fn cooked_byte(input: Cursor) -> PResult<()> {
     }
 }
 
-named!(character -> (), do_parse!(
-    punct!("'") >>
-    cooked_char >>
-    tag!("'") >>
-    (())
-));
+fn character(input: Cursor) -> PResult<()> {
+    let input = skip_whitespace(input);
+    let input = input.expect("'")?;
+    let (input, ()) = cooked_char(input)?;
+    let input = input.expect("'")?;
+    Ok((input, ()))
+}
 
 fn cooked_char(input: Cursor) -> PResult<()> {
     let mut chars = input.char_indices();
