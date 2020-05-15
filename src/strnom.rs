@@ -265,7 +265,7 @@ macro_rules! take_until_newline_or_eof {
     ($i:expr,) => {
         match $i.find('\n') {
             Some(i) => Ok(($i.advance(i), &$i.rest[..i])),
-            None => Ok(($i.advance($i.len()), &$i.rest[..$i.len()])),
+            None => Ok(($i.advance($i.len()), $i.rest)),
         }
     };
 }
