@@ -850,9 +850,9 @@ fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
                 Ok((a, tt)) => {
                     trees.push(tt);
                     input = a;
-                },
+                }
                 Err(_) => break,
-            }
+            },
         }
     }
     Ok((input, TokenStream { inner: trees }))
