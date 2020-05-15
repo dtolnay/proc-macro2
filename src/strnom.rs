@@ -262,16 +262,12 @@ macro_rules! option {
 }
 
 macro_rules! take_until_newline_or_eof {
-    ($i:expr,) => {{
-        if $i.len() == 0 {
-            Ok(($i, ""))
-        } else {
-            match $i.find('\n') {
-                Some(i) => Ok(($i.advance(i), &$i.rest[..i])),
-                None => Ok(($i.advance($i.len()), &$i.rest[..$i.len()])),
-            }
+    ($i:expr,) => {
+        match $i.find('\n') {
+            Some(i) => Ok(($i.advance(i), &$i.rest[..i])),
+            None => Ok(($i.advance($i.len()), &$i.rest[..$i.len()])),
         }
-    }};
+    };
 }
 
 macro_rules! pair {
