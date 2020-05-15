@@ -444,12 +444,6 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
 
 fn byte(input: Cursor) -> Result<Cursor, LexError> {
     let input = input.expect("b'")?;
-    let input = cooked_byte(input)?;
-    let input = input.expect("'")?;
-    Ok(input)
-}
-
-fn cooked_byte(input: Cursor) -> Result<Cursor, LexError> {
     let mut bytes = input.bytes().enumerate();
     let ok = match bytes.next().map(|(_, b)| b) {
         Some(b'\\') => match bytes.next().map(|(_, b)| b) {
@@ -460,20 +454,14 @@ fn cooked_byte(input: Cursor) -> Result<Cursor, LexError> {
         },
         b => b.is_some(),
     };
-    if ok {
-        match bytes.next() {
-            Some((offset, _)) => {
-                if input.chars().as_str().is_char_boundary(offset) {
-                    Ok(input.advance(offset))
-                } else {
-                    Err(LexError)
-                }
-            }
-            None => Ok(input.advance(input.len())),
-        }
-    } else {
-        Err(LexError)
+    if !ok {
+        return Err(LexError);
     }
+    let (offset, _) = bytes.next().ok_or(LexError)?;
+    if !input.chars().as_str().is_char_boundary(offset) {
+        return Err(LexError);
+    }
+    input.advance(offset).expect("'")
 }
 
 fn character(input: Cursor) -> Result<Cursor, LexError> {
