@@ -358,9 +358,9 @@ impl SourceMap {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Span {
     #[cfg(span_locations)]
-    lo: u32,
+    pub(crate) lo: u32,
     #[cfg(span_locations)]
-    hi: u32,
+    pub(crate) hi: u32,
 }
 
 impl Span {
