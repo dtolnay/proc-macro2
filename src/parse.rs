@@ -59,7 +59,7 @@ impl<'a> Cursor<'a> {
         self.rest.char_indices()
     }
 
-    fn expect(&self, tag: &str) -> Result<Cursor<'a>, LexError> {
+    fn parse(&self, tag: &str) -> Result<Cursor<'a>, LexError> {
         if self.starts_with(tag) {
             Ok(self.advance(tag.len()))
         } else {
@@ -232,7 +232,7 @@ fn group(input: Cursor) -> PResult<Group> {
     let input = input.advance(1);
     let (input, ts) = token_stream(input)?;
     let input = skip_whitespace(input);
-    let input = input.expect(close)?;
+    let input = input.parse(close)?;
     Ok((input, Group::new(delimiter, ts)))
 }
 
@@ -310,9 +310,9 @@ fn literal_suffix(input: Cursor) -> Cursor {
 }
 
 fn string(input: Cursor) -> Result<Cursor, LexError> {
-    if let Ok(input) = input.expect("\"") {
+    if let Ok(input) = input.parse("\"") {
         cooked_string(input)
-    } else if let Ok(input) = input.expect("r") {
+    } else if let Ok(input) = input.parse("r") {
         raw_string(input)
     } else {
         Err(LexError)
@@ -365,9 +365,9 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
 }
 
 fn byte_string(input: Cursor) -> Result<Cursor, LexError> {
-    if let Ok(input) = input.expect("b\"") {
+    if let Ok(input) = input.parse("b\"") {
         cooked_byte_string(input)
-    } else if let Ok(input) = input.expect("br") {
+    } else if let Ok(input) = input.parse("br") {
         raw_string(input)
     } else {
         Err(LexError)
@@ -444,7 +444,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
 }
 
 fn byte(input: Cursor) -> Result<Cursor, LexError> {
-    let input = input.expect("b'")?;
+    let input = input.parse("b'")?;
     let mut bytes = input.bytes().enumerate();
     let ok = match bytes.next().map(|(_, b)| b) {
         Some(b'\\') => match bytes.next().map(|(_, b)| b) {
@@ -462,12 +462,12 @@ fn byte(input: Cursor) -> Result<Cursor, LexError> {
     if !input.chars().as_str().is_char_boundary(offset) {
         return Err(LexError);
     }
-    let input = input.advance(offset).expect("'")?;
+    let input = input.advance(offset).parse("'")?;
     Ok(literal_suffix(input))
 }
 
 fn character(input: Cursor) -> Result<Cursor, LexError> {
-    let input = input.expect("'")?;
+    let input = input.parse("'")?;
     let mut chars = input.char_indices();
     let ok = match chars.next().map(|(_, ch)| ch) {
         Some('\\') => match chars.next().map(|(_, ch)| ch) {
@@ -484,7 +484,7 @@ fn character(input: Cursor) -> Result<Cursor, LexError> {
         return Err(LexError);
     }
     let (idx, _) = chars.next().ok_or(LexError)?;
-    let input = input.advance(idx).expect("'")?;
+    let input = input.advance(idx).parse("'")?;
     Ok(literal_suffix(input))
 }
 
