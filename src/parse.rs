@@ -466,12 +466,6 @@ fn byte(input: Cursor) -> Result<Cursor, LexError> {
 
 fn character(input: Cursor) -> Result<Cursor, LexError> {
     let input = input.expect("'")?;
-    let input = cooked_char(input)?;
-    let input = input.expect("'")?;
-    Ok(input)
-}
-
-fn cooked_char(input: Cursor) -> Result<Cursor, LexError> {
     let mut chars = input.char_indices();
     let ok = match chars.next().map(|(_, ch)| ch) {
         Some('\\') => match chars.next().map(|(_, ch)| ch) {
@@ -484,14 +478,11 @@ fn cooked_char(input: Cursor) -> Result<Cursor, LexError> {
         },
         ch => ch.is_some(),
     };
-    if ok {
-        match chars.next() {
-            Some((idx, _)) => Ok(input.advance(idx)),
-            None => Ok(input.advance(input.len())),
-        }
-    } else {
-        Err(LexError)
+    if !ok {
+        return Err(LexError);
     }
+    let (idx, _) = chars.next().ok_or(LexError)?;
+    input.advance(idx).expect("'")
 }
 
 macro_rules! next_ch {
