@@ -312,10 +312,10 @@ macro_rules! punct {
 }
 
 /// Do not use directly. Use `punct!`.
-pub(crate) fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &'a str> {
+pub(crate) fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, ()> {
     let input = skip_whitespace(input);
     if input.starts_with(token) {
-        Ok((input.advance(token.len()), token))
+        Ok((input.advance(token.len()), ()))
     } else {
         Err(LexError)
     }
