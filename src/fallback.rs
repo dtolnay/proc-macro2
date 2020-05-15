@@ -1125,13 +1125,13 @@ fn raw_string(input: Cursor) -> PResult<()> {
     Err(LexError)
 }
 
-named!(byte -> (), do_parse!(
-    punct!("b") >>
-    tag!("'") >>
-    cooked_byte >>
-    tag!("'") >>
-    (())
-));
+fn byte(input: Cursor) -> PResult<()> {
+    let input = skip_whitespace(input);
+    let input = input.expect("b'")?;
+    let (input, ()) = cooked_byte(input)?;
+    let input = input.expect("'")?;
+    Ok((input, ()))
+}
 
 fn cooked_byte(input: Cursor) -> PResult<()> {
     let mut bytes = input.bytes().enumerate();

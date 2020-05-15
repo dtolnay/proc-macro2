@@ -57,6 +57,14 @@ impl<'a> Cursor<'a> {
     pub fn char_indices(&self) -> CharIndices<'a> {
         self.rest.char_indices()
     }
+
+    pub fn expect(&self, tag: &str) -> Result<Cursor<'a>, LexError> {
+        if self.starts_with(tag) {
+            Ok(self.advance(tag.len()))
+        } else {
+            Err(LexError)
+        }
+    }
 }
 
 pub(crate) type PResult<'a, O> = Result<(Cursor<'a>, O), LexError>;
