@@ -150,10 +150,10 @@ fn is_whitespace(ch: char) -> bool {
     ch.is_whitespace() || ch == '\u{200e}' || ch == '\u{200f}'
 }
 
-fn word_break(input: Cursor) -> PResult<()> {
+fn word_break(input: Cursor) -> Result<Cursor, LexError> {
     match input.chars().next() {
         Some(ch) if UnicodeXID::is_xid_continue(ch) => Err(LexError),
-        Some(_) | None => Ok((input, ())),
+        Some(_) | None => Ok(input),
     }
 }
 
@@ -276,7 +276,7 @@ fn symbol_not_raw(input: Cursor) -> PResult<&str> {
 
 fn literal(input: Cursor) -> PResult<Literal> {
     match literal_nocapture(input) {
-        Ok((a, ())) => {
+        Ok(a) => {
             let end = input.len() - a.len();
             Ok((a, Literal::_new(input.rest[..end].to_string())))
         }
@@ -284,7 +284,7 @@ fn literal(input: Cursor) -> PResult<Literal> {
     }
 }
 
-fn literal_nocapture(input: Cursor) -> PResult<()> {
+fn literal_nocapture(input: Cursor) -> Result<Cursor, LexError> {
     if let Ok(ok) = string(input) {
         Ok(ok)
     } else if let Ok(ok) = byte_string(input) {
@@ -302,13 +302,13 @@ fn literal_nocapture(input: Cursor) -> PResult<()> {
     }
 }
 
-fn string(input: Cursor) -> PResult<()> {
+fn string(input: Cursor) -> Result<Cursor, LexError> {
     if let Ok(input) = input.expect("\"") {
-        let (input, ()) = cooked_string(input)?;
+        let input = cooked_string(input)?;
         let input = input.expect("\"")?;
         match symbol_not_raw(input) {
-            Ok((input, _)) => Ok((input, ())),
-            Err(LexError) => Ok((input, ())),
+            Ok((input, _)) => Ok(input),
+            Err(LexError) => Ok(input),
         }
     } else if let Ok(input) = input.expect("r") {
         raw_string(input)
@@ -317,12 +317,12 @@ fn string(input: Cursor) -> PResult<()> {
     }
 }
 
-fn cooked_string(input: Cursor) -> PResult<()> {
+fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
     let mut chars = input.char_indices().peekable();
     while let Some((byte_offset, ch)) = chars.next() {
         match ch {
             '"' => {
-                return Ok((input.advance(byte_offset), ()));
+                return Ok(input.advance(byte_offset));
             }
             '\r' => {
                 if let Some((_, '\n')) = chars.next() {
@@ -361,25 +361,25 @@ fn cooked_string(input: Cursor) -> PResult<()> {
     Err(LexError)
 }
 
-fn byte_string(input: Cursor) -> PResult<()> {
+fn byte_string(input: Cursor) -> Result<Cursor, LexError> {
     if let Ok(input) = input.expect("b\"") {
-        let (input, ()) = cooked_byte_string(input)?;
+        let input = cooked_byte_string(input)?;
         let input = input.expect("\"")?;
-        Ok((input, ()))
+        Ok(input)
     } else if let Ok(input) = input.expect("br") {
-        let (input, ()) = raw_string(input)?;
-        Ok((input, ()))
+        let input = raw_string(input)?;
+        Ok(input)
     } else {
         Err(LexError)
     }
 }
 
-fn cooked_byte_string(mut input: Cursor) -> PResult<()> {
+fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
     let mut bytes = input.bytes().enumerate();
     'outer: while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
-                return Ok((input.advance(offset), ()));
+                return Ok(input.advance(offset));
             }
             b'\r' => {
                 if let Some((_, b'\n')) = bytes.next() {
@@ -416,7 +416,7 @@ fn cooked_byte_string(mut input: Cursor) -> PResult<()> {
     Err(LexError)
 }
 
-fn raw_string(input: Cursor) -> PResult<()> {
+fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
     let mut chars = input.char_indices();
     let mut n = 0;
     while let Some((byte_offset, ch)) = chars.next() {
@@ -433,7 +433,7 @@ fn raw_string(input: Cursor) -> PResult<()> {
         match ch {
             '"' if input.advance(byte_offset + 1).starts_with(&input.rest[..n]) => {
                 let rest = input.advance(byte_offset + 1 + n);
-                return Ok((rest, ()));
+                return Ok(rest);
             }
             '\r' => {}
             _ => {}
@@ -442,14 +442,14 @@ fn raw_string(input: Cursor) -> PResult<()> {
     Err(LexError)
 }
 
-fn byte(input: Cursor) -> PResult<()> {
+fn byte(input: Cursor) -> Result<Cursor, LexError> {
     let input = input.expect("b'")?;
-    let (input, ()) = cooked_byte(input)?;
+    let input = cooked_byte(input)?;
     let input = input.expect("'")?;
-    Ok((input, ()))
+    Ok(input)
 }
 
-fn cooked_byte(input: Cursor) -> PResult<()> {
+fn cooked_byte(input: Cursor) -> Result<Cursor, LexError> {
     let mut bytes = input.bytes().enumerate();
     let ok = match bytes.next().map(|(_, b)| b) {
         Some(b'\\') => match bytes.next().map(|(_, b)| b) {
@@ -464,26 +464,26 @@ fn cooked_byte(input: Cursor) -> PResult<()> {
         match bytes.next() {
             Some((offset, _)) => {
                 if input.chars().as_str().is_char_boundary(offset) {
-                    Ok((input.advance(offset), ()))
+                    Ok(input.advance(offset))
                 } else {
                     Err(LexError)
                 }
             }
-            None => Ok((input.advance(input.len()), ())),
+            None => Ok(input.advance(input.len())),
         }
     } else {
         Err(LexError)
     }
 }
 
-fn character(input: Cursor) -> PResult<()> {
+fn character(input: Cursor) -> Result<Cursor, LexError> {
     let input = input.expect("'")?;
-    let (input, ()) = cooked_char(input)?;
+    let input = cooked_char(input)?;
     let input = input.expect("'")?;
-    Ok((input, ()))
+    Ok(input)
 }
 
-fn cooked_char(input: Cursor) -> PResult<()> {
+fn cooked_char(input: Cursor) -> Result<Cursor, LexError> {
     let mut chars = input.char_indices();
     let ok = match chars.next().map(|(_, ch)| ch) {
         Some('\\') => match chars.next().map(|(_, ch)| ch) {
@@ -498,8 +498,8 @@ fn cooked_char(input: Cursor) -> PResult<()> {
     };
     if ok {
         match chars.next() {
-            Some((idx, _)) => Ok((input.advance(idx), ())),
-            None => Ok((input.advance(input.len()), ())),
+            Some((idx, _)) => Ok(input.advance(idx)),
+            None => Ok(input.advance(input.len())),
         }
     } else {
         Err(LexError)
@@ -550,8 +550,8 @@ where
     }
 }
 
-fn float(input: Cursor) -> PResult<()> {
-    let (mut rest, ()) = float_digits(input)?;
+fn float(input: Cursor) -> Result<Cursor, LexError> {
+    let mut rest = float_digits(input)?;
     if let Some(ch) = rest.chars().next() {
         if is_ident_start(ch) {
             rest = symbol_not_raw(rest)?.0;
@@ -560,7 +560,7 @@ fn float(input: Cursor) -> PResult<()> {
     word_break(rest)
 }
 
-fn float_digits(input: Cursor) -> PResult<()> {
+fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
     let mut chars = input.chars().peekable();
     match chars.next() {
         Some(ch) if ch >= '0' && ch <= '9' => {}
@@ -634,11 +634,11 @@ fn float_digits(input: Cursor) -> PResult<()> {
         }
     }
 
-    Ok((input.advance(len), ()))
+    Ok(input.advance(len))
 }
 
-fn int(input: Cursor) -> PResult<()> {
-    let (mut rest, ()) = digits(input)?;
+fn int(input: Cursor) -> Result<Cursor, LexError> {
+    let mut rest = digits(input)?;
     if let Some(ch) = rest.chars().next() {
         if is_ident_start(ch) {
             rest = symbol_not_raw(rest)?.0;
@@ -647,7 +647,7 @@ fn int(input: Cursor) -> PResult<()> {
     word_break(rest)
 }
 
-fn digits(mut input: Cursor) -> PResult<()> {
+fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
     let base = if input.starts_with("0x") {
         input = input.advance(2);
         16
@@ -686,7 +686,7 @@ fn digits(mut input: Cursor) -> PResult<()> {
     if empty {
         Err(LexError)
     } else {
-        Ok((input.advance(len), ()))
+        Ok(input.advance(len))
     }
 }
 
