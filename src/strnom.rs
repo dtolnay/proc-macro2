@@ -69,11 +69,7 @@ impl<'a> Cursor<'a> {
 
 pub(crate) type PResult<'a, O> = Result<(Cursor<'a>, O), LexError>;
 
-pub(crate) fn whitespace(input: Cursor) -> PResult<()> {
-    if input.is_empty() {
-        return Err(LexError);
-    }
-
+pub(crate) fn skip_whitespace(input: Cursor) -> Cursor {
     let bytes = input.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
@@ -95,9 +91,13 @@ pub(crate) fn whitespace(input: Cursor) -> PResult<()> {
                 && (!s.starts_with("/**") || s.starts_with("/***"))
                 && !s.starts_with("/*!")
             {
-                let (_, com) = block_comment(s)?;
-                i += com.len();
-                continue;
+                match block_comment(s) {
+                    Ok((_, com)) => {
+                        i += com.len();
+                        continue;
+                    }
+                    Err(LexError) => return input,
+                }
             }
         }
         match bytes[i] {
@@ -114,9 +114,9 @@ pub(crate) fn whitespace(input: Cursor) -> PResult<()> {
                 }
             }
         }
-        return if i > 0 { Ok((s, ())) } else { Err(LexError) };
+        return s;
     }
-    Ok((input.advance(input.len()), ()))
+    input.advance(input.len())
 }
 
 pub(crate) fn block_comment(input: Cursor) -> PResult<&str> {
@@ -142,13 +142,6 @@ pub(crate) fn block_comment(input: Cursor) -> PResult<&str> {
         i += 1;
     }
     Err(LexError)
-}
-
-pub(crate) fn skip_whitespace(input: Cursor) -> Cursor {
-    match whitespace(input) {
-        Ok((rest, _)) => rest,
-        Err(LexError) => input,
-    }
 }
 
 fn is_whitespace(ch: char) -> bool {
