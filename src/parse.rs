@@ -462,7 +462,8 @@ fn byte(input: Cursor) -> Result<Cursor, LexError> {
     if !input.chars().as_str().is_char_boundary(offset) {
         return Err(LexError);
     }
-    input.advance(offset).expect("'")
+    let input = input.advance(offset).expect("'")?;
+    Ok(literal_suffix(input))
 }
 
 fn character(input: Cursor) -> Result<Cursor, LexError> {
@@ -483,7 +484,8 @@ fn character(input: Cursor) -> Result<Cursor, LexError> {
         return Err(LexError);
     }
     let (idx, _) = chars.next().ok_or(LexError)?;
-    input.advance(idx).expect("'")
+    let input = input.advance(idx).expect("'")?;
+    Ok(literal_suffix(input))
 }
 
 macro_rules! next_ch {
