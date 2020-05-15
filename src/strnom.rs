@@ -251,16 +251,6 @@ macro_rules! call {
     };
 }
 
-macro_rules! tag {
-    ($i:expr, $tag:expr) => {
-        if $i.starts_with($tag) {
-            Ok(($i.advance($tag.len()), ()))
-        } else {
-            Err(LexError)
-        }
-    };
-}
-
 macro_rules! punct {
     ($i:expr, $punct:expr) => {
         $crate::strnom::punct($i, $punct)

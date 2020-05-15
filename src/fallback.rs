@@ -1040,20 +1040,19 @@ fn cooked_string(input: Cursor) -> PResult<()> {
     Err(LexError)
 }
 
-named!(byte_string -> (), alt!(
-    do_parse!(
-        punct!("b\"") >>
-        cooked_byte_string >>
-        tag!("\"") >>
-        (())
-    )
-    |
-    do_parse!(
-        punct!("br") >>
-        raw_string >>
-        (())
-    )
-));
+fn byte_string(input: Cursor) -> PResult<()> {
+    let input = skip_whitespace(input);
+    if let Ok(input) = input.expect("b\"") {
+        let (input, ()) = cooked_byte_string(input)?;
+        let input = input.expect("\"")?;
+        Ok((input, ()))
+    } else if let Ok(input) = input.expect("br") {
+        let (input, ()) = raw_string(input)?;
+        Ok((input, ()))
+    } else {
+        Err(LexError)
+    }
+}
 
 fn cooked_byte_string(mut input: Cursor) -> PResult<()> {
     let mut bytes = input.bytes().enumerate();
