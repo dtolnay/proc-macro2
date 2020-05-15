@@ -219,24 +219,21 @@ fn token_kind(input: Cursor) -> PResult<TokenTree> {
 }
 
 fn group(input: Cursor) -> PResult<Group> {
-    if let Ok(input) = input.expect("(") {
-        let (input, ts) = token_stream(input)?;
-        let input = skip_whitespace(input);
-        let input = input.expect(")")?;
-        Ok((input, Group::new(Delimiter::Parenthesis, ts)))
-    } else if let Ok(input) = input.expect("[") {
-        let (input, ts) = token_stream(input)?;
-        let input = skip_whitespace(input);
-        let input = input.expect("]")?;
-        Ok((input, Group::new(Delimiter::Bracket, ts)))
-    } else if let Ok(input) = input.expect("{") {
-        let (input, ts) = token_stream(input)?;
-        let input = skip_whitespace(input);
-        let input = input.expect("}")?;
-        Ok((input, Group::new(Delimiter::Brace, ts)))
+    let (delimiter, close) = if input.starts_with("(") {
+        (Delimiter::Parenthesis, ")")
+    } else if input.starts_with("[") {
+        (Delimiter::Bracket, "]")
+    } else if input.starts_with("{") {
+        (Delimiter::Brace, "}")
     } else {
-        Err(LexError)
-    }
+        return Err(LexError);
+    };
+
+    let input = input.advance(1);
+    let (input, ts) = token_stream(input)?;
+    let input = skip_whitespace(input);
+    let input = input.expect(close)?;
+    Ok((input, Group::new(delimiter, ts)))
 }
 
 fn symbol(input: Cursor) -> PResult<TokenTree> {
