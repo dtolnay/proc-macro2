@@ -983,10 +983,11 @@ named!(literal_nocapture -> (), alt!(
 named!(string -> (), alt!(
     quoted_string
     |
-    preceded!(
-        punct!("r"),
-        raw_string
-    ) => { |_| () }
+    do_parse!(
+        punct!("r") >>
+        raw_string >>
+        (())
+    )
 ));
 
 named!(quoted_string -> (), do_parse!(
@@ -1049,10 +1050,11 @@ named!(byte_string -> (), alt!(
         (())
     )
     |
-    preceded!(
-        punct!("br"),
-        raw_string
-    ) => { |_| () }
+    do_parse!(
+        punct!("br") >>
+        raw_string >>
+        (())
+    )
 ));
 
 fn cooked_byte_string(mut input: Cursor) -> PResult<()> {

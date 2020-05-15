@@ -355,19 +355,6 @@ pub(crate) fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, &
     }
 }
 
-macro_rules! preceded {
-    ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => {
-        match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-            Ok((remaining, (_, o))) => Ok((remaining, o)),
-            Err(LexError) => Err(LexError),
-        }
-    };
-
-    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
-        preceded!($i, $submac!($($args)*), call!($g))
-    };
-}
-
 macro_rules! map {
     ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
         match $submac!($i, $($args)*) {
