@@ -274,49 +274,15 @@ macro_rules! take_until_newline_or_eof {
     }};
 }
 
-macro_rules! tuple {
-    ($i:expr, $($rest:tt)*) => {
-        tuple_parser!($i, (), $($rest)*)
-    };
-}
-
-/// Do not use directly. Use `tuple!`.
-macro_rules! tuple_parser {
-    ($i:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => {
-        tuple_parser!($i, ($($parsed),*), call!($e), $($rest)*)
-    };
-
-    ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
-        match $submac!($i, $($args)*) {
+macro_rules! pair {
+    ($i:expr, $first:ident!( $($arg1:tt)* ), $second:ident!( $($arg2:tt)* )) => {
+        match $first!($i, $($arg1)*) {
             Err(LexError) => Err(LexError),
-            Ok((i, o)) => tuple_parser!(i, (o), $($rest)*),
+            Ok((i, o1)) => match $second!(i, $($arg2)*) {
+                Err(LexError) => Err(LexError),
+                Ok((i, o2)) => Ok((i, (o1, o2))),
+            },
         }
-    };
-
-    ($i:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
-        match $submac!($i, $($args)*) {
-            Err(LexError) => Err(LexError),
-            Ok((i, o)) => tuple_parser!(i, ($($parsed)* , o), $($rest)*),
-        }
-    };
-
-    ($i:expr, ($($parsed:tt),*), $e:ident) => {
-        tuple_parser!($i, ($($parsed),*), call!($e))
-    };
-
-    ($i:expr, (), $submac:ident!( $($args:tt)* )) => {
-        $submac!($i, $($args)*)
-    };
-
-    ($i:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => {
-        match $submac!($i, $($args)*) {
-            Err(LexError) => Err(LexError),
-            Ok((i, o)) => Ok((i, ($($parsed),*, o)))
-        }
-    };
-
-    ($i:expr, ($($parsed:expr),*)) => {
-        Ok(($i, ($($parsed),*)))
     };
 }
 

@@ -1458,7 +1458,7 @@ named!(doc_comment_contents -> (&str, bool), alt!(
     |
     do_parse!(
         option!(whitespace) >>
-        peek!(tuple!(tag!("/**"), not!(tag!("*")))) >>
+        peek!(pair!(tag!("/**"), not!(tag!("*")))) >>
         s: block_comment >>
         ((s, false))
     )
