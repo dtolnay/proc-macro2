@@ -311,9 +311,7 @@ fn literal_suffix(input: Cursor) -> Cursor {
 
 fn string(input: Cursor) -> Result<Cursor, LexError> {
     if let Ok(input) = input.expect("\"") {
-        let input = cooked_string(input)?;
-        let input = input.expect("\"")?;
-        Ok(literal_suffix(input))
+        cooked_string(input)
     } else if let Ok(input) = input.expect("r") {
         raw_string(input)
     } else {
@@ -326,7 +324,8 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
     while let Some((byte_offset, ch)) = chars.next() {
         match ch {
             '"' => {
-                return Ok(input.advance(byte_offset));
+                let input = input.advance(byte_offset + 1);
+                return Ok(literal_suffix(input));
             }
             '\r' => {
                 if let Some((_, '\n')) = chars.next() {
@@ -367,12 +366,9 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
 
 fn byte_string(input: Cursor) -> Result<Cursor, LexError> {
     if let Ok(input) = input.expect("b\"") {
-        let input = cooked_byte_string(input)?;
-        let input = input.expect("\"")?;
-        Ok(input)
+        cooked_byte_string(input)
     } else if let Ok(input) = input.expect("br") {
-        let input = raw_string(input)?;
-        Ok(input)
+        raw_string(input)
     } else {
         Err(LexError)
     }
@@ -383,7 +379,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
     'outer: while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
-                return Ok(input.advance(offset));
+                return Ok(input.advance(offset + 1));
             }
             b'\r' => {
                 if let Some((_, b'\n')) = bytes.next() {
