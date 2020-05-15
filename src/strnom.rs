@@ -214,57 +214,10 @@ macro_rules! alt {
     };
 }
 
-macro_rules! do_parse {
-    ($i:expr, ( $($rest:expr),* )) => {
-        Ok(($i, ( $($rest),* )))
-    };
-
-    ($i:expr, $e:ident >> $($rest:tt)*) => {
-        do_parse!($i, call!($e) >> $($rest)*)
-    };
-
-    ($i:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => {
-        match $submac!($i, $($args)*) {
-            Err(LexError) => Err(LexError),
-            Ok((i, _)) => do_parse!(i, $($rest)*),
-        }
-    };
-
-    ($i:expr, $field:ident : $e:ident >> $($rest:tt)*) => {
-        do_parse!($i, $field: call!($e) >> $($rest)*)
-    };
-
-    ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => {
-        match $submac!($i, $($args)*) {
-            Err(LexError) => Err(LexError),
-            Ok((i, o)) => {
-                let $field = o;
-                do_parse!(i, $($rest)*)
-            },
-        }
-    };
-}
-
 macro_rules! call {
     ($i:expr, $fun:expr $(, $args:expr)*) => {
         $fun($i $(, $args)*)
     };
-}
-
-macro_rules! punct {
-    ($i:expr, $punct:expr) => {
-        $crate::strnom::punct($i, $punct)
-    };
-}
-
-/// Do not use directly. Use `punct!`.
-pub(crate) fn punct<'a>(input: Cursor<'a>, token: &'static str) -> PResult<'a, ()> {
-    let input = skip_whitespace(input);
-    if input.starts_with(token) {
-        Ok((input.advance(token.len()), ()))
-    } else {
-        Err(LexError)
-    }
 }
 
 macro_rules! map {

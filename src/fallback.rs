@@ -895,28 +895,27 @@ named!(token_kind -> TokenTree, alt!(
     symbol
 ));
 
-named!(group -> Group, alt!(
-    do_parse!(
-        punct!("(") >>
-        ts: token_stream >>
-        punct!(")") >>
-        (Group::new(Delimiter::Parenthesis, ts))
-    )
-    |
-    do_parse!(
-        punct!("[") >>
-        ts: token_stream >>
-        punct!("]") >>
-        (Group::new(Delimiter::Bracket, ts))
-    )
-    |
-    do_parse!(
-        punct!("{") >>
-        ts: token_stream >>
-        punct!("}") >>
-        (Group::new(Delimiter::Brace, ts))
-    )
-));
+fn group(input: Cursor) -> PResult<Group> {
+    let input = skip_whitespace(input);
+    if let Ok(input) = input.expect("(") {
+        let (input, ts) = token_stream(input)?;
+        let input = skip_whitespace(input);
+        let input = input.expect(")")?;
+        Ok((input, Group::new(Delimiter::Parenthesis, ts)))
+    } else if let Ok(input) = input.expect("[") {
+        let (input, ts) = token_stream(input)?;
+        let input = skip_whitespace(input);
+        let input = input.expect("]")?;
+        Ok((input, Group::new(Delimiter::Bracket, ts)))
+    } else if let Ok(input) = input.expect("{") {
+        let (input, ts) = token_stream(input)?;
+        let input = skip_whitespace(input);
+        let input = input.expect("}")?;
+        Ok((input, Group::new(Delimiter::Brace, ts)))
+    } else {
+        Err(LexError)
+    }
+}
 
 fn symbol(input: Cursor) -> PResult<TokenTree> {
     let raw = input.starts_with("r#");
