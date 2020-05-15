@@ -980,24 +980,19 @@ named!(literal_nocapture -> (), alt!(
     int
 ));
 
-named!(string -> (), alt!(
-    quoted_string
-    |
-    do_parse!(
-        punct!("r") >>
-        raw_string >>
-        (())
-    )
-));
-
-fn quoted_string(input: Cursor) -> PResult<()> {
+fn string(input: Cursor) -> PResult<()> {
     let input = skip_whitespace(input);
-    let input = input.expect("\"")?;
-    let (input, ()) = cooked_string(input)?;
-    let input = input.expect("\"")?;
-    match symbol_not_raw(input) {
-        Ok((input, _)) => Ok((input, ())),
-        Err(LexError) => Ok((input, ())),
+    if let Ok(input) = input.expect("\"") {
+        let (input, ()) = cooked_string(input)?;
+        let input = input.expect("\"")?;
+        match symbol_not_raw(input) {
+            Ok((input, _)) => Ok((input, ())),
+            Err(LexError) => Ok((input, ())),
+        }
+    } else if let Ok(input) = input.expect("r") {
+        raw_string(input)
+    } else {
+        Err(LexError)
     }
 }
 
