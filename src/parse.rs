@@ -302,14 +302,18 @@ fn literal_nocapture(input: Cursor) -> Result<Cursor, LexError> {
     }
 }
 
+fn literal_suffix(input: Cursor) -> Cursor {
+    match symbol_not_raw(input) {
+        Ok((input, _)) => input,
+        Err(LexError) => input,
+    }
+}
+
 fn string(input: Cursor) -> Result<Cursor, LexError> {
     if let Ok(input) = input.expect("\"") {
         let input = cooked_string(input)?;
         let input = input.expect("\"")?;
-        match symbol_not_raw(input) {
-            Ok((input, _)) => Ok(input),
-            Err(LexError) => Ok(input),
-        }
+        Ok(literal_suffix(input))
     } else if let Ok(input) = input.expect("r") {
         raw_string(input)
     } else {
