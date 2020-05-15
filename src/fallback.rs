@@ -896,23 +896,26 @@ named!(token_kind -> TokenTree, alt!(
 ));
 
 named!(group -> Group, alt!(
-    delimited!(
-        punct!("("),
-        token_stream,
-        punct!(")")
-    ) => { |ts| Group::new(Delimiter::Parenthesis, ts) }
+    do_parse!(
+        punct!("(") >>
+        ts: token_stream >>
+        punct!(")") >>
+        (Group::new(Delimiter::Parenthesis, ts))
+    )
     |
-    delimited!(
-        punct!("["),
-        token_stream,
-        punct!("]")
-    ) => { |ts| Group::new(Delimiter::Bracket, ts) }
+    do_parse!(
+        punct!("[") >>
+        ts: token_stream >>
+        punct!("]") >>
+        (Group::new(Delimiter::Bracket, ts))
+    )
     |
-    delimited!(
-        punct!("{"),
-        token_stream,
-        punct!("}")
-    ) => { |ts| Group::new(Delimiter::Brace, ts) }
+    do_parse!(
+        punct!("{") >>
+        ts: token_stream >>
+        punct!("}") >>
+        (Group::new(Delimiter::Brace, ts))
+    )
 ));
 
 fn symbol(input: Cursor) -> PResult<TokenTree> {
@@ -1039,11 +1042,12 @@ fn cooked_string(input: Cursor) -> PResult<()> {
 }
 
 named!(byte_string -> (), alt!(
-    delimited!(
-        punct!("b\""),
-        cooked_byte_string,
-        tag!("\"")
-    ) => { |_| () }
+    do_parse!(
+        punct!("b\"") >>
+        cooked_byte_string >>
+        tag!("\"") >>
+        (())
+    )
     |
     preceded!(
         punct!("br"),

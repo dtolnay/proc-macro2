@@ -368,15 +368,6 @@ macro_rules! preceded {
     };
 }
 
-macro_rules! delimited {
-    ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => {
-        match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-            Err(LexError) => Err(LexError),
-            Ok((i1, (_, o, _))) => Ok((i1, o))
-        }
-    };
-}
-
 macro_rules! map {
     ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => {
         match $submac!($i, $($args)*) {
