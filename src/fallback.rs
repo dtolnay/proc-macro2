@@ -966,19 +966,23 @@ fn literal(input: Cursor) -> PResult<Literal> {
     }
 }
 
-named!(literal_nocapture -> (), alt!(
-    string
-    |
-    byte_string
-    |
-    byte
-    |
-    character
-    |
-    float
-    |
-    int
-));
+fn literal_nocapture(input: Cursor) -> PResult<()> {
+    if let Ok(ok) = string(input) {
+        Ok(ok)
+    } else if let Ok(ok) = byte_string(input) {
+        Ok(ok)
+    } else if let Ok(ok) = byte(input) {
+        Ok(ok)
+    } else if let Ok(ok) = character(input) {
+        Ok(ok)
+    } else if let Ok(ok) = float(input) {
+        Ok(ok)
+    } else if let Ok(ok) = int(input) {
+        Ok(ok)
+    } else {
+        Err(LexError)
+    }
+}
 
 fn string(input: Cursor) -> PResult<()> {
     let input = skip_whitespace(input);
