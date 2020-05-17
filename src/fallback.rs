@@ -93,8 +93,8 @@ impl fmt::Display for TokenStream {
                 write!(f, " ")?;
             }
             joint = false;
-            match *tt {
-                TokenTree::Group(ref tt) => {
+            match tt {
+                TokenTree::Group(tt) => {
                     let (start, end) = match tt.delimiter() {
                         Delimiter::Parenthesis => ("(", ")"),
                         Delimiter::Brace => ("{", "}"),
@@ -107,15 +107,15 @@ impl fmt::Display for TokenStream {
                         write!(f, "{} {} {}", start, tt.stream(), end)?
                     }
                 }
-                TokenTree::Ident(ref tt) => write!(f, "{}", tt)?,
-                TokenTree::Punct(ref tt) => {
+                TokenTree::Ident(tt) => write!(f, "{}", tt)?,
+                TokenTree::Punct(tt) => {
                     write!(f, "{}", tt.as_char())?;
                     match tt.spacing() {
                         Spacing::Alone => {}
                         Spacing::Joint => joint = true,
                     }
                 }
-                TokenTree::Literal(ref tt) => write!(f, "{}", tt)?,
+                TokenTree::Literal(tt) => write!(f, "{}", tt)?,
             }
         }
 

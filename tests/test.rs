@@ -190,7 +190,7 @@ fn span_test() {
                 assert_eq!(end.column, ecol, "ecol did not match for {}", i);
 
                 match i {
-                    TokenTree::Group(ref g) => {
+                    TokenTree::Group(g) => {
                         check_spans_internal(g.stream().clone(), lines);
                     }
                     _ => {}
@@ -289,12 +289,12 @@ fn tricky_doc_comment() {
     let stream = "/// doc".parse::<TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.len() == 2, "not length 2 -- {:?}", tokens);
-    match tokens[0] {
-        TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '#'),
+    match &tokens[0] {
+        TokenTree::Punct(tt) => assert_eq!(tt.as_char(), '#'),
         _ => panic!("wrong token {:?}", tokens[0]),
     }
-    let mut tokens = match tokens[1] {
-        TokenTree::Group(ref tt) => {
+    let mut tokens = match &tokens[1] {
+        TokenTree::Group(tt) => {
             assert_eq!(tt.delimiter(), Delimiter::Bracket);
             tt.stream().into_iter()
         }
@@ -302,15 +302,15 @@ fn tricky_doc_comment() {
     };
 
     match tokens.next().unwrap() {
-        TokenTree::Ident(ref tt) => assert_eq!(tt.to_string(), "doc"),
+        TokenTree::Ident(tt) => assert_eq!(tt.to_string(), "doc"),
         t => panic!("wrong token {:?}", t),
     }
     match tokens.next().unwrap() {
-        TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '='),
+        TokenTree::Punct(tt) => assert_eq!(tt.as_char(), '='),
         t => panic!("wrong token {:?}", t),
     }
     match tokens.next().unwrap() {
-        TokenTree::Literal(ref tt) => {
+        TokenTree::Literal(tt) => {
             assert_eq!(tt.to_string(), "\" doc\"");
         }
         t => panic!("wrong token {:?}", t),

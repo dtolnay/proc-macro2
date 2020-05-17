@@ -468,11 +468,11 @@ impl TokenTree {
     /// Returns the span of this tree, delegating to the `span` method of
     /// the contained token or a delimited stream.
     pub fn span(&self) -> Span {
-        match *self {
-            TokenTree::Group(ref t) => t.span(),
-            TokenTree::Ident(ref t) => t.span(),
-            TokenTree::Punct(ref t) => t.span(),
-            TokenTree::Literal(ref t) => t.span(),
+        match self {
+            TokenTree::Group(t) => t.span(),
+            TokenTree::Ident(t) => t.span(),
+            TokenTree::Punct(t) => t.span(),
+            TokenTree::Literal(t) => t.span(),
         }
     }
 
@@ -482,11 +482,11 @@ impl TokenTree {
     /// the span of each of the internal tokens, this will simply delegate to
     /// the `set_span` method of each variant.
     pub fn set_span(&mut self, span: Span) {
-        match *self {
-            TokenTree::Group(ref mut t) => t.set_span(span),
-            TokenTree::Ident(ref mut t) => t.set_span(span),
-            TokenTree::Punct(ref mut t) => t.set_span(span),
-            TokenTree::Literal(ref mut t) => t.set_span(span),
+        match self {
+            TokenTree::Group(t) => t.set_span(span),
+            TokenTree::Ident(t) => t.set_span(span),
+            TokenTree::Punct(t) => t.set_span(span),
+            TokenTree::Literal(t) => t.set_span(span),
         }
     }
 }
@@ -521,11 +521,11 @@ impl From<Literal> for TokenTree {
 /// numeric literals.
 impl fmt::Display for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Ident(ref t) => t.fmt(f),
-            TokenTree::Punct(ref t) => t.fmt(f),
-            TokenTree::Literal(ref t) => t.fmt(f),
+        match self {
+            TokenTree::Group(t) => t.fmt(f),
+            TokenTree::Ident(t) => t.fmt(f),
+            TokenTree::Punct(t) => t.fmt(f),
+            TokenTree::Literal(t) => t.fmt(f),
         }
     }
 }
@@ -535,16 +535,16 @@ impl fmt::Debug for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Each of these has the name in the struct type in the derived debug,
         // so don't bother with an extra layer of indirection
-        match *self {
-            TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Ident(ref t) => {
+        match self {
+            TokenTree::Group(t) => t.fmt(f),
+            TokenTree::Ident(t) => {
                 let mut debug = f.debug_struct("Ident");
                 debug.field("sym", &format_args!("{}", t));
                 imp::debug_span_field_if_nontrivial(&mut debug, t.span().inner);
                 debug.finish()
             }
-            TokenTree::Punct(ref t) => t.fmt(f),
-            TokenTree::Literal(ref t) => t.fmt(f),
+            TokenTree::Punct(t) => t.fmt(f),
+            TokenTree::Literal(t) => t.fmt(f),
         }
     }
 }
