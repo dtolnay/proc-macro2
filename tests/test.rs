@@ -469,3 +469,13 @@ fn default_tokenstream_is_empty() {
 
     assert!(default_token_stream.is_empty());
 }
+
+#[test]
+fn tuple_indexing() {
+    // This behavior may change depending on https://github.com/rust-lang/rust/pull/71322
+    let mut tokens = "tuple.0.0".parse::<TokenStream>().unwrap().into_iter();
+    assert_eq!("tuple", tokens.next().unwrap().to_string());
+    assert_eq!(".", tokens.next().unwrap().to_string());
+    assert_eq!("0.0", tokens.next().unwrap().to_string());
+    assert!(tokens.next().is_none());
+}
