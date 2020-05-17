@@ -1,4 +1,4 @@
-use proc_macro2::{Ident, Literal, Spacing, Span, TokenStream, TokenTree};
+use proc_macro2::{Delimiter, Ident, Literal, Spacing, Span, TokenStream, TokenTree};
 use std::str::{self, FromStr};
 
 #[test]
@@ -171,8 +171,6 @@ fn fail() {
 #[cfg(span_locations)]
 #[test]
 fn span_test() {
-    use proc_macro2::TokenTree;
-
     fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
         let ts = p.parse::<TokenStream>().unwrap();
         check_spans_internal(ts, &mut lines);
@@ -279,47 +277,47 @@ fn span_join() {
 #[test]
 fn no_panic() {
     let s = str::from_utf8(b"b\'\xc2\x86  \x00\x00\x00^\"").unwrap();
-    assert!(s.parse::<proc_macro2::TokenStream>().is_err());
+    assert!(s.parse::<TokenStream>().is_err());
 }
 
 #[test]
 fn tricky_doc_comment() {
-    let stream = "/**/".parse::<proc_macro2::TokenStream>().unwrap();
+    let stream = "/**/".parse::<TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.is_empty(), "not empty -- {:?}", tokens);
 
-    let stream = "/// doc".parse::<proc_macro2::TokenStream>().unwrap();
+    let stream = "/// doc".parse::<TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.len() == 2, "not length 2 -- {:?}", tokens);
     match tokens[0] {
-        proc_macro2::TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '#'),
+        TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '#'),
         _ => panic!("wrong token {:?}", tokens[0]),
     }
     let mut tokens = match tokens[1] {
-        proc_macro2::TokenTree::Group(ref tt) => {
-            assert_eq!(tt.delimiter(), proc_macro2::Delimiter::Bracket);
+        TokenTree::Group(ref tt) => {
+            assert_eq!(tt.delimiter(), Delimiter::Bracket);
             tt.stream().into_iter()
         }
         _ => panic!("wrong token {:?}", tokens[0]),
     };
 
     match tokens.next().unwrap() {
-        proc_macro2::TokenTree::Ident(ref tt) => assert_eq!(tt.to_string(), "doc"),
+        TokenTree::Ident(ref tt) => assert_eq!(tt.to_string(), "doc"),
         t => panic!("wrong token {:?}", t),
     }
     match tokens.next().unwrap() {
-        proc_macro2::TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '='),
+        TokenTree::Punct(ref tt) => assert_eq!(tt.as_char(), '='),
         t => panic!("wrong token {:?}", t),
     }
     match tokens.next().unwrap() {
-        proc_macro2::TokenTree::Literal(ref tt) => {
+        TokenTree::Literal(ref tt) => {
             assert_eq!(tt.to_string(), "\" doc\"");
         }
         t => panic!("wrong token {:?}", t),
     }
     assert!(tokens.next().is_none());
 
-    let stream = "//! doc".parse::<proc_macro2::TokenStream>().unwrap();
+    let stream = "//! doc".parse::<TokenStream>().unwrap();
     let tokens = stream.into_iter().collect::<Vec<_>>();
     assert!(tokens.len() == 3, "not length 3 -- {:?}", tokens);
 }
