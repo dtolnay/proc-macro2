@@ -376,6 +376,15 @@ impl Span {
         }
     }
 
+    #[cfg(hygiene)]
+    pub fn mixed_site() -> Span {
+        if inside_proc_macro() {
+            Span::Compiler(proc_macro::Span::mixed_site())
+        } else {
+            Span::Fallback(fallback::Span::mixed_site())
+        }
+    }
+
     #[cfg(super_unstable)]
     pub fn def_site() -> Span {
         if inside_proc_macro() {

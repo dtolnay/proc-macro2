@@ -57,6 +57,10 @@ fn main() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
+    if version.minor >= 45 {
+        println!("cargo:rustc-cfg=hygiene");
+    }
+
     let target = env::var("TARGET").unwrap();
     if !enable_use_proc_macro(&target) {
         return;

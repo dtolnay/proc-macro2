@@ -374,6 +374,11 @@ impl Span {
         Span { lo: 0, hi: 0 }
     }
 
+    #[cfg(hygiene)]
+    pub fn mixed_site() -> Span {
+        Span::call_site()
+    }
+
     #[cfg(procmacro2_semver_exempt)]
     pub fn def_site() -> Span {
         Span::call_site()
