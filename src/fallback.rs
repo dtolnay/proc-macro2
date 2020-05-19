@@ -384,17 +384,12 @@ impl Span {
         Span::call_site()
     }
 
-    #[cfg(procmacro2_semver_exempt)]
-    pub fn resolved_at(&self, _other: Span) -> Span {
-        // Stable spans consist only of line/column information, so
-        // `resolved_at` and `located_at` only select which span the
-        // caller wants line/column information from.
-        *self
+    pub fn resolved_at(&self, other: Span) -> Span {
+        other
     }
 
-    #[cfg(procmacro2_semver_exempt)]
-    pub fn located_at(&self, other: Span) -> Span {
-        other
+    pub fn located_at(&self, _other: Span) -> Span {
+        *self
     }
 
     #[cfg(procmacro2_semver_exempt)]

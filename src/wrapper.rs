@@ -394,19 +394,29 @@ impl Span {
         }
     }
 
-    #[cfg(super_unstable)]
     pub fn resolved_at(&self, other: Span) -> Span {
         match (self, other) {
+            #[cfg(hygiene)]
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.resolved_at(b)),
+
+            // Name resolution affects semantics, but location is only cosmetic
+            #[cfg(not(hygiene))]
+            (Span::Compiler(_), Span::Compiler(_)) => other,
+
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.resolved_at(b)),
             _ => mismatch(),
         }
     }
 
-    #[cfg(super_unstable)]
     pub fn located_at(&self, other: Span) -> Span {
         match (self, other) {
+            #[cfg(hygiene)]
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.located_at(b)),
+
+            // Name resolution affects semantics, but location is only cosmetic
+            #[cfg(not(hygiene))]
+            (Span::Compiler(_), Span::Compiler(_)) => *self,
+
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.located_at(b)),
             _ => mismatch(),
         }

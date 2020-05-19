@@ -369,8 +369,8 @@ impl Span {
     /// Creates a new span with the same line/column information as `self` but
     /// that resolves symbols as though it were at `other`.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// On versions of Rust prior to 1.45, this returns `other` to preserve the
+    /// name resolution behavior while discarding location information.
     pub fn resolved_at(&self, other: Span) -> Span {
         Span::_new(self.inner.resolved_at(other.inner))
     }
@@ -378,8 +378,8 @@ impl Span {
     /// Creates a new span with the same name resolution behavior as `self` but
     /// with the line/column information of `other`.
     ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    /// On versions of Rust prior to 1.45, this returns `self` to preserve the
+    /// name resolution behavior while discarding location information.
     pub fn located_at(&self, other: Span) -> Span {
         Span::_new(self.inner.located_at(other.inner))
     }

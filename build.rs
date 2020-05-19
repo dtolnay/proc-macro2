@@ -14,6 +14,10 @@
 //     procmacro2_semver_exempt surface area is implemented by using the
 //     nightly-only proc_macro API.
 //
+//  "hygiene"
+//    Enable Span::mixed_site() and non-dummy behavior of Span::resolved_at
+//    and Span::located_at. Enabled on Rust 1.45+.
+//
 // "proc_macro_span"
 //     Enable non-dummy behavior of Span::start and Span::end methods which
 //     requires an unstable compiler feature. Enabled when building with
