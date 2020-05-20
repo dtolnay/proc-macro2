@@ -348,6 +348,16 @@ impl Span {
         Span::_new(imp::Span::call_site())
     }
 
+    /// The span located at the invocation of the procedural macro, but with
+    /// local variables, labels, and `$crate` resolved at the definition site
+    /// of the macro. This is the same hygiene behavior as `macro_rules`.
+    ///
+    /// This function requires Rust 1.45 or later.
+    #[cfg(hygiene)]
+    pub fn mixed_site() -> Span {
+        Span::_new(imp::Span::mixed_site())
+    }
+
     /// A span that resolves at the macro definition site.
     ///
     /// This method is semver exempt and not exposed by default.
@@ -358,18 +368,12 @@ impl Span {
 
     /// Creates a new span with the same line/column information as `self` but
     /// that resolves symbols as though it were at `other`.
-    ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
     pub fn resolved_at(&self, other: Span) -> Span {
         Span::_new(self.inner.resolved_at(other.inner))
     }
 
     /// Creates a new span with the same name resolution behavior as `self` but
     /// with the line/column information of `other`.
-    ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
     pub fn located_at(&self, other: Span) -> Span {
         Span::_new(self.inner.located_at(other.inner))
     }
