@@ -455,8 +455,8 @@ fn tuple_indexing() {
 fn non_ascii_tokens() {
     check_spans("// abc", &[]);
     check_spans("// ábc", &[]);
-    check_spans("// abc x", &[(1, 7, 1, 8)]);
-    check_spans("// ábc x", &[(1, 7, 1, 8)]);
+    check_spans("// abc x", &[]);
+    check_spans("// ábc x", &[]);
     check_spans("/* abc */ x", &[(1, 10, 1, 11)]);
     check_spans("/* ábc */ x", &[(1, 10, 1, 11)]);
     check_spans("/* ab\nc */ x", &[(2, 5, 2, 6)]);
@@ -499,6 +499,7 @@ fn incomplete_comment_no_panic() {
 fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
     let ts = p.parse::<TokenStream>().unwrap();
     check_spans_internal(ts, &mut lines);
+    assert!(lines.is_empty(), "leftover ranges: {:?}", lines);
 }
 
 #[cfg(span_locations)]
