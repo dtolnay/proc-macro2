@@ -241,23 +241,11 @@ thread_local! {
     static SOURCE_MAP: RefCell<SourceMap> = RefCell::new(SourceMap {
         // NOTE: We start with a single dummy file which all call_site() and
         // def_site() spans reference.
-        files: vec![{
+        files: vec![FileInfo {
             #[cfg(procmacro2_semver_exempt)]
-            {
-                FileInfo {
-                    name: "<unspecified>".to_owned(),
-                    span: Span { lo: 0, hi: 0 },
-                    lines: vec![0],
-                }
-            }
-
-            #[cfg(not(procmacro2_semver_exempt))]
-            {
-                FileInfo {
-                    span: Span { lo: 0, hi: 0 },
-                    lines: vec![0],
-                }
-            }
+            name: "<unspecified>".to_owned(),
+            span: Span { lo: 0, hi: 0 },
+            lines: vec![0],
         }],
     });
 }
@@ -331,15 +319,14 @@ impl SourceMap {
             hi: lo + (src.len() as u32),
         };
 
-        #[cfg(procmacro2_semver_exempt)]
         self.files.push(FileInfo {
+            #[cfg(procmacro2_semver_exempt)]
             name: name.to_owned(),
             span,
             lines,
         });
 
         #[cfg(not(procmacro2_semver_exempt))]
-        self.files.push(FileInfo { span, lines });
         let _ = name;
 
         span
