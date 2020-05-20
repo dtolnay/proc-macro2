@@ -515,11 +515,8 @@ fn check_spans_internal(ts: TokenStream, lines: &mut &[(usize, usize, usize, usi
             assert_eq!(end.line, eline, "eline did not match for {}", i);
             assert_eq!(end.column, ecol, "ecol did not match for {}", i);
 
-            match i {
-                TokenTree::Group(g) => {
-                    check_spans_internal(g.stream().clone(), lines);
-                }
-                _ => {}
+            if let TokenTree::Group(g) = i {
+                check_spans_internal(g.stream().clone(), lines);
             }
         }
     }
