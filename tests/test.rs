@@ -171,34 +171,6 @@ fn fail() {
 #[cfg(span_locations)]
 #[test]
 fn span_test() {
-    fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
-        let ts = p.parse::<TokenStream>().unwrap();
-        check_spans_internal(ts, &mut lines);
-    }
-
-    fn check_spans_internal(ts: TokenStream, lines: &mut &[(usize, usize, usize, usize)]) {
-        for i in ts {
-            if let Some((&(sline, scol, eline, ecol), rest)) = lines.split_first() {
-                *lines = rest;
-
-                let start = i.span().start();
-                assert_eq!(start.line, sline, "sline did not match for {}", i);
-                assert_eq!(start.column, scol, "scol did not match for {}", i);
-
-                let end = i.span().end();
-                assert_eq!(end.line, eline, "eline did not match for {}", i);
-                assert_eq!(end.column, ecol, "ecol did not match for {}", i);
-
-                match i {
-                    TokenTree::Group(g) => {
-                        check_spans_internal(g.stream().clone(), lines);
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-
     check_spans(
         "\
 /// This is a document comment
@@ -476,4 +448,79 @@ fn tuple_indexing() {
     assert_eq!(".", tokens.next().unwrap().to_string());
     assert_eq!("0.0", tokens.next().unwrap().to_string());
     assert!(tokens.next().is_none());
+}
+
+#[cfg(span_locations)]
+#[test]
+fn non_ascii_tokens() {
+    check_spans("// abc", &[]);
+    check_spans("// ábc", &[]);
+    check_spans("// abc x", &[(1, 7, 1, 8)]);
+    check_spans("// ábc x", &[(1, 7, 1, 8)]);
+    check_spans("/* abc */ x", &[(1, 10, 1, 11)]);
+    check_spans("/* ábc */ x", &[(1, 10, 1, 11)]);
+    check_spans("/* ab\nc */ x", &[(2, 5, 2, 6)]);
+    check_spans("/* áb\nc */ x", &[(2, 5, 2, 6)]);
+    check_spans("/*** abc */ x", &[(1, 12, 1, 13)]);
+    check_spans("/*** ábc */ x", &[(1, 12, 1, 13)]);
+    check_spans(r#""abc""#, &[(1, 0, 1, 5)]);
+    check_spans(r#""ábc""#, &[(1, 0, 1, 5)]);
+    check_spans(r###"r#"abc"#"###, &[(1, 0, 1, 8)]);
+    check_spans(r###"r#"ábc"#"###, &[(1, 0, 1, 8)]);
+    check_spans("r#\"a\nc\"#", &[(1, 0, 2, 3)]);
+    check_spans("r#\"á\nc\"#", &[(1, 0, 2, 3)]);
+    check_spans("'a'", &[(1, 0, 1, 3)]);
+    check_spans("'á'", &[(1, 0, 1, 3)]);
+    check_spans("//! abc", &[(1, 0, 1, 7), (1, 0, 1, 7), (1, 0, 1, 7)]);
+    check_spans("//! ábc", &[(1, 0, 1, 7), (1, 0, 1, 7), (1, 0, 1, 7)]);
+    check_spans("//! abc\n", &[(1, 0, 1, 7), (1, 0, 1, 7), (1, 0, 1, 7)]);
+    check_spans("//! ábc\n", &[(1, 0, 1, 7), (1, 0, 1, 7), (1, 0, 1, 7)]);
+    check_spans("/*! abc */", &[(1, 0, 1, 10), (1, 0, 1, 10), (1, 0, 1, 10)]);
+    check_spans("/*! ábc */", &[(1, 0, 1, 10), (1, 0, 1, 10), (1, 0, 1, 10)]);
+    check_spans("/*! a\nc */", &[(1, 0, 2, 4), (1, 0, 2, 4), (1, 0, 2, 4)]);
+    check_spans("/*! á\nc */", &[(1, 0, 2, 4), (1, 0, 2, 4), (1, 0, 2, 4)]);
+    check_spans("abc", &[(1, 0, 1, 3)]);
+    check_spans("ábc", &[(1, 0, 1, 3)]);
+    check_spans("ábć", &[(1, 0, 1, 3)]);
+    check_spans("abc// foo", &[(1, 0, 1, 3)]);
+    check_spans("ábc// foo", &[(1, 0, 1, 3)]);
+    check_spans("ábć// foo", &[(1, 0, 1, 3)]);
+    check_spans("b\"a\\\n c\"", &[(1, 0, 2, 3)]);
+    check_spans("b\"a\\\n\u{00a0}c\"", &[(1, 0, 2, 3)]);
+}
+
+#[test]
+fn incomplete_comment_no_panic() {
+    let s = "/*/";
+    assert!(s.parse::<TokenStream>().is_err());
+}
+
+#[cfg(span_locations)]
+fn check_spans(p: &str, mut lines: &[(usize, usize, usize, usize)]) {
+    let ts = p.parse::<TokenStream>().unwrap();
+    check_spans_internal(ts, &mut lines);
+}
+
+#[cfg(span_locations)]
+fn check_spans_internal(ts: TokenStream, lines: &mut &[(usize, usize, usize, usize)]) {
+    for i in ts {
+        if let Some((&(sline, scol, eline, ecol), rest)) = lines.split_first() {
+            *lines = rest;
+
+            let start = i.span().start();
+            assert_eq!(start.line, sline, "sline did not match for {}", i);
+            assert_eq!(start.column, scol, "scol did not match for {}", i);
+
+            let end = i.span().end();
+            assert_eq!(end.line, eline, "eline did not match for {}", i);
+            assert_eq!(end.column, ecol, "ecol did not match for {}", i);
+
+            match i {
+                TokenTree::Group(g) => {
+                    check_spans_internal(g.stream().clone(), lines);
+                }
+                _ => {}
+            }
+        }
+    }
 }

@@ -283,16 +283,21 @@ impl FileInfo {
     }
 }
 
-/// Computesthe offsets of each line in the given source string.
+/// Computes the offsets of each line in the given source string
+/// and the total number of characters
 #[cfg(span_locations)]
-fn lines_offsets(s: &str) -> Vec<usize> {
+fn lines_offsets(s: &str) -> (usize, Vec<usize>) {
     let mut lines = vec![0];
-    let mut prev = 0;
-    while let Some(len) = s[prev..].find('\n') {
-        prev += len + 1;
-        lines.push(prev);
+    let mut total = 0;
+
+    for ch in s.chars() {
+        total += 1;
+        if ch == '\n' {
+            lines.push(total);
+        }
     }
-    lines
+
+    (total, lines)
 }
 
 #[cfg(span_locations)]
@@ -311,12 +316,12 @@ impl SourceMap {
     }
 
     fn add_file(&mut self, name: &str, src: &str) -> Span {
-        let lines = lines_offsets(src);
+        let (len, lines) = lines_offsets(src);
         let lo = self.next_start_pos();
         // XXX(nika): Shouild we bother doing a checked cast or checked add here?
         let span = Span {
             lo,
-            hi: lo + (src.len() as u32),
+            hi: lo + (len as u32),
         };
 
         self.files.push(FileInfo {
