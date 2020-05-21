@@ -13,15 +13,7 @@ pub(crate) struct Cursor<'a> {
 }
 
 impl<'a> Cursor<'a> {
-    fn advance_ascii(&self, amt: usize) -> Cursor<'a> {
-        Cursor {
-            rest: &self.rest[amt..],
-            #[cfg(span_locations)]
-            off: self.off + (amt as u32),
-        }
-    }
-
-    fn advance_chars(&self, bytes: usize) -> Cursor<'a> {
+    fn advance(&self, bytes: usize) -> Cursor<'a> {
         let (_front, rest) = self.rest.split_at(bytes);
         Cursor {
             rest,
@@ -67,7 +59,7 @@ impl<'a> Cursor<'a> {
 
     fn parse(&self, tag: &str) -> Result<Cursor<'a>, LexError> {
         if self.starts_with(tag) {
-            Ok(self.advance_ascii(tag.len()))
+            Ok(self.advance(tag.len()))
         } else {
             Err(LexError)
         }
@@ -90,7 +82,7 @@ fn skip_whitespace(input: Cursor) -> Cursor {
                 s = cursor;
                 continue;
             } else if s.starts_with("/**/") {
-                s = s.advance_ascii(4);
+                s = s.advance(4);
                 continue;
             } else if s.starts_with("/*")
                 && (!s.starts_with("/**") || s.starts_with("/***"))
@@ -107,14 +99,14 @@ fn skip_whitespace(input: Cursor) -> Cursor {
         }
         match byte {
             b' ' | 0x09..=0x0d => {
-                s = s.advance_ascii(1);
+                s = s.advance(1);
                 continue;
             }
             b if b <= 0x7f => {}
             _ => {
                 let ch = s.chars().next().unwrap();
                 if is_whitespace(ch) {
-                    s = s.advance_chars(ch.len_utf8());
+                    s = s.advance(ch.len_utf8());
                     continue;
                 }
             }
@@ -145,7 +137,7 @@ fn block_comment(input: Cursor) -> PResult<&str> {
         } else if bytes[i] == b'*' && bytes[i + 1] == b'/' {
             depth -= 1;
             if depth == 0 {
-                return Ok((input.advance_chars(i + 2), &input.rest[..i + 2]));
+                return Ok((input.advance(i + 2), &input.rest[..i + 2]));
             }
             // eat '/'
             let _ = iter.next();
@@ -239,7 +231,7 @@ fn group(input: Cursor) -> PResult<Group> {
         return Err(LexError);
     };
 
-    let input = input.advance_ascii(1);
+    let input = input.advance(1);
     let (input, ts) = token_stream(input)?;
     let input = skip_whitespace(input);
     let input = input.parse(close)?;
@@ -248,7 +240,7 @@ fn group(input: Cursor) -> PResult<Group> {
 
 fn symbol(input: Cursor) -> PResult<TokenTree> {
     let raw = input.starts_with("r#");
-    let rest = input.advance_ascii((raw as usize) << 1);
+    let rest = input.advance((raw as usize) << 1);
 
     let (rest, sym) = symbol_not_raw(rest)?;
 
@@ -281,7 +273,7 @@ fn symbol_not_raw(input: Cursor) -> PResult<&str> {
         }
     }
 
-    Ok((input.advance_chars(end), &input.rest[..end]))
+    Ok((input.advance(end), &input.rest[..end]))
 }
 
 fn literal(input: Cursor) -> PResult<Literal> {
@@ -341,7 +333,7 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
     while let Some((_, byte_offset, ch)) = chars.next() {
         match ch {
             '"' => {
-                let input = input.advance_chars(byte_offset + 1);
+                let input = input.advance(byte_offset + 1);
                 return Ok(literal_suffix(input));
             }
             '\r' => {
@@ -396,7 +388,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
     'outer: while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
-                let input = input.advance_ascii(offset + 1);
+                let input = input.advance(offset + 1);
                 return Ok(literal_suffix(input));
             }
             b'\r' => {
@@ -415,10 +407,10 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                 Some((_, b'n')) | Some((_, b'r')) | Some((_, b't')) | Some((_, b'\\'))
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
                 Some((newline, b'\n')) | Some((newline, b'\r')) => {
-                    let rest = input.advance_ascii(newline + 1);
+                    let rest = input.advance(newline + 1);
                     for (_, offset, ch) in rest.char_offsets() {
                         if !ch.is_whitespace() {
-                            input = rest.advance_chars(offset);
+                            input = rest.advance(offset);
                             bytes = input.bytes().enumerate();
                             continue 'outer;
                         }
@@ -450,7 +442,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
     for (_, byte_offset, ch) in chars {
         match ch {
             '"' if input.rest[(byte_offset + 1)..].starts_with(&input.rest[..n]) => {
-                let rest = input.advance_chars(byte_offset + 1 + n);
+                let rest = input.advance(byte_offset + 1 + n);
                 return Ok(literal_suffix(rest));
             }
             '\r' => {}
@@ -479,7 +471,7 @@ fn byte(input: Cursor) -> Result<Cursor, LexError> {
     if !input.chars().as_str().is_char_boundary(offset) {
         return Err(LexError);
     }
-    let input = input.advance_ascii(offset).parse("'")?;
+    let input = input.advance(offset).parse("'")?;
     Ok(literal_suffix(input))
 }
 
@@ -501,7 +493,7 @@ fn character(input: Cursor) -> Result<Cursor, LexError> {
         return Err(LexError);
     }
     let (idx, _) = chars.next().ok_or(LexError)?;
-    let input = input.advance_chars(idx).parse("'")?;
+    let input = input.advance(idx).parse("'")?;
     Ok(literal_suffix(input))
 }
 
@@ -600,7 +592,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
         }
     }
 
-    let rest = input.advance_ascii(len);
+    let rest = input.advance(len);
     if !(has_dot || has_exp || rest.starts_with("f32") || rest.starts_with("f64")) {
         return Err(LexError);
     }
@@ -633,7 +625,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
         }
     }
 
-    Ok(input.advance_ascii(len))
+    Ok(input.advance(len))
 }
 
 fn int(input: Cursor) -> Result<Cursor, LexError> {
@@ -648,13 +640,13 @@ fn int(input: Cursor) -> Result<Cursor, LexError> {
 
 fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
     let base = if input.starts_with("0x") {
-        input = input.advance_ascii(2);
+        input = input.advance(2);
         16
     } else if input.starts_with("0o") {
-        input = input.advance_ascii(2);
+        input = input.advance(2);
         8
     } else if input.starts_with("0b") {
-        input = input.advance_ascii(2);
+        input = input.advance(2);
         2
     } else {
         10
@@ -685,7 +677,7 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
     if empty {
         Err(LexError)
     } else {
-        Ok(input.advance_ascii(len))
+        Ok(input.advance(len))
     }
 }
 
@@ -721,7 +713,7 @@ fn op_char(input: Cursor) -> PResult<char> {
     };
     let recognized = "~!@#$%^&*-=+|;:,<.>/?'";
     if recognized.contains(first) {
-        Ok((input.advance_ascii(first.len_utf8()), first))
+        Ok((input.advance(first.len_utf8()), first))
     } else {
         Err(LexError)
     }
@@ -761,20 +753,20 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
 
 fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
     if input.starts_with("//!") {
-        let input = input.advance_ascii(3);
+        let input = input.advance(3);
         let (input, s) = take_until_newline_or_eof(input);
         Ok((input, (s, true)))
     } else if input.starts_with("/*!") {
         let (input, s) = block_comment(input)?;
         Ok((input, (&s[3..s.len() - 2], true)))
     } else if input.starts_with("///") {
-        let input = input.advance_ascii(3);
+        let input = input.advance(3);
         if input.starts_with("/") {
             return Err(LexError);
         }
         let (input, s) = take_until_newline_or_eof(input);
         Ok((input, (s, false)))
-    } else if input.starts_with("/**") && !input.advance_ascii(3).starts_with("*") {
+    } else if input.starts_with("/**") && !input.advance(3).starts_with("*") {
         let (input, s) = block_comment(input)?;
         Ok((input, (&s[3..s.len() - 2], false)))
     } else {
@@ -787,11 +779,11 @@ fn take_until_newline_or_eof(input: Cursor) -> (Cursor, &str) {
 
     while let Some((_, byte_off, ch)) = chars.next() {
         if ch == '\n' {
-            return (input.advance_chars(byte_off), &input.rest[..byte_off]);
+            return (input.advance(byte_off), &input.rest[..byte_off]);
         } else if ch == '\r' && input.rest[byte_off + 1..].starts_with('\n') {
-            return (input.advance_chars(byte_off + 1), &input.rest[..byte_off]);
+            return (input.advance(byte_off + 1), &input.rest[..byte_off]);
         }
     }
 
-    (input.advance_chars(input.len()), input.rest)
+    (input.advance(input.len()), input.rest)
 }
