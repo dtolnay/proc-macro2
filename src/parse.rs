@@ -13,8 +13,7 @@ pub(crate) struct Cursor<'a> {
 }
 
 impl<'a> Cursor<'a> {
-    /// Advance `amt` bytes, without regards for non-ascii text
-    fn advance(&self, amt: usize) -> Cursor<'a> {
+    fn advance_ascii(&self, amt: usize) -> Cursor<'a> {
         Cursor {
             rest: &self.rest[amt..],
             #[cfg(span_locations)]
@@ -68,7 +67,7 @@ impl<'a> Cursor<'a> {
 
     fn parse(&self, tag: &str) -> Result<Cursor<'a>, LexError> {
         if self.starts_with(tag) {
-            Ok(self.advance(tag.len()))
+            Ok(self.advance_ascii(tag.len()))
         } else {
             Err(LexError)
         }
@@ -91,7 +90,7 @@ fn skip_whitespace(input: Cursor) -> Cursor {
                 s = cursor;
                 continue;
             } else if s.starts_with("/**/") {
-                s = s.advance(4);
+                s = s.advance_ascii(4);
                 continue;
             } else if s.starts_with("/*")
                 && (!s.starts_with("/**") || s.starts_with("/***"))
@@ -108,7 +107,7 @@ fn skip_whitespace(input: Cursor) -> Cursor {
         }
         match byte {
             b' ' | 0x09..=0x0d => {
-                s = s.advance(1);
+                s = s.advance_ascii(1);
                 continue;
             }
             b if b <= 0x7f => {}
@@ -240,7 +239,7 @@ fn group(input: Cursor) -> PResult<Group> {
         return Err(LexError);
     };
 
-    let input = input.advance(1);
+    let input = input.advance_ascii(1);
     let (input, ts) = token_stream(input)?;
     let input = skip_whitespace(input);
     let input = input.parse(close)?;
@@ -249,7 +248,7 @@ fn group(input: Cursor) -> PResult<Group> {
 
 fn symbol(input: Cursor) -> PResult<TokenTree> {
     let raw = input.starts_with("r#");
-    let rest = input.advance((raw as usize) << 1);
+    let rest = input.advance_ascii((raw as usize) << 1);
 
     let (rest, sym) = symbol_not_raw(rest)?;
 
@@ -399,7 +398,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
     'outer: while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
-                let input = input.advance(offset + 1);
+                let input = input.advance_ascii(offset + 1);
                 return Ok(literal_suffix(input));
             }
             b'\r' => {
@@ -418,7 +417,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                 Some((_, b'n')) | Some((_, b'r')) | Some((_, b't')) | Some((_, b'\\'))
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
                 Some((newline, b'\n')) | Some((newline, b'\r')) => {
-                    let rest = input.advance(newline + 1);
+                    let rest = input.advance_ascii(newline + 1);
                     for (char_offset, offset, ch) in rest.char_offsets() {
                         if !ch.is_whitespace() {
                             input = rest.advance_chars(char_offset, offset);
@@ -482,7 +481,7 @@ fn byte(input: Cursor) -> Result<Cursor, LexError> {
     if !input.chars().as_str().is_char_boundary(offset) {
         return Err(LexError);
     }
-    let input = input.advance(offset).parse("'")?;
+    let input = input.advance_ascii(offset).parse("'")?;
     Ok(literal_suffix(input))
 }
 
@@ -606,7 +605,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
         }
     }
 
-    let rest = input.advance(len);
+    let rest = input.advance_ascii(len);
     if !(has_dot || has_exp || rest.starts_with("f32") || rest.starts_with("f64")) {
         return Err(LexError);
     }
@@ -639,7 +638,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
         }
     }
 
-    Ok(input.advance(len))
+    Ok(input.advance_ascii(len))
 }
 
 fn int(input: Cursor) -> Result<Cursor, LexError> {
@@ -654,13 +653,13 @@ fn int(input: Cursor) -> Result<Cursor, LexError> {
 
 fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
     let base = if input.starts_with("0x") {
-        input = input.advance(2);
+        input = input.advance_ascii(2);
         16
     } else if input.starts_with("0o") {
-        input = input.advance(2);
+        input = input.advance_ascii(2);
         8
     } else if input.starts_with("0b") {
-        input = input.advance(2);
+        input = input.advance_ascii(2);
         2
     } else {
         10
@@ -691,7 +690,7 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
     if empty {
         Err(LexError)
     } else {
-        Ok(input.advance(len))
+        Ok(input.advance_ascii(len))
     }
 }
 
@@ -727,7 +726,7 @@ fn op_char(input: Cursor) -> PResult<char> {
     };
     let recognized = "~!@#$%^&*-=+|;:,<.>/?'";
     if recognized.contains(first) {
-        Ok((input.advance(first.len_utf8()), first))
+        Ok((input.advance_ascii(first.len_utf8()), first))
     } else {
         Err(LexError)
     }
@@ -758,20 +757,20 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
 
 fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
     if input.starts_with("//!") {
-        let input = input.advance(3);
+        let input = input.advance_ascii(3);
         let (input, s) = take_until_newline_or_eof(input);
         Ok((input, (s, true)))
     } else if input.starts_with("/*!") {
         let (input, s) = block_comment(input)?;
         Ok((input, (s, true)))
     } else if input.starts_with("///") {
-        let input = input.advance(3);
+        let input = input.advance_ascii(3);
         if input.starts_with("/") {
             return Err(LexError);
         }
         let (input, s) = take_until_newline_or_eof(input);
         Ok((input, (s, false)))
-    } else if input.starts_with("/**") && !input.advance(3).starts_with("*") {
+    } else if input.starts_with("/**") && !input.advance_ascii(3).starts_with("*") {
         let (input, s) = block_comment(input)?;
         Ok((input, (s, false)))
     } else {
