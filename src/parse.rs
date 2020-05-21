@@ -313,10 +313,10 @@ fn string(input: Cursor) -> Result<Cursor, LexError> {
 fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
     let mut chars = input.char_indices().peekable();
 
-    while let Some((byte_offset, ch)) = chars.next() {
+    while let Some((i, ch)) = chars.next() {
         match ch {
             '"' => {
-                let input = input.advance(byte_offset + 1);
+                let input = input.advance(i + 1);
                 return Ok(literal_suffix(input));
             }
             '\r' => {
@@ -412,20 +412,20 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
 fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
     let mut chars = input.char_indices();
     let mut n = 0;
-    while let Some((byte_offset, ch)) = chars.next() {
+    while let Some((i, ch)) = chars.next() {
         match ch {
             '"' => {
-                n = byte_offset;
+                n = i;
                 break;
             }
             '#' => {}
             _ => return Err(LexError),
         }
     }
-    for (byte_offset, ch) in chars {
+    for (i, ch) in chars {
         match ch {
-            '"' if input.rest[byte_offset + 1..].starts_with(&input.rest[..n]) => {
-                let rest = input.advance(byte_offset + 1 + n);
+            '"' if input.rest[i + 1..].starts_with(&input.rest[..n]) => {
+                let rest = input.advance(i + 1 + n);
                 return Ok(literal_suffix(rest));
             }
             '\r' => {}
@@ -760,11 +760,11 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
 fn take_until_newline_or_eof(input: Cursor) -> (Cursor, &str) {
     let mut chars = input.char_indices();
 
-    while let Some((byte_off, ch)) = chars.next() {
+    while let Some((i, ch)) = chars.next() {
         if ch == '\n' {
-            return (input.advance(byte_off), &input.rest[..byte_off]);
-        } else if ch == '\r' && input.rest[byte_off + 1..].starts_with('\n') {
-            return (input.advance(byte_off + 1), &input.rest[..byte_off]);
+            return (input.advance(i), &input.rest[..i]);
+        } else if ch == '\r' && input.rest[i + 1..].starts_with('\n') {
+            return (input.advance(i + 1), &input.rest[..i]);
         }
     }
 
