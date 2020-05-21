@@ -1,11 +1,26 @@
 use proc_macro2::{Delimiter, Literal, TokenStream, TokenTree};
 
 // #[doc = "..."] -> "..."
-fn lit_of_doc_comment(tokens: TokenStream) -> Literal {
+fn lit_of_outer_doc_comment(tokens: TokenStream) -> Literal {
+    lit_of_doc_comment(tokens, false)
+}
+
+// #![doc = "..."] -> "..."
+fn lit_of_inner_doc_comment(tokens: TokenStream) -> Literal {
+    lit_of_doc_comment(tokens, true)
+}
+
+fn lit_of_doc_comment(tokens: TokenStream, inner: bool) -> Literal {
     let mut iter = tokens.clone().into_iter();
     match iter.next().unwrap() {
         TokenTree::Punct(punct) => assert_eq!(punct.as_char(), '#'),
         _ => panic!("wrong token {:?}", tokens),
+    }
+    if inner {
+        match iter.next().unwrap() {
+            TokenTree::Punct(punct) => assert_eq!(punct.as_char(), '!'),
+            _ => panic!("wrong token {:?}", tokens),
+        }
     }
     iter = match iter.next().unwrap() {
         TokenTree::Group(group) => {
@@ -39,12 +54,12 @@ fn tricky_doc_comment() {
     assert!(tokens.is_empty(), "not empty -- {:?}", tokens);
 
     let stream = "/// doc".parse::<TokenStream>().unwrap();
-    let lit = lit_of_doc_comment(stream);
+    let lit = lit_of_outer_doc_comment(stream);
     assert_eq!(lit.to_string(), "\" doc\"");
 
     let stream = "//! doc".parse::<TokenStream>().unwrap();
-    let tokens = stream.into_iter().collect::<Vec<_>>();
-    assert!(tokens.len() == 3, "not length 3 -- {:?}", tokens);
+    let lit = lit_of_inner_doc_comment(stream);
+    assert_eq!(lit.to_string(), "\" doc\"");
 }
 
 #[test]
