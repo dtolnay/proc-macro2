@@ -762,7 +762,7 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
         Ok((input, (s, true)))
     } else if input.starts_with("/*!") {
         let (input, s) = block_comment(input)?;
-        Ok((input, (s, true)))
+        Ok((input, (&s[3..s.len() - 2], true)))
     } else if input.starts_with("///") {
         let input = input.advance_ascii(3);
         if input.starts_with("/") {
@@ -772,7 +772,7 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
         Ok((input, (s, false)))
     } else if input.starts_with("/**") && !input.advance_ascii(3).starts_with("*") {
         let (input, s) = block_comment(input)?;
-        Ok((input, (s, false)))
+        Ok((input, (&s[3..s.len() - 2], false)))
     } else {
         Err(LexError)
     }
