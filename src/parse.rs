@@ -783,13 +783,21 @@ fn take_until_newline_or_eof(input: Cursor) -> (Cursor, &str) {
     let mut char_len = 0;
 
     while let Some((char_off, byte_off, ch)) = chars.next() {
-        if ch == '\n' {
-            return (
-                input.advance_chars(char_len, byte_off),
-                &input.rest[..byte_off],
-            );
+        match ch {
+            '\n' => {
+                return (
+                    input.advance_chars(char_len, byte_off),
+                    &input.rest[..byte_off],
+                );
+            }
+            '\r' if input.rest[byte_off + 1..].starts_with('\n') => {
+                return (
+                    input.advance_chars(char_len + 1, byte_off + 1),
+                    &input.rest[..byte_off],
+                );
+            }
+            _ => char_len = char_off + 1,
         }
-        char_len = char_off + 1;
     }
 
     (input.advance_chars(char_len, input.len()), input.rest)
