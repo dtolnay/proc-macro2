@@ -145,8 +145,12 @@ fn block_comment(input: Cursor) -> PResult<&str> {
     let mut depth = 0;
     let bytes = input.as_bytes();
     let mut iter = input.char_offsets();
+    let upper = bytes.len() - 1;
 
     while let Some((ch_i, i, _)) = iter.next() {
+        if i == upper {
+            break;
+        }
         if bytes[i] == b'/' && bytes[i + 1] == b'*' {
             depth += 1;
             // eat '*'
@@ -427,9 +431,9 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
                 Some((newline, b'\n')) | Some((newline, b'\r')) => {
                     let rest = input.advance(newline + 1);
-                    for (offset, ch) in rest.char_indices() {
+                    for (char_offset, offset, ch) in rest.char_offsets() {
                         if !ch.is_whitespace() {
-                            input = rest.advance(offset);
+                            input = rest.advance_chars(char_offset, offset);
                             bytes = input.bytes().enumerate();
                             continue 'outer;
                         }
@@ -460,7 +464,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
     }
     for (char_offset, byte_offset, ch) in chars {
         match ch {
-            '"' if input.advance(byte_offset + 1).starts_with(&input.rest[..n]) => {
+            '"' if input.rest[(byte_offset + 1)..].starts_with(&input.rest[..n]) => {
                 let rest = input.advance_chars(char_offset + 1 + n, byte_offset + 1 + n);
                 return Ok(literal_suffix(rest));
             }

@@ -485,6 +485,14 @@ fn non_ascii_tokens() {
     check_spans("abc// foo", &[(1, 0, 1, 3)]);
     check_spans("ábc// foo", &[(1, 0, 1, 3)]);
     check_spans("ábć// foo", &[(1, 0, 1, 3)]);
+    check_spans("b\"a\\\n c\"", &[(1, 0, 2, 3)]);
+    check_spans("b\"a\\\n\u{00a0}c\"", &[(1, 0, 2, 3)]);
+}
+
+#[test]
+fn incomplete_comment_no_panic() {
+    let s = "/*/";
+    assert!(s.parse::<TokenStream>().is_err());
 }
 
 #[cfg(span_locations)]
