@@ -22,9 +22,10 @@ impl<'a> Cursor<'a> {
     }
 
     fn advance_chars(&self, chars: usize, bytes: usize) -> Cursor<'a> {
-        let _ = chars;
+        let (front, rest) = self.rest.split_at(bytes);
+        assert_eq!(chars, front.chars().count());
         Cursor {
-            rest: &self.rest[bytes..],
+            rest,
             #[cfg(span_locations)]
             off: self.off + (chars as u32),
         }
