@@ -89,8 +89,15 @@ fn lit() {
 
 #[test]
 fn carriage_return() {
-    "///\r\n".parse::<TokenStream>().unwrap();
+    let stream = "///\r\n".parse::<TokenStream>().unwrap();
+    let lit = lit_of_outer_doc_comment(stream);
+    assert_eq!(lit.to_string(), "\"\\r\""); // FIXME: should be "\"\""
+
     "///\r \n".parse::<TokenStream>().unwrap(); // FIXME: should be Err
-    "/**\r\n*/".parse::<TokenStream>().unwrap();
+
+    let stream = "/**\r\n*/".parse::<TokenStream>().unwrap();
+    let lit = lit_of_outer_doc_comment(stream);
+    assert_eq!(lit.to_string(), "\"\\r\\n\"");
+
     "/**\r \n*/".parse::<TokenStream>().unwrap(); // FIXME: should be Err
 }
