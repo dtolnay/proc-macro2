@@ -50,13 +50,6 @@ impl<'a> Cursor<'a> {
         self.rest.char_indices()
     }
 
-    fn char_offsets(&self) -> impl Iterator<Item = (usize, usize, char)> + 'a {
-        self.rest
-            .char_indices()
-            .enumerate()
-            .map(|(char_idx, (byte_offset, ch))| (char_idx, byte_offset, ch))
-    }
-
     fn parse(&self, tag: &str) -> Result<Cursor<'a>, LexError> {
         if self.starts_with(tag) {
             Ok(self.advance(tag.len()))
@@ -123,10 +116,10 @@ fn block_comment(input: Cursor) -> PResult<&str> {
 
     let mut depth = 0;
     let bytes = input.as_bytes();
-    let mut iter = input.char_offsets();
+    let mut iter = input.char_indices();
     let upper = bytes.len() - 1;
 
-    while let Some((_, i, _)) = iter.next() {
+    while let Some((i, _)) = iter.next() {
         if i == upper {
             break;
         }
@@ -322,42 +315,36 @@ fn string(input: Cursor) -> Result<Cursor, LexError> {
 }
 
 fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
-    let mut chars = input.char_offsets().peekable();
+    let mut chars = input.char_indices().peekable();
 
-    macro_rules! char_indices {
-        ($iter:expr) => {
-            &mut ((&mut $iter).map(|(_, byte_offset, ch)| (byte_offset, ch)))
-        };
-    }
-
-    while let Some((_, byte_offset, ch)) = chars.next() {
+    while let Some((byte_offset, ch)) = chars.next() {
         match ch {
             '"' => {
                 let input = input.advance(byte_offset + 1);
                 return Ok(literal_suffix(input));
             }
             '\r' => {
-                if let Some((_, _, '\n')) = chars.next() {
+                if let Some((_, '\n')) = chars.next() {
                     // ...
                 } else {
                     break;
                 }
             }
             '\\' => match chars.next() {
-                Some((_, _, 'x')) => {
-                    if !backslash_x_char(char_indices!(chars)) {
+                Some((_, 'x')) => {
+                    if !backslash_x_char(&mut chars) {
                         break;
                     }
                 }
-                Some((_, _, 'n')) | Some((_, _, 'r')) | Some((_, _, 't')) | Some((_, _, '\\'))
-                | Some((_, _, '\'')) | Some((_, _, '"')) | Some((_, _, '0')) => {}
-                Some((_, _, 'u')) => {
-                    if !backslash_u(char_indices!(chars)) {
+                Some((_, 'n')) | Some((_, 'r')) | Some((_, 't')) | Some((_, '\\'))
+                | Some((_, '\'')) | Some((_, '"')) | Some((_, '0')) => {}
+                Some((_, 'u')) => {
+                    if !backslash_u(&mut chars) {
                         break;
                     }
                 }
-                Some((_, _, '\n')) | Some((_, _, '\r')) => {
-                    while let Some(&(_, _, ch)) = chars.peek() {
+                Some((_, '\n')) | Some((_, '\r')) => {
+                    while let Some(&(_, ch)) = chars.peek() {
                         if ch.is_whitespace() {
                             chars.next();
                         } else {
@@ -408,7 +395,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
                 Some((newline, b'\n')) | Some((newline, b'\r')) => {
                     let rest = input.advance(newline + 1);
-                    for (_, offset, ch) in rest.char_offsets() {
+                    for (offset, ch) in rest.char_indices() {
                         if !ch.is_whitespace() {
                             input = rest.advance(offset);
                             bytes = input.bytes().enumerate();
@@ -427,9 +414,9 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
 }
 
 fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
-    let mut chars = input.char_offsets();
+    let mut chars = input.char_indices();
     let mut n = 0;
-    while let Some((_, byte_offset, ch)) = chars.next() {
+    while let Some((byte_offset, ch)) = chars.next() {
         match ch {
             '"' => {
                 n = byte_offset;
@@ -439,7 +426,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
             _ => return Err(LexError),
         }
     }
-    for (_, byte_offset, ch) in chars {
+    for (byte_offset, ch) in chars {
         match ch {
             '"' if input.rest[(byte_offset + 1)..].starts_with(&input.rest[..n]) => {
                 let rest = input.advance(byte_offset + 1 + n);
@@ -775,9 +762,9 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
 }
 
 fn take_until_newline_or_eof(input: Cursor) -> (Cursor, &str) {
-    let mut chars = input.char_offsets();
+    let mut chars = input.char_indices();
 
-    while let Some((_, byte_off, ch)) = chars.next() {
+    while let Some((byte_off, ch)) = chars.next() {
         if ch == '\n' {
             return (input.advance(byte_off), &input.rest[..byte_off]);
         } else if ch == '\r' && input.rest[byte_off + 1..].starts_with('\n') {
