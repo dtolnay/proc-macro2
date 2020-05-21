@@ -13,32 +13,20 @@ pub(crate) struct Cursor<'a> {
 }
 
 impl<'a> Cursor<'a> {
-    #[cfg(not(span_locations))]
     /// Advance `amt` bytes, without regards for non-ascii text
     fn advance(&self, amt: usize) -> Cursor<'a> {
         Cursor {
             rest: &self.rest[amt..],
-        }
-    }
-    #[cfg(span_locations)]
-    /// Advance `amt` bytes, without regards for non-ascii text
-    fn advance(&self, amt: usize) -> Cursor<'a> {
-        Cursor {
-            rest: &self.rest[amt..],
+            #[cfg(span_locations)]
             off: self.off + (amt as u32),
         }
     }
 
-    #[cfg(not(span_locations))]
-    fn advance_chars(&self, _chars: usize, bytes: usize) -> Cursor<'a> {
-        Cursor {
-            rest: &self.rest[bytes..],
-        }
-    }
-    #[cfg(span_locations)]
     fn advance_chars(&self, chars: usize, bytes: usize) -> Cursor<'a> {
+        let _ = chars;
         Cursor {
             rest: &self.rest[bytes..],
+            #[cfg(span_locations)]
             off: self.off + (chars as u32),
         }
     }
