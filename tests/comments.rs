@@ -86,3 +86,11 @@ fn lit() {
     let lit = lit_of_inner_doc_comment(stream);
     assert_eq!(lit.to_string(), "\"/*! doc */\""); // FIXME: does not match libproc_macro
 }
+
+#[test]
+fn carriage_return() {
+    "///\r\n".parse::<TokenStream>().unwrap();
+    "///\r \n".parse::<TokenStream>().unwrap(); // FIXME: should be Err
+    "/**\r\n*/".parse::<TokenStream>().unwrap();
+    "/**\r \n*/".parse::<TokenStream>().unwrap(); // FIXME: should be Err
+}
