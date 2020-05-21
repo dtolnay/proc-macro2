@@ -68,4 +68,12 @@ fn lit() {
     let stream = "//! doc".parse::<TokenStream>().unwrap();
     let lit = lit_of_inner_doc_comment(stream);
     assert_eq!(lit.to_string(), "\" doc\"");
+
+    let stream = "/** doc */".parse::<TokenStream>().unwrap();
+    let lit = lit_of_outer_doc_comment(stream);
+    assert_eq!(lit.to_string(), "\"/** doc */\""); // FIXME: does not match libproc_macro
+
+    let stream = "/*! doc */".parse::<TokenStream>().unwrap();
+    let lit = lit_of_inner_doc_comment(stream);
+    assert_eq!(lit.to_string(), "\"/*! doc */\""); // FIXME: does not match libproc_macro
 }
