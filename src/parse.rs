@@ -733,8 +733,17 @@ fn op_char(input: Cursor) -> PResult<char> {
 }
 
 fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
-    let mut trees = Vec::new();
     let (rest, ((comment, inner), span)) = spanned(input, doc_comment_contents)?;
+    let mut scan_for_bare_cr = comment;
+    while let Some(cr) = scan_for_bare_cr.find('\r') {
+        let rest = &scan_for_bare_cr[cr + 1..];
+        if !rest.starts_with('\n') {
+            return Err(LexError);
+        }
+        scan_for_bare_cr = rest;
+    }
+
+    let mut trees = Vec::new();
     trees.push(TokenTree::Punct(Punct::new('#', Spacing::Alone)));
     if inner {
         trees.push(Punct::new('!', Spacing::Alone).into());
