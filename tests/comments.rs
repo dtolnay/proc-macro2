@@ -1,4 +1,4 @@
-use proc_macro2::{Delimiter, Literal, TokenStream, TokenTree};
+use proc_macro2::{Delimiter, Literal, Spacing, TokenStream, TokenTree};
 
 // #[doc = "..."] -> "..."
 fn lit_of_outer_doc_comment(tokens: TokenStream) -> Literal {
@@ -13,12 +13,18 @@ fn lit_of_inner_doc_comment(tokens: TokenStream) -> Literal {
 fn lit_of_doc_comment(tokens: TokenStream, inner: bool) -> Literal {
     let mut iter = tokens.clone().into_iter();
     match iter.next().unwrap() {
-        TokenTree::Punct(punct) => assert_eq!(punct.as_char(), '#'),
+        TokenTree::Punct(punct) => {
+            assert_eq!(punct.as_char(), '#');
+            assert_eq!(punct.spacing(), Spacing::Alone);
+        }
         _ => panic!("wrong token {:?}", tokens),
     }
     if inner {
         match iter.next().unwrap() {
-            TokenTree::Punct(punct) => assert_eq!(punct.as_char(), '!'),
+            TokenTree::Punct(punct) => {
+                assert_eq!(punct.as_char(), '!');
+                assert_eq!(punct.spacing(), Spacing::Alone);
+            }
             _ => panic!("wrong token {:?}", tokens),
         }
     }
@@ -35,7 +41,10 @@ fn lit_of_doc_comment(tokens: TokenStream, inner: bool) -> Literal {
         _ => panic!("wrong token {:?}", tokens),
     }
     match iter.next().unwrap() {
-        TokenTree::Punct(punct) => assert_eq!(punct.as_char(), '='),
+        TokenTree::Punct(punct) => {
+            assert_eq!(punct.as_char(), '=');
+            assert_eq!(punct.spacing(), Spacing::Alone);
+        }
         _ => panic!("wrong token {:?}", tokens),
     }
     match iter.next().unwrap() {
