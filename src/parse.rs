@@ -86,7 +86,7 @@ fn skip_whitespace(input: Cursor) -> Cursor {
                         s = rest;
                         continue;
                     }
-                    Err(LexError) => return input,
+                    Err(LexError) => return s,
                 }
             }
         }
@@ -116,25 +116,21 @@ fn block_comment(input: Cursor) -> PResult<&str> {
 
     let mut depth = 0;
     let bytes = input.as_bytes();
-    let mut iter = input.char_indices();
+    let mut i = 0;
     let upper = bytes.len() - 1;
 
-    while let Some((i, _)) = iter.next() {
-        if i == upper {
-            break;
-        }
+    while i < upper {
         if bytes[i] == b'/' && bytes[i + 1] == b'*' {
             depth += 1;
-            // eat '*'
-            let _ = iter.next();
+            i += 1; // eat '*'
         } else if bytes[i] == b'*' && bytes[i + 1] == b'/' {
             depth -= 1;
             if depth == 0 {
                 return Ok((input.advance(i + 2), &input.rest[..i + 2]));
             }
-            // eat '/'
-            let _ = iter.next();
+            i += 1; // eat '/'
         }
+        i += 1;
     }
 
     Err(LexError)
@@ -428,7 +424,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
     }
     for (byte_offset, ch) in chars {
         match ch {
-            '"' if input.rest[(byte_offset + 1)..].starts_with(&input.rest[..n]) => {
+            '"' if input.rest[byte_offset + 1..].starts_with(&input.rest[..n]) => {
                 let rest = input.advance(byte_offset + 1 + n);
                 return Ok(literal_suffix(rest));
             }
@@ -753,7 +749,7 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
         }
         let (input, s) = take_until_newline_or_eof(input);
         Ok((input, (s, false)))
-    } else if input.starts_with("/**") && !input.advance(3).starts_with("*") {
+    } else if input.starts_with("/**") && !input.rest[3..].starts_with("*") {
         let (input, s) = block_comment(input)?;
         Ok((input, (&s[3..s.len() - 2], false)))
     } else {
