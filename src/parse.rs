@@ -172,27 +172,16 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     Ok((input, TokenStream { inner: trees }))
 }
 
-fn spanned<'a, T>(
-    input: Cursor<'a>,
-    f: fn(Cursor<'a>) -> PResult<'a, T>,
-) -> PResult<'a, (T, crate::Span)> {
+fn token_tree(input: Cursor) -> PResult<TokenTree> {
     #[cfg(span_locations)]
     let lo = input.off;
-    let (a, b) = f(input)?;
-    #[cfg(span_locations)]
-    let hi = a.off;
-    let span = crate::Span::_new_stable(Span {
+    let (rest, mut tt) = token_kind(input)?;
+    tt.set_span(crate::Span::_new_stable(Span {
         #[cfg(span_locations)]
         lo,
         #[cfg(span_locations)]
-        hi,
-    });
-    Ok((a, (b, span)))
-}
-
-fn token_tree(input: Cursor) -> PResult<TokenTree> {
-    let (rest, (mut tt, span)) = spanned(input, token_kind)?;
-    tt.set_span(span);
+        hi: rest.off,
+    }));
     Ok((rest, tt))
 }
 
@@ -705,7 +694,16 @@ fn op_char(input: Cursor) -> PResult<char> {
 }
 
 fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
-    let (rest, ((comment, inner), span)) = spanned(input, doc_comment_contents)?;
+    #[cfg(span_locations)]
+    let lo = input.off;
+    let (rest, (comment, inner)) = doc_comment_contents(input)?;
+    let span = crate::Span::_new_stable(Span {
+        #[cfg(span_locations)]
+        lo,
+        #[cfg(span_locations)]
+        hi: rest.off,
+    });
+
     let mut scan_for_bare_cr = comment;
     while let Some(cr) = scan_for_bare_cr.find('\r') {
         let rest = &scan_for_bare_cr[cr + 1..];
