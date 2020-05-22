@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use std::cmp;
 use std::fmt;
 use std::iter;
+use std::mem;
 use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::Path;
@@ -43,6 +44,29 @@ impl TokenStream {
 
     pub fn is_empty(&self) -> bool {
         self.inner.len() == 0
+    }
+
+    fn take_inner(&mut self) -> Vec<TokenTree> {
+        mem::replace(&mut self.inner, Vec::new())
+    }
+}
+
+// Nonrecursive to prevent stack overflow.
+impl Drop for TokenStream {
+    fn drop(&mut self) {
+        while let Some(token) = self.inner.pop() {
+            let group = match token {
+                TokenTree::Group(group) => group.inner,
+                _ => continue,
+            };
+            #[cfg(wrap_proc_macro)]
+            let group = match group {
+                crate::imp::Group::Fallback(group) => group,
+                _ => continue,
+            };
+            let mut group = group;
+            self.inner.extend(group.stream.take_inner());
+        }
     }
 }
 
@@ -168,8 +192,8 @@ impl iter::FromIterator<TokenStream> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
         let mut v = Vec::new();
 
-        for stream in streams.into_iter() {
-            v.extend(stream.inner);
+        for mut stream in streams.into_iter() {
+            v.extend(stream.take_inner());
         }
 
         TokenStream { inner: v }
@@ -195,8 +219,8 @@ impl IntoIterator for TokenStream {
     type Item = TokenTree;
     type IntoIter = TokenTreeIter;
 
-    fn into_iter(self) -> TokenTreeIter {
-        self.inner.into_iter()
+    fn into_iter(mut self) -> TokenTreeIter {
+        self.take_inner().into_iter()
     }
 }
 
