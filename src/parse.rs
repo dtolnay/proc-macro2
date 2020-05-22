@@ -172,24 +172,21 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     Ok((input, TokenStream { inner: trees }))
 }
 
-#[cfg(not(span_locations))]
 fn spanned<'a, T>(
     input: Cursor<'a>,
     f: fn(Cursor<'a>) -> PResult<'a, T>,
 ) -> PResult<'a, (T, crate::Span)> {
-    let (a, b) = f(input)?;
-    Ok((a, ((b, crate::Span::_new_stable(Span::call_site())))))
-}
-
-#[cfg(span_locations)]
-fn spanned<'a, T>(
-    input: Cursor<'a>,
-    f: fn(Cursor<'a>) -> PResult<'a, T>,
-) -> PResult<'a, (T, crate::Span)> {
+    #[cfg(span_locations)]
     let lo = input.off;
     let (a, b) = f(input)?;
+    #[cfg(span_locations)]
     let hi = a.off;
-    let span = crate::Span::_new_stable(Span { lo, hi });
+    let span = crate::Span::_new_stable(Span {
+        #[cfg(span_locations)]
+        lo,
+        #[cfg(span_locations)]
+        hi,
+    });
     Ok((a, (b, span)))
 }
 
