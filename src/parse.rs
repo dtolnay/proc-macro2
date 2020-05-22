@@ -150,6 +150,7 @@ fn word_break(input: Cursor) -> Result<Cursor, LexError> {
 
 pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     let mut trees = Vec::new();
+    let mut stack = Vec::new();
 
     loop {
         input = skip_whitespace(input);
@@ -162,13 +163,49 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
 
         #[cfg(span_locations)]
         let lo = input.off;
-        let (delimiter, close) = if input.starts_with("(") {
-            (Delimiter::Parenthesis, ")")
-        } else if input.starts_with("[") {
-            (Delimiter::Bracket, "]")
-        } else if input.starts_with("{") {
-            (Delimiter::Brace, "}")
-        } else if let Ok((rest, mut tt)) = leaf_token(input) {
+
+        let first = match input.bytes().next() {
+            Some(first) => first,
+            None => break,
+        };
+
+        if let Some(open_delimiter) = match first {
+            b'(' => Some(Delimiter::Parenthesis),
+            b'[' => Some(Delimiter::Bracket),
+            b'{' => Some(Delimiter::Brace),
+            _ => None,
+        } {
+            input = input.advance(1);
+            let frame = (open_delimiter, trees);
+            #[cfg(span_locations)]
+            let frame = (lo, frame);
+            stack.push(frame);
+            trees = Vec::new();
+        } else if let Some(close_delimiter) = match first {
+            b')' => Some(Delimiter::Parenthesis),
+            b']' => Some(Delimiter::Bracket),
+            b'}' => Some(Delimiter::Brace),
+            _ => None,
+        } {
+            input = input.advance(1);
+            let frame = stack.pop().ok_or(LexError)?;
+            #[cfg(span_locations)]
+            let (lo, frame) = frame;
+            let (open_delimiter, outer) = frame;
+            if open_delimiter != close_delimiter {
+                return Err(LexError);
+            }
+            let mut g = Group::new(open_delimiter, TokenStream { inner: trees });
+            g.set_span(Span {
+                #[cfg(span_locations)]
+                lo,
+                #[cfg(span_locations)]
+                hi: input.off,
+            });
+            trees = outer;
+            trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
+        } else {
+            let (rest, mut tt) = leaf_token(input)?;
             tt.set_span(crate::Span::_new_stable(Span {
                 #[cfg(span_locations)]
                 lo,
@@ -177,26 +214,14 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
             }));
             trees.push(tt);
             input = rest;
-            continue;
-        } else {
-            break;
-        };
-
-        input = input.advance(1);
-        let (rest, ts) = token_stream(input)?;
-        input = skip_whitespace(rest);
-        input = input.parse(close)?;
-        let mut g = Group::new(delimiter, ts);
-        g.set_span(Span {
-            #[cfg(span_locations)]
-            lo,
-            #[cfg(span_locations)]
-            hi: input.off,
-        });
-        trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
+        }
     }
 
-    Ok((input, TokenStream { inner: trees }))
+    if stack.is_empty() {
+        Ok((input, TokenStream { inner: trees }))
+    } else {
+        Err(LexError)
+    }
 }
 
 fn leaf_token(input: Cursor) -> PResult<TokenTree> {
