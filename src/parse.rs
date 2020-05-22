@@ -162,7 +162,17 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
 
         #[cfg(span_locations)]
         let lo = input.off;
-        if let Ok((rest, mut tt)) = token_kind(input) {
+        if let Ok((rest, mut g)) = group(input) {
+            g.set_span(Span {
+                #[cfg(span_locations)]
+                lo,
+                #[cfg(span_locations)]
+                hi: rest.off,
+            });
+            trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
+            input = rest;
+            continue;
+        } else if let Ok((rest, mut tt)) = leaf_token(input) {
             tt.set_span(crate::Span::_new_stable(Span {
                 #[cfg(span_locations)]
                 lo,
@@ -180,10 +190,8 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     Ok((input, TokenStream { inner: trees }))
 }
 
-fn token_kind(input: Cursor) -> PResult<TokenTree> {
-    if let Ok((input, g)) = group(input) {
-        Ok((input, TokenTree::Group(crate::Group::_new_stable(g))))
-    } else if let Ok((input, l)) = literal(input) {
+fn leaf_token(input: Cursor) -> PResult<TokenTree> {
+    if let Ok((input, l)) = literal(input) {
         // must be parsed before ident
         Ok((input, TokenTree::Literal(crate::Literal::_new_stable(l))))
     } else if let Ok((input, p)) = op(input) {
