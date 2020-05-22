@@ -204,8 +204,10 @@ fn token_kind(input: Cursor) -> PResult<TokenTree> {
         Ok((input, TokenTree::Literal(crate::Literal::_new_stable(l))))
     } else if let Ok((input, p)) = op(input) {
         Ok((input, TokenTree::Punct(p)))
+    } else if let Ok((input, i)) = ident(input) {
+        Ok((input, TokenTree::Ident(i)))
     } else {
-        ident(input)
+        Err(LexError)
     }
 }
 
@@ -227,7 +229,7 @@ fn group(input: Cursor) -> PResult<Group> {
     Ok((input, Group::new(delimiter, ts)))
 }
 
-fn ident(input: Cursor) -> PResult<TokenTree> {
+fn ident(input: Cursor) -> PResult<crate::Ident> {
     let raw = input.starts_with("r#");
     let rest = input.advance((raw as usize) << 1);
 
@@ -235,7 +237,7 @@ fn ident(input: Cursor) -> PResult<TokenTree> {
 
     if !raw {
         let ident = crate::Ident::new(sym, crate::Span::call_site());
-        return Ok((rest, ident.into()));
+        return Ok((rest, ident));
     }
 
     if sym == "_" {
@@ -243,7 +245,7 @@ fn ident(input: Cursor) -> PResult<TokenTree> {
     }
 
     let ident = crate::Ident::_new_raw(sym, crate::Span::call_site());
-    Ok((rest, ident.into()))
+    Ok((rest, ident))
 }
 
 fn ident_not_raw(input: Cursor) -> PResult<&str> {
