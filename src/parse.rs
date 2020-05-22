@@ -150,56 +150,82 @@ fn word_break(input: Cursor) -> Result<Cursor, LexError> {
 
 pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     let mut trees = Vec::new();
+    let mut stack = Vec::new();
+
     loop {
         input = skip_whitespace(input);
-        match doc_comment(input) {
-            Ok((a, tt)) => {
-                trees.extend(tt);
-                input = a;
+
+        if let Ok((rest, tt)) = doc_comment(input) {
+            trees.extend(tt);
+            input = rest;
+            continue;
+        }
+
+        #[cfg(span_locations)]
+        let lo = input.off;
+
+        let first = match input.bytes().next() {
+            Some(first) => first,
+            None => break,
+        };
+
+        if let Some(open_delimiter) = match first {
+            b'(' => Some(Delimiter::Parenthesis),
+            b'[' => Some(Delimiter::Bracket),
+            b'{' => Some(Delimiter::Brace),
+            _ => None,
+        } {
+            input = input.advance(1);
+            let frame = (open_delimiter, trees);
+            #[cfg(span_locations)]
+            let frame = (lo, frame);
+            stack.push(frame);
+            trees = Vec::new();
+        } else if let Some(close_delimiter) = match first {
+            b')' => Some(Delimiter::Parenthesis),
+            b']' => Some(Delimiter::Bracket),
+            b'}' => Some(Delimiter::Brace),
+            _ => None,
+        } {
+            input = input.advance(1);
+            let frame = stack.pop().ok_or(LexError)?;
+            #[cfg(span_locations)]
+            let (lo, frame) = frame;
+            let (open_delimiter, outer) = frame;
+            if open_delimiter != close_delimiter {
+                return Err(LexError);
             }
-            Err(_) => match token_tree(input) {
-                Ok((a, tt)) => {
-                    trees.push(tt);
-                    input = a;
-                }
-                Err(_) => break,
-            },
+            let mut g = Group::new(open_delimiter, TokenStream { inner: trees });
+            g.set_span(Span {
+                #[cfg(span_locations)]
+                lo,
+                #[cfg(span_locations)]
+                hi: input.off,
+            });
+            trees = outer;
+            trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
+        } else {
+            let (rest, mut tt) = leaf_token(input)?;
+            tt.set_span(crate::Span::_new_stable(Span {
+                #[cfg(span_locations)]
+                lo,
+                #[cfg(span_locations)]
+                hi: rest.off,
+            }));
+            trees.push(tt);
+            input = rest;
         }
     }
-    Ok((input, TokenStream { inner: trees }))
+
+    if stack.is_empty() {
+        Ok((input, TokenStream { inner: trees }))
+    } else {
+        Err(LexError)
+    }
 }
 
-#[cfg(not(span_locations))]
-fn spanned<'a, T>(
-    input: Cursor<'a>,
-    f: fn(Cursor<'a>) -> PResult<'a, T>,
-) -> PResult<'a, (T, crate::Span)> {
-    let (a, b) = f(input)?;
-    Ok((a, ((b, crate::Span::_new_stable(Span::call_site())))))
-}
-
-#[cfg(span_locations)]
-fn spanned<'a, T>(
-    input: Cursor<'a>,
-    f: fn(Cursor<'a>) -> PResult<'a, T>,
-) -> PResult<'a, (T, crate::Span)> {
-    let lo = input.off;
-    let (a, b) = f(input)?;
-    let hi = a.off;
-    let span = crate::Span::_new_stable(Span { lo, hi });
-    Ok((a, (b, span)))
-}
-
-fn token_tree(input: Cursor) -> PResult<TokenTree> {
-    let (rest, (mut tt, span)) = spanned(input, token_kind)?;
-    tt.set_span(span);
-    Ok((rest, tt))
-}
-
-fn token_kind(input: Cursor) -> PResult<TokenTree> {
-    if let Ok((input, g)) = group(input) {
-        Ok((input, TokenTree::Group(crate::Group::_new_stable(g))))
-    } else if let Ok((input, l)) = literal(input) {
+fn leaf_token(input: Cursor) -> PResult<TokenTree> {
+    if let Ok((input, l)) = literal(input) {
         // must be parsed before ident
         Ok((input, TokenTree::Literal(crate::Literal::_new_stable(l))))
     } else if let Ok((input, p)) = op(input) {
@@ -209,24 +235,6 @@ fn token_kind(input: Cursor) -> PResult<TokenTree> {
     } else {
         Err(LexError)
     }
-}
-
-fn group(input: Cursor) -> PResult<Group> {
-    let (delimiter, close) = if input.starts_with("(") {
-        (Delimiter::Parenthesis, ")")
-    } else if input.starts_with("[") {
-        (Delimiter::Bracket, "]")
-    } else if input.starts_with("{") {
-        (Delimiter::Brace, "}")
-    } else {
-        return Err(LexError);
-    };
-
-    let input = input.advance(1);
-    let (input, ts) = token_stream(input)?;
-    let input = skip_whitespace(input);
-    let input = input.parse(close)?;
-    Ok((input, Group::new(delimiter, ts)))
 }
 
 fn ident(input: Cursor) -> PResult<crate::Ident> {
@@ -705,7 +713,16 @@ fn op_char(input: Cursor) -> PResult<char> {
 }
 
 fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
-    let (rest, ((comment, inner), span)) = spanned(input, doc_comment_contents)?;
+    #[cfg(span_locations)]
+    let lo = input.off;
+    let (rest, (comment, inner)) = doc_comment_contents(input)?;
+    let span = crate::Span::_new_stable(Span {
+        #[cfg(span_locations)]
+        lo,
+        #[cfg(span_locations)]
+        hi: rest.off,
+    });
+
     let mut scan_for_bare_cr = comment;
     while let Some(cr) = scan_for_bare_cr.find('\r') {
         let rest = &scan_for_bare_cr[cr + 1..];
