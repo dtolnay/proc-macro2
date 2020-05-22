@@ -200,12 +200,12 @@ fn token_kind(input: Cursor) -> PResult<TokenTree> {
     if let Ok((input, g)) = group(input) {
         Ok((input, TokenTree::Group(crate::Group::_new_stable(g))))
     } else if let Ok((input, l)) = literal(input) {
-        // must be parsed before symbol
+        // must be parsed before ident
         Ok((input, TokenTree::Literal(crate::Literal::_new_stable(l))))
     } else if let Ok((input, p)) = op(input) {
         Ok((input, TokenTree::Punct(p)))
     } else {
-        symbol(input)
+        ident(input)
     }
 }
 
@@ -227,11 +227,11 @@ fn group(input: Cursor) -> PResult<Group> {
     Ok((input, Group::new(delimiter, ts)))
 }
 
-fn symbol(input: Cursor) -> PResult<TokenTree> {
+fn ident(input: Cursor) -> PResult<TokenTree> {
     let raw = input.starts_with("r#");
     let rest = input.advance((raw as usize) << 1);
 
-    let (rest, sym) = symbol_not_raw(rest)?;
+    let (rest, sym) = ident_not_raw(rest)?;
 
     if !raw {
         let ident = crate::Ident::new(sym, crate::Span::call_site());
@@ -246,7 +246,7 @@ fn symbol(input: Cursor) -> PResult<TokenTree> {
     Ok((rest, ident.into()))
 }
 
-fn symbol_not_raw(input: Cursor) -> PResult<&str> {
+fn ident_not_raw(input: Cursor) -> PResult<&str> {
     let mut chars = input.char_indices();
 
     match chars.next() {
@@ -294,7 +294,7 @@ fn literal_nocapture(input: Cursor) -> Result<Cursor, LexError> {
 }
 
 fn literal_suffix(input: Cursor) -> Cursor {
-    match symbol_not_raw(input) {
+    match ident_not_raw(input) {
         Ok((input, _)) => input,
         Err(LexError) => input,
     }
@@ -528,7 +528,7 @@ fn float(input: Cursor) -> Result<Cursor, LexError> {
     let mut rest = float_digits(input)?;
     if let Some(ch) = rest.chars().next() {
         if is_ident_start(ch) {
-            rest = symbol_not_raw(rest)?.0;
+            rest = ident_not_raw(rest)?.0;
         }
     }
     word_break(rest)
@@ -615,7 +615,7 @@ fn int(input: Cursor) -> Result<Cursor, LexError> {
     let mut rest = digits(input)?;
     if let Some(ch) = rest.chars().next() {
         if is_ident_start(ch) {
-            rest = symbol_not_raw(rest)?.0;
+            rest = ident_not_raw(rest)?.0;
         }
     }
     word_break(rest)
@@ -667,7 +667,7 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
 fn op(input: Cursor) -> PResult<Punct> {
     match op_char(input) {
         Ok((rest, '\'')) => {
-            symbol(rest)?;
+            ident(rest)?;
             Ok((rest, Punct::new('\'', Spacing::Joint)))
         }
         Ok((rest, ch)) => {
