@@ -162,16 +162,12 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
 
         #[cfg(span_locations)]
         let lo = input.off;
-        if let Ok((rest, mut g)) = group(input) {
-            g.set_span(Span {
-                #[cfg(span_locations)]
-                lo,
-                #[cfg(span_locations)]
-                hi: rest.off,
-            });
-            trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
-            input = rest;
-            continue;
+        let (delimiter, close) = if input.starts_with("(") {
+            (Delimiter::Parenthesis, ")")
+        } else if input.starts_with("[") {
+            (Delimiter::Bracket, "]")
+        } else if input.starts_with("{") {
+            (Delimiter::Brace, "}")
         } else if let Ok((rest, mut tt)) = leaf_token(input) {
             tt.set_span(crate::Span::_new_stable(Span {
                 #[cfg(span_locations)]
@@ -182,9 +178,22 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
             trees.push(tt);
             input = rest;
             continue;
-        }
+        } else {
+            break;
+        };
 
-        break;
+        input = input.advance(1);
+        let (rest, ts) = token_stream(input)?;
+        input = skip_whitespace(rest);
+        input = input.parse(close)?;
+        let mut g = Group::new(delimiter, ts);
+        g.set_span(Span {
+            #[cfg(span_locations)]
+            lo,
+            #[cfg(span_locations)]
+            hi: input.off,
+        });
+        trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
     }
 
     Ok((input, TokenStream { inner: trees }))
@@ -201,24 +210,6 @@ fn leaf_token(input: Cursor) -> PResult<TokenTree> {
     } else {
         Err(LexError)
     }
-}
-
-fn group(input: Cursor) -> PResult<Group> {
-    let (delimiter, close) = if input.starts_with("(") {
-        (Delimiter::Parenthesis, ")")
-    } else if input.starts_with("[") {
-        (Delimiter::Bracket, "]")
-    } else if input.starts_with("{") {
-        (Delimiter::Brace, "}")
-    } else {
-        return Err(LexError);
-    };
-
-    let input = input.advance(1);
-    let (input, ts) = token_stream(input)?;
-    let input = skip_whitespace(input);
-    let input = input.parse(close)?;
-    Ok((input, Group::new(delimiter, ts)))
 }
 
 fn ident(input: Cursor) -> PResult<crate::Ident> {
