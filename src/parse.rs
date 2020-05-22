@@ -160,7 +160,15 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
             continue;
         }
 
-        if let Ok((rest, tt)) = token_tree(input) {
+        #[cfg(span_locations)]
+        let lo = input.off;
+        if let Ok((rest, mut tt)) = token_kind(input) {
+            tt.set_span(crate::Span::_new_stable(Span {
+                #[cfg(span_locations)]
+                lo,
+                #[cfg(span_locations)]
+                hi: rest.off,
+            }));
             trees.push(tt);
             input = rest;
             continue;
@@ -170,19 +178,6 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     }
 
     Ok((input, TokenStream { inner: trees }))
-}
-
-fn token_tree(input: Cursor) -> PResult<TokenTree> {
-    #[cfg(span_locations)]
-    let lo = input.off;
-    let (rest, mut tt) = token_kind(input)?;
-    tt.set_span(crate::Span::_new_stable(Span {
-        #[cfg(span_locations)]
-        lo,
-        #[cfg(span_locations)]
-        hi: rest.off,
-    }));
-    Ok((rest, tt))
 }
 
 fn token_kind(input: Cursor) -> PResult<TokenTree> {
