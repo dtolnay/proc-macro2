@@ -317,6 +317,20 @@ pub struct LineColumn {
     pub column: usize,
 }
 
+#[cfg(span_locations)]
+impl Ord for LineColumn {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.line.cmp(&other.line).then(self.column.cmp(&other.column))
+    }
+}
+
+#[cfg(span_locations)]
+impl PartialOrd for LineColumn {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 /// A region of source code, along with macro expansion information.
 #[derive(Copy, Clone)]
 pub struct Span {
