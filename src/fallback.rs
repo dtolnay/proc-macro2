@@ -72,15 +72,11 @@ impl FromStr for TokenStream {
         // Create a dummy file & add it to the source map
         let cursor = get_cursor(src);
 
-        match token_stream(cursor) {
-            Ok((input, output)) => {
-                if input.is_empty() {
-                    Ok(output)
-                } else {
-                    Err(LexError)
-                }
-            }
-            Err(LexError) => Err(LexError),
+        let (rest, tokens) = token_stream(cursor)?;
+        if rest.is_empty() {
+            Ok(tokens)
+        } else {
+            Err(LexError)
         }
     }
 }
