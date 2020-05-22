@@ -150,22 +150,25 @@ fn word_break(input: Cursor) -> Result<Cursor, LexError> {
 
 pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
     let mut trees = Vec::new();
+
     loop {
         input = skip_whitespace(input);
-        match doc_comment(input) {
-            Ok((a, tt)) => {
-                trees.extend(tt);
-                input = a;
-            }
-            Err(_) => match token_tree(input) {
-                Ok((a, tt)) => {
-                    trees.push(tt);
-                    input = a;
-                }
-                Err(_) => break,
-            },
+
+        if let Ok((rest, tt)) = doc_comment(input) {
+            trees.extend(tt);
+            input = rest;
+            continue;
         }
+
+        if let Ok((rest, tt)) = token_tree(input) {
+            trees.push(tt);
+            input = rest;
+            continue;
+        }
+
+        break;
     }
+
     Ok((input, TokenStream { inner: trees }))
 }
 
