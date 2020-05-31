@@ -118,6 +118,27 @@ fn literal_suffix() {
 }
 
 #[test]
+fn literal_iter_negative() {
+    let negative_literal = Literal::i32_suffixed(-3);
+    let tokens = TokenStream::from(TokenTree::Literal(negative_literal));
+    let mut iter = tokens.into_iter();
+    match iter.next().unwrap() {
+        TokenTree::Punct(punct) => {
+            assert_eq!(punct.as_char(), '-');
+            assert_eq!(punct.spacing(), Spacing::Alone);
+        }
+        unexpected => panic!("unexpected token {:?}", unexpected),
+    }
+    match iter.next().unwrap() {
+        TokenTree::Literal(literal) => {
+            assert_eq!(literal.to_string(), "3i32");
+        }
+        unexpected => panic!("unexpected token {:?}", unexpected),
+    }
+    assert!(iter.next().is_none());
+}
+
+#[test]
 fn roundtrip() {
     fn roundtrip(p: &str) {
         println!("parse: {}", p);
