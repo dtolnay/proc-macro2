@@ -49,6 +49,49 @@ impl TokenStream {
     fn take_inner(&mut self) -> Vec<TokenTree> {
         mem::replace(&mut self.inner, Vec::new())
     }
+
+    fn push_token(&mut self, token: TokenTree) {
+        // https://github.com/alexcrichton/proc-macro2/issues/235
+        match token {
+            #[cfg(not(no_bind_by_move_pattern_guard))]
+            TokenTree::Literal(crate::Literal {
+                #[cfg(wrap_proc_macro)]
+                    inner: crate::imp::Literal::Fallback(literal),
+                #[cfg(not(wrap_proc_macro))]
+                    inner: literal,
+                ..
+            }) if literal.text.starts_with('-') => {
+                push_negative_literal(self, literal);
+            }
+            #[cfg(no_bind_by_move_pattern_guard)]
+            TokenTree::Literal(crate::Literal {
+                #[cfg(wrap_proc_macro)]
+                    inner: crate::imp::Literal::Fallback(literal),
+                #[cfg(not(wrap_proc_macro))]
+                    inner: literal,
+                ..
+            }) => {
+                if literal.text.starts_with('-') {
+                    push_negative_literal(self, literal);
+                } else {
+                    self.inner
+                        .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
+                }
+            }
+            _ => self.inner.push(token),
+        }
+
+        #[cold]
+        fn push_negative_literal(stream: &mut TokenStream, mut literal: Literal) {
+            literal.text.remove(0);
+            let mut punct = crate::Punct::new('-', Spacing::Alone);
+            punct.set_span(crate::Span::_new_stable(literal.span));
+            stream.inner.push(TokenTree::Punct(punct));
+            stream
+                .inner
+                .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
+        }
+    }
 }
 
 // Nonrecursive to prevent stack overflow.
@@ -172,19 +215,17 @@ impl From<TokenStream> for proc_macro::TokenStream {
 
 impl From<TokenTree> for TokenStream {
     fn from(tree: TokenTree) -> TokenStream {
-        TokenStream { inner: vec![tree] }
+        let mut stream = TokenStream::new();
+        stream.push_token(tree);
+        stream
     }
 }
 
 impl FromIterator<TokenTree> for TokenStream {
-    fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
-        let mut v = Vec::new();
-
-        for token in streams {
-            v.push(token);
-        }
-
-        TokenStream { inner: v }
+    fn from_iter<I: IntoIterator<Item = TokenTree>>(tokens: I) -> Self {
+        let mut stream = TokenStream::new();
+        stream.extend(tokens);
+        stream
     }
 }
 
@@ -201,8 +242,8 @@ impl FromIterator<TokenStream> for TokenStream {
 }
 
 impl Extend<TokenTree> for TokenStream {
-    fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
-        self.inner.extend(streams);
+    fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, tokens: I) {
+        tokens.into_iter().for_each(|token| self.push_token(token));
     }
 }
 
