@@ -84,9 +84,9 @@ impl TokenStream {
         #[cold]
         fn push_negative_literal(stream: &mut TokenStream, mut literal: Literal) {
             literal.text.remove(0);
-            stream
-                .inner
-                .push(TokenTree::Punct(crate::Punct::new('-', Spacing::Alone)));
+            let mut punct = crate::Punct::new('-', Spacing::Alone);
+            punct.set_span(crate::Span::_new_stable(literal.span));
+            stream.inner.push(TokenTree::Punct(punct));
             stream
                 .inner
                 .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
