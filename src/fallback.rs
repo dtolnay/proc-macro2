@@ -53,6 +53,7 @@ impl TokenStream {
     fn push_token(&mut self, token: TokenTree) {
         // https://github.com/alexcrichton/proc-macro2/issues/235
         match token {
+            #[cfg(not(no_bind_by_move_pattern_guard))]
             TokenTree::Literal(crate::Literal {
                 #[cfg(wrap_proc_macro)]
                     inner: crate::imp::Literal::Fallback(literal),
@@ -61,6 +62,21 @@ impl TokenStream {
                 ..
             }) if literal.text.starts_with('-') => {
                 push_negative_literal(self, literal);
+            }
+            #[cfg(no_bind_by_move_pattern_guard)]
+            TokenTree::Literal(crate::Literal {
+                #[cfg(wrap_proc_macro)]
+                    inner: crate::imp::Literal::Fallback(literal),
+                #[cfg(not(wrap_proc_macro))]
+                    inner: literal,
+                ..
+            }) => {
+                if literal.text.starts_with('-') {
+                    push_negative_literal(self, literal);
+                } else {
+                    self.inner
+                        .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
+                }
             }
             _ => self.inner.push(token),
         }
