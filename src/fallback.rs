@@ -766,7 +766,7 @@ impl Literal {
 
     pub fn f32_unsuffixed(f: f32) -> Literal {
         let mut s = f.to_string();
-        if !s.contains(".") {
+        if !s.contains('.') {
             s.push_str(".0");
         }
         Literal::_new(s)
@@ -774,7 +774,7 @@ impl Literal {
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
         let mut s = f.to_string();
-        if !s.contains(".") {
+        if !s.contains('.') {
             s.push_str(".0");
         }
         Literal::_new(s)
