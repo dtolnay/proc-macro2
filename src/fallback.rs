@@ -810,6 +810,7 @@ impl Literal {
     pub fn byte_string(bytes: &[u8]) -> Literal {
         let mut escaped = "b\"".to_string();
         for b in bytes {
+            #[allow(clippy::match_overlapping_arm)]
             match *b {
                 b'\0' => escaped.push_str(r"\0"),
                 b'\t' => escaped.push_str(r"\t"),
