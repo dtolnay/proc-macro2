@@ -320,7 +320,9 @@ pub struct LineColumn {
 #[cfg(span_locations)]
 impl Ord for LineColumn {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.line.cmp(&other.line).then(self.column.cmp(&other.column))
+        self.line
+            .cmp(&other.line)
+            .then(self.column.cmp(&other.column))
     }
 }
 
