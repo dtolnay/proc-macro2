@@ -528,16 +528,16 @@ impl Span {
 
 impl Debug for Span {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        #[cfg(procmacro2_semver_exempt)]
+        #[cfg(span_locations)]
         return write!(f, "bytes({}..{})", self.lo, self.hi);
 
-        #[cfg(not(procmacro2_semver_exempt))]
+        #[cfg(not(span_locations))]
         write!(f, "Span")
     }
 }
 
 pub(crate) fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
-    if cfg!(procmacro2_semver_exempt) {
+    if cfg!(span_locations) {
         debug.field("span", &span);
     }
 }
@@ -605,8 +605,7 @@ impl Debug for Group {
         let mut debug = fmt.debug_struct("Group");
         debug.field("delimiter", &self.delimiter);
         debug.field("stream", &self.stream);
-        #[cfg(procmacro2_semver_exempt)]
-        debug.field("span", &self.span);
+        debug_span_field_if_nontrivial(&mut debug, self.span);
         debug.finish()
     }
 }
@@ -736,7 +735,7 @@ impl Debug for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = f.debug_struct("Ident");
         debug.field("sym", &format_args!("{}", self));
-        debug.field("span", &self.span);
+        debug_span_field_if_nontrivial(&mut debug, self.span);
         debug.finish()
     }
 }
@@ -890,8 +889,7 @@ impl Debug for Literal {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Literal");
         debug.field("lit", &format_args!("{}", self.text));
-        #[cfg(procmacro2_semver_exempt)]
-        debug.field("span", &self.span);
+        debug_span_field_if_nontrivial(&mut debug, self.span);
         debug.finish()
     }
 }

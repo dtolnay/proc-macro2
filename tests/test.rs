@@ -312,7 +312,7 @@ fn test_debug_ident() {
 fn test_debug_tokenstream() {
     let tts = TokenStream::from_str("[a + 1]").unwrap();
 
-    #[cfg(not(procmacro2_semver_exempt))]
+    #[cfg(not(span_locations))]
     let expected = "\
 TokenStream [
     Group {
@@ -333,7 +333,7 @@ TokenStream [
 ]\
     ";
 
-    #[cfg(not(procmacro2_semver_exempt))]
+    #[cfg(not(span_locations))]
     let expected_before_trailing_commas = "\
 TokenStream [
     Group {
@@ -354,7 +354,7 @@ TokenStream [
 ]\
     ";
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_locations)]
     let expected = "\
 TokenStream [
     Group {
@@ -379,7 +379,7 @@ TokenStream [
 ]\
     ";
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_locations)]
     let expected_before_trailing_commas = "\
 TokenStream [
     Group {
