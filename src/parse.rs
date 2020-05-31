@@ -777,9 +777,9 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
 }
 
 fn take_until_newline_or_eof(input: Cursor) -> (Cursor, &str) {
-    let mut chars = input.char_indices();
+    let chars = input.char_indices();
 
-    while let Some((i, ch)) = chars.next() {
+    for (i, ch) in chars {
         if ch == '\n' {
             return (input.advance(i), &input.rest[..i]);
         } else if ch == '\r' && input.rest[i + 1..].starts_with('\n') {
