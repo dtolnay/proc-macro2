@@ -537,6 +537,13 @@ impl Debug for Span {
 }
 
 pub(crate) fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
+    #[cfg(span_locations)]
+    {
+        if span.lo == 0 && span.hi == 0 {
+            return;
+        }
+    }
+
     if cfg!(span_locations) {
         debug.field("span", &span);
     }
