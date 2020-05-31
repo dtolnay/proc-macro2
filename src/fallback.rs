@@ -4,7 +4,7 @@ use crate::{Delimiter, Spacing, TokenTree};
 use std::cell::RefCell;
 #[cfg(span_locations)]
 use std::cmp;
-use std::fmt;
+use std::fmt::{self, Debug, Display};
 use std::iter::FromIterator;
 use std::mem;
 use std::ops::RangeBounds;
@@ -105,7 +105,7 @@ impl FromStr for TokenStream {
     }
 }
 
-impl fmt::Display for TokenStream {
+impl Display for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut joint = false;
         for (i, tt) in self.inner.iter().enumerate() {
@@ -143,7 +143,7 @@ impl fmt::Display for TokenStream {
     }
 }
 
-impl fmt::Debug for TokenStream {
+impl Debug for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("TokenStream ")?;
         f.debug_list().entries(self.clone()).finish()
@@ -241,7 +241,7 @@ impl SourceFile {
     }
 }
 
-impl fmt::Debug for SourceFile {
+impl Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("SourceFile")
             .field("path", &self.path())
@@ -486,7 +486,7 @@ impl Span {
     }
 }
 
-impl fmt::Debug for Span {
+impl Debug for Span {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         #[cfg(procmacro2_semver_exempt)]
         return write!(f, "bytes({}..{})", self.lo, self.hi);
@@ -543,7 +543,7 @@ impl Group {
     }
 }
 
-impl fmt::Display for Group {
+impl Display for Group {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (left, right) = match self.delimiter {
             Delimiter::Parenthesis => ("(", ")"),
@@ -553,14 +553,14 @@ impl fmt::Display for Group {
         };
 
         f.write_str(left)?;
-        self.stream.fmt(f)?;
+        Display::fmt(&self.stream, f)?;
         f.write_str(right)?;
 
         Ok(())
     }
 }
 
-impl fmt::Debug for Group {
+impl Debug for Group {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Group");
         debug.field("delimiter", &self.delimiter);
@@ -670,16 +670,16 @@ where
     }
 }
 
-impl fmt::Display for Ident {
+impl Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.raw {
-            "r#".fmt(f)?;
+            f.write_str("r#")?;
         }
-        self.sym.fmt(f)
+        Display::fmt(&self.sym, f)
     }
 }
 
-impl fmt::Debug for Ident {
+impl Debug for Ident {
     // Ident(proc_macro), Ident(r#union)
     #[cfg(not(procmacro2_semver_exempt))]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -839,13 +839,13 @@ impl Literal {
     }
 }
 
-impl fmt::Display for Literal {
+impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.text.fmt(f)
+        Display::fmt(&self.text, f)
     }
 }
 
-impl fmt::Debug for Literal {
+impl Debug for Literal {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Literal");
         debug.field("lit", &format_args!("{}", self.text));

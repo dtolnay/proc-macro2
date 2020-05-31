@@ -86,7 +86,7 @@
 extern crate proc_macro;
 
 use std::cmp::Ordering;
-use std::fmt;
+use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
@@ -234,22 +234,22 @@ impl FromIterator<TokenStream> for TokenStream {
 /// convertible back into the same token stream (modulo spans), except for
 /// possibly `TokenTree::Group`s with `Delimiter::None` delimiters and negative
 /// numeric literals.
-impl fmt::Display for TokenStream {
+impl Display for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Display::fmt(&self.inner, f)
     }
 }
 
 /// Prints token in a form convenient for debugging.
-impl fmt::Debug for TokenStream {
+impl Debug for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
-impl fmt::Debug for LexError {
+impl Debug for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -297,9 +297,9 @@ impl SourceFile {
 }
 
 #[cfg(procmacro2_semver_exempt)]
-impl fmt::Debug for SourceFile {
+impl Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -466,9 +466,9 @@ impl Span {
 }
 
 /// Prints a span in a form convenient for debugging.
-impl fmt::Debug for Span {
+impl Debug for Span {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -540,32 +540,32 @@ impl From<Literal> for TokenTree {
 /// convertible back into the same token tree (modulo spans), except for
 /// possibly `TokenTree::Group`s with `Delimiter::None` delimiters and negative
 /// numeric literals.
-impl fmt::Display for TokenTree {
+impl Display for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            TokenTree::Group(t) => t.fmt(f),
-            TokenTree::Ident(t) => t.fmt(f),
-            TokenTree::Punct(t) => t.fmt(f),
-            TokenTree::Literal(t) => t.fmt(f),
+            TokenTree::Group(t) => Display::fmt(t, f),
+            TokenTree::Ident(t) => Display::fmt(t, f),
+            TokenTree::Punct(t) => Display::fmt(t, f),
+            TokenTree::Literal(t) => Display::fmt(t, f),
         }
     }
 }
 
 /// Prints token tree in a form convenient for debugging.
-impl fmt::Debug for TokenTree {
+impl Debug for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Each of these has the name in the struct type in the derived debug,
         // so don't bother with an extra layer of indirection
         match self {
-            TokenTree::Group(t) => t.fmt(f),
+            TokenTree::Group(t) => Debug::fmt(t, f),
             TokenTree::Ident(t) => {
                 let mut debug = f.debug_struct("Ident");
                 debug.field("sym", &format_args!("{}", t));
                 imp::debug_span_field_if_nontrivial(&mut debug, t.span().inner);
                 debug.finish()
             }
-            TokenTree::Punct(t) => t.fmt(f),
-            TokenTree::Literal(t) => t.fmt(f),
+            TokenTree::Punct(t) => Debug::fmt(t, f),
+            TokenTree::Literal(t) => Debug::fmt(t, f),
         }
     }
 }
@@ -678,15 +678,15 @@ impl Group {
 /// Prints the group as a string that should be losslessly convertible back
 /// into the same group (modulo spans), except for possibly `TokenTree::Group`s
 /// with `Delimiter::None` delimiters.
-impl fmt::Display for Group {
+impl Display for Group {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.inner, formatter)
+        Display::fmt(&self.inner, formatter)
     }
 }
 
-impl fmt::Debug for Group {
+impl Debug for Group {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(&self.inner, formatter)
+        Debug::fmt(&self.inner, formatter)
     }
 }
 
@@ -757,13 +757,13 @@ impl Punct {
 
 /// Prints the punctuation character as a string that should be losslessly
 /// convertible back into the same character.
-impl fmt::Display for Punct {
+impl Display for Punct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.op.fmt(f)
+        Display::fmt(&self.op, f)
     }
 }
 
-impl fmt::Debug for Punct {
+impl Debug for Punct {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Punct");
         debug.field("op", &self.op);
@@ -947,15 +947,15 @@ impl Hash for Ident {
 
 /// Prints the identifier as a string that should be losslessly convertible back
 /// into the same identifier.
-impl fmt::Display for Ident {
+impl Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Display::fmt(&self.inner, f)
     }
 }
 
-impl fmt::Debug for Ident {
+impl Debug for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -1167,22 +1167,22 @@ impl Literal {
     }
 }
 
-impl fmt::Debug for Literal {
+impl Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
-impl fmt::Display for Literal {
+impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Display::fmt(&self.inner, f)
     }
 }
 
 /// Public implementation details for the `TokenStream` type, such as iterators.
 pub mod token_stream {
     use crate::{imp, TokenTree};
-    use std::fmt;
+    use std::fmt::{self, Debug};
     use std::marker;
     use std::rc::Rc;
 
@@ -1206,9 +1206,9 @@ pub mod token_stream {
         }
     }
 
-    impl fmt::Debug for IntoIter {
+    impl Debug for IntoIter {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            self.inner.fmt(f)
+            Debug::fmt(&self.inner, f)
         }
     }
 
