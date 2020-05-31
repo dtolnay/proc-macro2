@@ -1,7 +1,7 @@
 use crate::detection::inside_proc_macro;
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 use std::fmt;
-use std::iter;
+use std::iter::FromIterator;
 use std::ops::RangeBounds;
 use std::panic;
 #[cfg(super_unstable)]
@@ -164,7 +164,7 @@ impl From<TokenTree> for TokenStream {
     }
 }
 
-impl iter::FromIterator<TokenTree> for TokenStream {
+impl FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(trees: I) -> Self {
         if inside_proc_macro() {
             TokenStream::Compiler(DeferredTokenStream::new(
@@ -176,7 +176,7 @@ impl iter::FromIterator<TokenTree> for TokenStream {
     }
 }
 
-impl iter::FromIterator<TokenStream> for TokenStream {
+impl FromIterator<TokenStream> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
         let mut streams = streams.into_iter();
         match streams.next() {

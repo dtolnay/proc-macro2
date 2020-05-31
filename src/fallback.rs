@@ -5,7 +5,7 @@ use std::cell::RefCell;
 #[cfg(span_locations)]
 use std::cmp;
 use std::fmt;
-use std::iter;
+use std::iter::FromIterator;
 use std::mem;
 use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
@@ -176,7 +176,7 @@ impl From<TokenTree> for TokenStream {
     }
 }
 
-impl iter::FromIterator<TokenTree> for TokenStream {
+impl FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
         let mut v = Vec::new();
 
@@ -188,7 +188,7 @@ impl iter::FromIterator<TokenTree> for TokenStream {
     }
 }
 
-impl iter::FromIterator<TokenStream> for TokenStream {
+impl FromIterator<TokenStream> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
         let mut v = Vec::new();
 
