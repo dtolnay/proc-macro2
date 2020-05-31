@@ -727,7 +727,7 @@ impl Display for Ident {
 
 impl Debug for Ident {
     // Ident(proc_macro), Ident(r#union)
-    #[cfg(not(procmacro2_semver_exempt))]
+    #[cfg(not(span_locations))]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = f.debug_tuple("Ident");
         debug.field(&format_args!("{}", self));
@@ -738,7 +738,7 @@ impl Debug for Ident {
     //     sym: proc_macro,
     //     span: bytes(128..138)
     // }
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_locations)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = f.debug_struct("Ident");
         debug.field("sym", &format_args!("{}", self));

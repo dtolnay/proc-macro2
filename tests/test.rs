@@ -299,11 +299,11 @@ fn raw_identifier() {
 fn test_debug_ident() {
     let ident = Ident::new("proc_macro", Span::call_site());
 
-    #[cfg(not(procmacro2_semver_exempt))]
+    #[cfg(not(span_locations))]
     let expected = "Ident(proc_macro)";
 
-    #[cfg(procmacro2_semver_exempt)]
-    let expected = "Ident { sym: proc_macro, span: bytes(0..0) }";
+    #[cfg(span_locations)]
+    let expected = "Ident { sym: proc_macro }";
 
     assert_eq!(expected, format!("{:?}", ident));
 }
