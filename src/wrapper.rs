@@ -46,7 +46,12 @@ impl DeferredTokenStream {
     }
 
     fn evaluate_now(&mut self) {
-        self.stream.extend(self.extra.drain(..));
+        // If-check provides a fast short circuit for the common case of `extra`
+        // being empty, which saves a round trip over the proc macro bridge.
+        // Improves macro expansion time in winrt by 6% in debug mode.
+        if !self.extra.is_empty() {
+            self.stream.extend(self.extra.drain(..));
+        }
     }
 
     fn into_token_stream(mut self) -> proc_macro::TokenStream {
