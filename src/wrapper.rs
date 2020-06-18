@@ -219,10 +219,10 @@ impl Extend<TokenStream> for TokenStream {
             TokenStream::Compiler(tts) => {
                 tts.evaluate_now();
                 tts.stream
-                    .extend(streams.into_iter().map(|stream| stream.unwrap_nightly()));
+                    .extend(streams.into_iter().map(TokenStream::unwrap_nightly));
             }
             TokenStream::Fallback(tts) => {
-                tts.extend(streams.into_iter().map(|stream| stream.unwrap_stable()));
+                tts.extend(streams.into_iter().map(TokenStream::unwrap_stable));
             }
         }
     }
