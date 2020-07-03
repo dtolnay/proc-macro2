@@ -127,7 +127,7 @@ pub struct TokenStream {
     _marker: marker::PhantomData<Rc<()>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum TokenStreamItem {
     Imp(imp::TokenStream),
     String(String),
@@ -136,6 +136,18 @@ enum TokenStreamItem {
 impl From<imp::TokenStream> for TokenStreamItem {
     fn from(imp: imp::TokenStream) -> Self {
         TokenStreamItem::Imp(imp)
+    }
+}
+
+impl<'a> From<&'a str> for TokenStreamItem {
+    fn from(s: &str) -> Self {
+        s.to_owned().into()
+    }
+}
+
+impl From<String> for TokenStreamItem {
+    fn from(s: String) -> Self {
+        TokenStreamItem::String(s)
     }
 }
 
@@ -172,13 +184,26 @@ impl From<TokenStreamItem> for imp::TokenStream {
 
 impl From<TokenStream> for imp::TokenStream {
     fn from(s: TokenStream) -> Self {
-        s.inner
-            .into_iter()
-            .fold(imp::TokenStream::new(), |mut stream, next| {
-                let s: imp::TokenStream = next.into();
-                stream.extend(s);
-                stream
-            })
+        let mut imp = imp::TokenStream::new();
+        let mut previous: Option<String> = None;
+        for next in s.inner.into_iter() {
+            match next {
+                TokenStreamItem::String(next_s) => match &mut previous {
+                    Some(previous_s) => previous_s.push_str(&next_s),
+                    None => previous = Some(next_s),
+                },
+                TokenStreamItem::Imp(i) => {
+                    if let Some(s) = std::mem::replace(&mut previous, None) {
+                        imp.extend(s.parse::<imp::TokenStream>());
+                    }
+                    imp.extend(i);
+                }
+            }
+        }
+        if let Some(s) = previous {
+            imp.extend(s.parse::<imp::TokenStream>());
+        }
+        imp
     }
 }
 
@@ -191,7 +216,7 @@ pub struct LexError {
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
         let mut items = VecDeque::new();
-        items.push_front(inner.into());
+        items.push_back(inner.into());
         TokenStream {
             inner: items,
             _marker: marker::PhantomData,
@@ -200,7 +225,7 @@ impl TokenStream {
 
     fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
         let mut items = VecDeque::new();
-        items.push_front(inner.into());
+        items.push_back(inner.into());
         TokenStream {
             inner: items,
             _marker: marker::PhantomData,
@@ -209,7 +234,10 @@ impl TokenStream {
 
     /// Returns an empty `TokenStream` containing no token trees.
     pub fn new() -> TokenStream {
-        TokenStream::_new(imp::TokenStream::new())
+        TokenStream {
+            inner: VecDeque::new(),
+            _marker: marker::PhantomData,
+        }
     }
 
     /// Checks if this `TokenStream` is empty.
@@ -219,6 +247,18 @@ impl TokenStream {
             Some(TokenStreamItem::Imp(s)) => s.is_empty(),
             Some(TokenStreamItem::String(s)) => s.is_empty(),
         }
+    }
+
+    /// Push an unchecked string into the stream
+    pub fn push_str(&mut self, str: &str) {
+        match self.inner.back_mut() {
+            Some(TokenStreamItem::String(s)) => {
+                s.push_str(str);
+            }
+            _ => {
+                self.inner.push_back(str.into());
+            }
+        };
     }
 }
 
