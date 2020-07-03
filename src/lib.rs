@@ -326,14 +326,8 @@ impl From<proc_macro::TokenStream> for TokenStream {
 #[cfg(use_proc_macro)]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
-        inner
-            .inner
-            .into_iter()
-            .fold(proc_macro::TokenStream::new(), |mut stream, next| {
-                let s: proc_macro::TokenStream = next.into();
-                stream.extend(s);
-                stream
-            })
+        let stream = imp::TokenStream::from(inner);
+        stream.into()
     }
 }
 
@@ -354,8 +348,8 @@ impl Extend<TokenTree> for TokenStream {
 
 impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
-        let iter = streams.into_iter().flat_map(|t| t.inner);
-        self.inner.extend(iter);
+        self.inner
+            .extend(streams.into_iter().flat_map(|stream| stream.inner));
     }
 }
 
