@@ -87,7 +87,6 @@
 extern crate proc_macro;
 
 use std::cmp::Ordering;
-use std::collections::VecDeque;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
@@ -123,7 +122,7 @@ mod imp;
 /// `#[proc_macro_attribute]` and `#[proc_macro_derive]` definitions.
 #[derive(Clone)]
 pub struct TokenStream {
-    inner: VecDeque<TokenStreamItem>,
+    inner: Vec<TokenStreamItem>,
     _marker: marker::PhantomData<Rc<()>>,
 }
 
@@ -215,8 +214,8 @@ pub struct LexError {
 
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
-        let mut items = VecDeque::new();
-        items.push_back(inner.into());
+        let mut items = Vec::new();
+        items.push(inner.into());
         TokenStream {
             inner: items,
             _marker: marker::PhantomData,
@@ -224,8 +223,8 @@ impl TokenStream {
     }
 
     fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
-        let mut items = VecDeque::new();
-        items.push_back(inner.into());
+        let mut items = Vec::new();
+        items.push(inner.into());
         TokenStream {
             inner: items,
             _marker: marker::PhantomData,
@@ -235,14 +234,14 @@ impl TokenStream {
     /// Returns an empty `TokenStream` containing no token trees.
     pub fn new() -> TokenStream {
         TokenStream {
-            inner: VecDeque::new(),
+            inner: Vec::new(),
             _marker: marker::PhantomData,
         }
     }
 
     /// Checks if this `TokenStream` is empty.
     pub fn is_empty(&self) -> bool {
-        match self.inner.front() {
+        match self.inner.first() {
             None => true,
             Some(TokenStreamItem::Imp(s)) => s.is_empty(),
             Some(TokenStreamItem::String(s)) => s.is_empty(),
@@ -251,12 +250,12 @@ impl TokenStream {
 
     /// Push an unchecked string into the stream
     pub fn push_str(&mut self, str: &str) {
-        match self.inner.back_mut() {
+        match self.inner.last_mut() {
             Some(TokenStreamItem::String(s)) => {
                 s.push_str(str);
             }
             _ => {
-                self.inner.push_back(str.into());
+                self.inner.push(str.into());
             }
         };
     }
