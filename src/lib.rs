@@ -194,14 +194,14 @@ impl From<TokenStream> for imp::TokenStream {
                 },
                 TokenStreamItem::Imp(i) => {
                     if let Some(s) = std::mem::replace(&mut previous, None) {
-                        imp.extend(s.parse::<imp::TokenStream>());
+                        imp.extend(s.parse::<imp::TokenStream>().unwrap());
                     }
                     imp.extend(i);
                 }
             }
         }
         if let Some(s) = previous {
-            imp.extend(s.parse::<imp::TokenStream>());
+            imp.extend(s.parse::<imp::TokenStream>().unwrap());
         }
         imp
     }
@@ -259,6 +259,32 @@ impl TokenStream {
                 self.inner.push_back(str.into());
             }
         };
+    }
+
+    /// Push an unchecked string into the stream
+    pub fn push_group(&mut self, delimiter: Delimiter, stream: TokenStream) {
+        if stream
+            .inner
+            .iter()
+            .all(|s| matches!(s, TokenStreamItem::String(_)))
+        {
+            self.push_str(match delimiter {
+                Delimiter::Bracket => "[",
+                Delimiter::Brace => "{",
+                Delimiter::Parenthesis => "(",
+                Delimiter::None => "",
+            });
+            self.inner.extend(stream.inner);
+            self.push_str(match delimiter {
+                Delimiter::Bracket => "]",
+                Delimiter::Brace => "}",
+                Delimiter::Parenthesis => ")",
+                Delimiter::None => "",
+            });
+        } else {
+            let tree: TokenTree = Group::new(delimiter, stream.into()).into();
+            self.extend(std::iter::once(tree));
+        }
     }
 }
 
@@ -329,7 +355,7 @@ impl Extend<TokenTree> for TokenStream {
 impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
         let iter = streams.into_iter().flat_map(|t| t.inner);
-        self.inner.extend(iter)
+        self.inner.extend(iter);
     }
 }
 
