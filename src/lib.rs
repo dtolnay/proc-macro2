@@ -87,6 +87,7 @@
 extern crate proc_macro;
 
 use std::cmp::Ordering;
+use std::collections::VecDeque;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
@@ -122,8 +123,63 @@ mod imp;
 /// `#[proc_macro_attribute]` and `#[proc_macro_derive]` definitions.
 #[derive(Clone)]
 pub struct TokenStream {
-    inner: imp::TokenStream,
+    inner: VecDeque<TokenStreamItem>,
     _marker: marker::PhantomData<Rc<()>>,
+}
+
+#[derive(Clone)]
+enum TokenStreamItem {
+    Imp(imp::TokenStream),
+    String(String),
+}
+
+impl From<imp::TokenStream> for TokenStreamItem {
+    fn from(imp: imp::TokenStream) -> Self {
+        TokenStreamItem::Imp(imp)
+    }
+}
+
+impl From<fallback::TokenStream> for TokenStreamItem {
+    fn from(imp: fallback::TokenStream) -> Self {
+        TokenStreamItem::Imp(imp.into())
+    }
+}
+
+impl From<TokenStreamItem> for proc_macro::TokenStream {
+    fn from(item: TokenStreamItem) -> Self {
+        match item {
+            TokenStreamItem::Imp(i) => i.into(),
+            TokenStreamItem::String(s) => s.parse().expect("token stream parse failed"),
+        }
+    }
+}
+
+impl From<TokenTree> for TokenStreamItem {
+    fn from(tree: TokenTree) -> Self {
+        let stream: imp::TokenStream = tree.into();
+        stream.into()
+    }
+}
+
+impl From<TokenStreamItem> for imp::TokenStream {
+    fn from(item: TokenStreamItem) -> Self {
+        match item {
+            TokenStreamItem::Imp(s) => s,
+            TokenStreamItem::String(s) => s.parse().expect("token stream parse failed"),
+        }
+    }
+}
+
+impl From<TokenStream> for imp::TokenStream {
+    fn from(s: TokenStream) -> Self {
+        s.inner
+            .into_iter()
+            .fold(imp::TokenStream::new(), |mut stream, next| {
+                let s: imp::TokenStream = next.into();
+                stream.extend(s);
+                stream
+            })
+    }
 }
 
 /// Error returned from `TokenStream::from_str`.
@@ -134,15 +190,19 @@ pub struct LexError {
 
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
+        let mut items = VecDeque::new();
+        items.push_front(inner.into());
         TokenStream {
-            inner,
+            inner: items,
             _marker: marker::PhantomData,
         }
     }
 
     fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
+        let mut items = VecDeque::new();
+        items.push_front(inner.into());
         TokenStream {
-            inner: inner.into(),
+            inner: items,
             _marker: marker::PhantomData,
         }
     }
@@ -154,7 +214,11 @@ impl TokenStream {
 
     /// Checks if this `TokenStream` is empty.
     pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
+        match self.inner.front() {
+            None => true,
+            Some(TokenStreamItem::Imp(s)) => s.is_empty(),
+            Some(TokenStreamItem::String(s)) => s.is_empty(),
+        }
     }
 }
 
@@ -196,7 +260,14 @@ impl From<proc_macro::TokenStream> for TokenStream {
 #[cfg(use_proc_macro)]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
-        inner.inner.into()
+        inner
+            .inner
+            .into_iter()
+            .fold(proc_macro::TokenStream::new(), |mut stream, next| {
+                let s: proc_macro::TokenStream = next.into();
+                stream.extend(s);
+                stream
+            })
     }
 }
 
@@ -208,14 +279,17 @@ impl From<TokenTree> for TokenStream {
 
 impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, streams: I) {
-        self.inner.extend(streams)
+        let iter = streams
+            .into_iter()
+            .map(|t| <TokenStreamItem as From<TokenTree>>::from(t));
+        self.inner.extend(iter)
     }
 }
 
 impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
-        self.inner
-            .extend(streams.into_iter().map(|stream| stream.inner))
+        let iter = streams.into_iter().flat_map(|t| t.inner);
+        self.inner.extend(iter)
     }
 }
 
@@ -227,7 +301,11 @@ impl FromIterator<TokenTree> for TokenStream {
 }
 impl FromIterator<TokenStream> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
-        TokenStream::_new(streams.into_iter().map(|i| i.inner).collect())
+        let inner = streams.into_iter().flat_map(|i| i.inner).collect();
+        TokenStream {
+            inner,
+            _marker: marker::PhantomData,
+        }
     }
 }
 
@@ -237,14 +315,16 @@ impl FromIterator<TokenStream> for TokenStream {
 /// numeric literals.
 impl Display for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.inner, f)
+        let stream: imp::TokenStream = self.clone().into();
+        Display::fmt(&stream, f)
     }
 }
 
 /// Prints token in a form convenient for debugging.
 impl Debug for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(&self.inner, f)
+        let stream: imp::TokenStream = self.clone().into();
+        Debug::fmt(&stream, f)
     }
 }
 
@@ -619,7 +699,7 @@ impl Group {
     /// method below.
     pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
         Group {
-            inner: imp::Group::new(delimiter, stream.inner),
+            inner: imp::Group::new(delimiter, stream.into()),
         }
     }
 
@@ -1220,8 +1300,9 @@ pub mod token_stream {
         type IntoIter = IntoIter;
 
         fn into_iter(self) -> IntoIter {
+            let imp: imp::TokenStream = self.into();
             IntoIter {
-                inner: self.inner.into_iter(),
+                inner: imp.into_iter(),
                 _marker: marker::PhantomData,
             }
         }
