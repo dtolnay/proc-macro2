@@ -150,12 +150,7 @@ impl From<String> for TokenStreamItem {
     }
 }
 
-impl From<fallback::TokenStream> for TokenStreamItem {
-    fn from(imp: fallback::TokenStream) -> Self {
-        TokenStreamItem::Imp(imp.into())
-    }
-}
-
+#[cfg(use_proc_macro)]
 impl From<TokenStreamItem> for proc_macro::TokenStream {
     fn from(item: TokenStreamItem) -> Self {
         match item {
@@ -222,15 +217,6 @@ impl TokenStream {
         }
     }
 
-    fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
-        let mut items = Vec::new();
-        items.push(inner.into());
-        TokenStream {
-            inner: items,
-            _marker: marker::PhantomData,
-        }
-    }
-
     /// Returns an empty `TokenStream` containing no token trees.
     pub fn new() -> TokenStream {
         TokenStream {
@@ -262,11 +248,10 @@ impl TokenStream {
 
     /// Push an unchecked string into the stream
     pub fn push_group(&mut self, delimiter: Delimiter, stream: TokenStream) {
-        if stream
-            .inner
-            .iter()
-            .all(|s| matches!(s, TokenStreamItem::String(_)))
-        {
+        if stream.inner.iter().all(|s| match s {
+            TokenStreamItem::String(_) => true,
+            _ => false,
+        }) {
             self.push_str(match delimiter {
                 Delimiter::Bracket => "[",
                 Delimiter::Brace => "{",
