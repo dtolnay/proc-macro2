@@ -188,14 +188,20 @@ impl From<TokenStream> for imp::TokenStream {
                 },
                 TokenStreamItem::Imp(i) => {
                     if let Some(s) = std::mem::replace(&mut previous, None) {
-                        imp.extend(s.parse::<imp::TokenStream>().unwrap());
+                        imp.extend(
+                            s.parse::<imp::TokenStream>()
+                                .expect("token stream parse failed"),
+                        );
                     }
                     imp.extend(i);
                 }
             }
         }
         if let Some(s) = previous {
-            imp.extend(s.parse::<imp::TokenStream>().unwrap());
+            imp.extend(
+                s.parse::<imp::TokenStream>()
+                    .expect("token stream parse failed"),
+            );
         }
         imp
     }
@@ -246,25 +252,15 @@ impl TokenStream {
         };
     }
 
-    /// Push an unchecked string into the stream
+    /// Push a delimited inner `TokenStream`
     pub fn push_group(&mut self, delimiter: Delimiter, stream: TokenStream) {
-        if stream.inner.iter().all(|s| match s {
-            TokenStreamItem::String(_) => true,
+        if !stream.inner.iter().any(|s| match s {
+            TokenStreamItem::Imp(_) => true,
             _ => false,
         }) {
-            self.push_str(match delimiter {
-                Delimiter::Bracket => "[",
-                Delimiter::Brace => "{",
-                Delimiter::Parenthesis => "(",
-                Delimiter::None => "",
-            });
+            self.push_str(delimiter.opening());
             self.inner.extend(stream.inner);
-            self.push_str(match delimiter {
-                Delimiter::Bracket => "]",
-                Delimiter::Brace => "}",
-                Delimiter::Parenthesis => ")",
-                Delimiter::None => "",
-            });
+            self.push_str(delimiter.closing());
         } else {
             let tree: TokenTree = Group::new(delimiter, stream.into()).into();
             self.extend(std::iter::once(tree));
@@ -723,6 +719,26 @@ pub enum Delimiter {
     /// Implicit delimiters may not survive roundtrip of a token stream through
     /// a string.
     None,
+}
+
+impl Delimiter {
+    fn opening(self) -> &'static str {
+        match self {
+            Delimiter::Parenthesis => "(",
+            Delimiter::Brace => "{",
+            Delimiter::Bracket => "[",
+            Delimiter::None => "",
+        }
+    }
+
+    fn closing(self) -> &'static str {
+        match self {
+            Delimiter::Parenthesis => ")",
+            Delimiter::Brace => "}",
+            Delimiter::Bracket => "]",
+            Delimiter::None => "",
+        }
+    }
 }
 
 impl Group {
