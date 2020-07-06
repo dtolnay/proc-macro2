@@ -130,6 +130,7 @@ pub struct TokenStream {
 enum TokenStreamItem {
     Imp(imp::TokenStream),
     String(String),
+    Group(Delimiter, TokenStream),
 }
 
 impl From<imp::TokenStream> for TokenStreamItem {
@@ -156,6 +157,11 @@ impl From<TokenStreamItem> for proc_macro::TokenStream {
         match item {
             TokenStreamItem::Imp(i) => i.into(),
             TokenStreamItem::String(s) => s.parse().expect("token stream parse failed"),
+            TokenStreamItem::Group(d, inner) => {
+                let group: TokenTree = Group::new(d, inner).into();
+                let imp: imp::TokenStream = group.into();
+                imp.into()
+            }
         }
     }
 }
@@ -172,22 +178,28 @@ impl From<TokenStreamItem> for imp::TokenStream {
         match item {
             TokenStreamItem::Imp(s) => s,
             TokenStreamItem::String(s) => s.parse().expect("token stream parse failed"),
+            TokenStreamItem::Group(delimiter, inner) => {
+                let tree: TokenTree = Group::new(delimiter, inner).into();
+                tree.into()
+            }
         }
     }
 }
 
 impl From<TokenStream> for imp::TokenStream {
     fn from(s: TokenStream) -> Self {
-        let mut imp = imp::TokenStream::new();
-        let mut previous: Option<String> = None;
-        for next in s.inner.into_iter() {
+        fn process(
+            next: TokenStreamItem,
+            previous: &mut Option<String>,
+            imp: &mut imp::TokenStream,
+        ) {
             match next {
-                TokenStreamItem::String(next_s) => match &mut previous {
+                TokenStreamItem::String(next_s) => match previous {
                     Some(previous_s) => previous_s.push_str(&next_s),
-                    None => previous = Some(next_s),
+                    None => *previous = Some(next_s),
                 },
                 TokenStreamItem::Imp(i) => {
-                    if let Some(s) = std::mem::replace(&mut previous, None) {
+                    if let Some(s) = std::mem::replace(previous, None) {
                         imp.extend(
                             s.parse::<imp::TokenStream>()
                                 .expect("token stream parse failed"),
@@ -195,7 +207,23 @@ impl From<TokenStream> for imp::TokenStream {
                     }
                     imp.extend(i);
                 }
+                TokenStreamItem::Group(d, inner) => {
+                    if let Some(s) = std::mem::replace(previous, None) {
+                        imp.extend(
+                            s.parse::<imp::TokenStream>()
+                                .expect("token stream parse failed"),
+                        );
+                    }
+                    let tree: TokenTree = Group::new(d, inner.into()).into();
+                    imp.extend(std::iter::once(tree));
+                }
             }
+        }
+
+        let mut imp = imp::TokenStream::new();
+        let mut previous: Option<String> = None;
+        for next in s.inner.into_iter() {
+            process(next, &mut previous, &mut imp);
         }
         if let Some(s) = previous {
             imp.extend(
@@ -237,6 +265,7 @@ impl TokenStream {
             None => true,
             Some(TokenStreamItem::Imp(s)) => s.is_empty(),
             Some(TokenStreamItem::String(s)) => s.is_empty(),
+            Some(TokenStreamItem::Group(_, _)) => false,
         }
     }
 
@@ -254,17 +283,7 @@ impl TokenStream {
 
     /// Push a delimited inner `TokenStream`
     pub fn push_group(&mut self, delimiter: Delimiter, stream: TokenStream) {
-        if !stream.inner.iter().any(|s| match s {
-            TokenStreamItem::Imp(_) => true,
-            _ => false,
-        }) {
-            self.push_str(delimiter.opening());
-            self.inner.extend(stream.inner);
-            self.push_str(delimiter.closing());
-        } else {
-            let tree: TokenTree = Group::new(delimiter, stream.into()).into();
-            self.extend(std::iter::once(tree));
-        }
+        self.inner.push(TokenStreamItem::Group(delimiter, stream));
     }
 }
 
@@ -719,26 +738,6 @@ pub enum Delimiter {
     /// Implicit delimiters may not survive roundtrip of a token stream through
     /// a string.
     None,
-}
-
-impl Delimiter {
-    fn opening(self) -> &'static str {
-        match self {
-            Delimiter::Parenthesis => "(",
-            Delimiter::Brace => "{",
-            Delimiter::Bracket => "[",
-            Delimiter::None => "",
-        }
-    }
-
-    fn closing(self) -> &'static str {
-        match self {
-            Delimiter::Parenthesis => ")",
-            Delimiter::Brace => "}",
-            Delimiter::Bracket => "]",
-            Delimiter::None => "",
-        }
-    }
 }
 
 impl Group {
