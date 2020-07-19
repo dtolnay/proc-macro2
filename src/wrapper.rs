@@ -382,7 +382,6 @@ impl Span {
         }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     #[cfg(hygiene)]
     pub fn mixed_site() -> Span {
         if inside_proc_macro() {
@@ -401,7 +400,6 @@ impl Span {
         }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn resolved_at(&self, other: Span) -> Span {
         match (self, other) {
             #[cfg(hygiene)]
@@ -416,7 +414,6 @@ impl Span {
         }
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     pub fn located_at(&self, other: Span) -> Span {
         match (self, other) {
             #[cfg(hygiene)]
