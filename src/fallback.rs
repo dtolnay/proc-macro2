@@ -573,17 +573,27 @@ impl Group {
 }
 
 impl Display for Group {
+    // We attempt to match libproc_macro's formatting.
+    // Empty parens: ()
+    // Nonempty parens: (...)
+    // Empty brackets: []
+    // Nonempty brackets: [...]
+    // Empty braces: { }
+    // Nonempty braces: { ... }
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (left, right) = match self.delimiter {
+        let (open, close) = match self.delimiter {
             Delimiter::Parenthesis => ("(", ")"),
-            Delimiter::Brace => ("{", "}"),
+            Delimiter::Brace => ("{ ", "}"),
             Delimiter::Bracket => ("[", "]"),
             Delimiter::None => ("", ""),
         };
 
-        f.write_str(left)?;
+        f.write_str(open)?;
         Display::fmt(&self.stream, f)?;
-        f.write_str(right)?;
+        if self.delimiter == Delimiter::Brace && !self.stream.inner.is_empty() {
+            f.write_str(" ")?;
+        }
+        f.write_str(close)?;
 
         Ok(())
     }
