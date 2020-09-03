@@ -157,29 +157,14 @@ impl Display for TokenStream {
             }
             joint = false;
             match tt {
-                TokenTree::Group(tt) => {
-                    let (start, end) = match tt.delimiter() {
-                        Delimiter::Parenthesis => ("(", ")"),
-                        Delimiter::Brace => ("{", "}"),
-                        Delimiter::Bracket => ("[", "]"),
-                        Delimiter::None => ("", ""),
-                    };
-                    if tt.stream().into_iter().next().is_none() {
-                        write!(f, "{} {}", start, end)?
-                    } else {
-                        write!(f, "{} {} {}", start, tt.stream(), end)?
-                    }
-                }
-                TokenTree::Ident(tt) => write!(f, "{}", tt)?,
+                TokenTree::Group(tt) => Display::fmt(tt, f),
+                TokenTree::Ident(tt) => Display::fmt(tt, f),
                 TokenTree::Punct(tt) => {
-                    write!(f, "{}", tt.as_char())?;
-                    match tt.spacing() {
-                        Spacing::Alone => {}
-                        Spacing::Joint => joint = true,
-                    }
+                    joint = tt.spacing() == Spacing::Joint;
+                    Display::fmt(tt, f)
                 }
-                TokenTree::Literal(tt) => write!(f, "{}", tt)?,
-            }
+                TokenTree::Literal(tt) => Display::fmt(tt, f),
+            }?
         }
 
         Ok(())
