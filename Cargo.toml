@@ -27,8 +27,6 @@ unicode-xid = "0.2"
 
 [dev-dependencies]
 quote = { version = "1.0", default_features = false }
-rustversion = "1.0"
-trybuild = "1.0"
 
 [features]
 proc-macro = []
