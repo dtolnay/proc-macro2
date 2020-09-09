@@ -86,17 +86,6 @@
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
 
-use std::cmp::Ordering;
-use std::fmt::{self, Debug, Display};
-use std::hash::{Hash, Hasher};
-use std::iter::FromIterator;
-use std::marker::PhantomData;
-use std::ops::RangeBounds;
-#[cfg(procmacro2_semver_exempt)]
-use std::path::PathBuf;
-use std::rc::Rc;
-use std::str::FromStr;
-
 mod parse;
 
 #[cfg(wrap_proc_macro)]
@@ -112,6 +101,17 @@ use crate::fallback as imp;
 #[path = "wrapper.rs"]
 #[cfg(wrap_proc_macro)]
 mod imp;
+
+use std::cmp::Ordering;
+use std::fmt::{self, Debug, Display};
+use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
+use std::marker::PhantomData;
+use std::ops::RangeBounds;
+#[cfg(procmacro2_semver_exempt)]
+use std::path::PathBuf;
+use std::rc::Rc;
+use std::str::FromStr;
 
 /// An abstract stream of tokens, or more concretely a sequence of token trees.
 ///
