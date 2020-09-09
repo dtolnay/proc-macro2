@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use std::panic::{RefUnwindSafe, UnwindSafe};
 use std::rc::Rc;
 
 // Zero sized marker with the correct set of autotrait impls we want all proc
@@ -12,3 +13,6 @@ mod value {
 }
 
 pub(crate) struct ProcMacroAutoTraits(Rc<()>);
+
+impl UnwindSafe for ProcMacroAutoTraits {}
+impl RefUnwindSafe for ProcMacroAutoTraits {}
