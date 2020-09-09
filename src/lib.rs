@@ -90,7 +90,7 @@ use std::cmp::Ordering;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
-use std::marker;
+use std::marker::PhantomData;
 use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
@@ -123,27 +123,27 @@ mod imp;
 #[derive(Clone)]
 pub struct TokenStream {
     inner: imp::TokenStream,
-    _marker: marker::PhantomData<Rc<()>>,
+    _marker: PhantomData<Rc<()>>,
 }
 
 /// Error returned from `TokenStream::from_str`.
 pub struct LexError {
     inner: imp::LexError,
-    _marker: marker::PhantomData<Rc<()>>,
+    _marker: PhantomData<Rc<()>>,
 }
 
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
         TokenStream {
             inner,
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
     fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
         TokenStream {
             inner: inner.into(),
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -180,7 +180,7 @@ impl FromStr for TokenStream {
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         let e = src.parse().map_err(|e| LexError {
             inner: e,
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         })?;
         Ok(TokenStream::_new(e))
     }
@@ -261,7 +261,7 @@ impl Debug for LexError {
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     inner: imp::SourceFile,
-    _marker: marker::PhantomData<Rc<()>>,
+    _marker: PhantomData<Rc<()>>,
 }
 
 #[cfg(procmacro2_semver_exempt)]
@@ -269,7 +269,7 @@ impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
             inner,
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -338,21 +338,21 @@ impl PartialOrd for LineColumn {
 #[derive(Copy, Clone)]
 pub struct Span {
     inner: imp::Span,
-    _marker: marker::PhantomData<Rc<()>>,
+    _marker: PhantomData<Rc<()>>,
 }
 
 impl Span {
     fn _new(inner: imp::Span) -> Span {
         Span {
             inner,
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
     fn _new_stable(inner: fallback::Span) -> Span {
         Span {
             inner: inner.into(),
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -840,14 +840,14 @@ impl Debug for Punct {
 #[derive(Clone)]
 pub struct Ident {
     inner: imp::Ident,
-    _marker: marker::PhantomData<Rc<()>>,
+    _marker: PhantomData<Rc<()>>,
 }
 
 impl Ident {
     fn _new(inner: imp::Ident) -> Ident {
         Ident {
             inner,
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -968,7 +968,7 @@ impl Debug for Ident {
 #[derive(Clone)]
 pub struct Literal {
     inner: imp::Literal,
-    _marker: marker::PhantomData<Rc<()>>,
+    _marker: PhantomData<Rc<()>>,
 }
 
 macro_rules! suffixed_int_literals {
@@ -1015,14 +1015,14 @@ impl Literal {
     fn _new(inner: imp::Literal) -> Literal {
         Literal {
             inner,
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
     fn _new_stable(inner: fallback::Literal) -> Literal {
         Literal {
             inner: inner.into(),
-            _marker: marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -1183,7 +1183,7 @@ impl Display for Literal {
 pub mod token_stream {
     use crate::{imp, TokenTree};
     use std::fmt::{self, Debug};
-    use std::marker;
+    use std::marker::PhantomData;
     use std::rc::Rc;
 
     pub use crate::TokenStream;
@@ -1195,7 +1195,7 @@ pub mod token_stream {
     #[derive(Clone)]
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
-        _marker: marker::PhantomData<Rc<()>>,
+        _marker: PhantomData<Rc<()>>,
     }
 
     impl Iterator for IntoIter {
@@ -1219,7 +1219,7 @@ pub mod token_stream {
         fn into_iter(self) -> IntoIter {
             IntoIter {
                 inner: self.inner.into_iter(),
-                _marker: marker::PhantomData,
+                _marker: PhantomData,
             }
         }
     }
