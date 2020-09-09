@@ -1,0 +1,13 @@
+[package]
+name = "proc-macro2-ui-test"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+[[test]]
+name = "compiletest"
+path = "compiletest.rs"
+
+[dev-dependencies]
+proc-macro2 = { path = "../.." }
+trybuild = { version = "1.0", features = ["diff"] }

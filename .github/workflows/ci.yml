@@ -40,6 +40,7 @@ jobs:
       - run: cargo test --no-default-features
       - run: cargo test --no-default-features -- --ignored # run the ignored test to make sure the `proc-macro` feature is disabled
       - run: cargo test --features span-locations
+      - run: cargo test --manifest-path tests/ui/Cargo.toml
       - run: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
       - run: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test --no-default-features
       - run: RUSTFLAGS='-Z allow-features=' cargo test

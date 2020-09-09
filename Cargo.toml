@@ -40,7 +40,7 @@ span-locations = []
 nightly = []
 
 [workspace]
-members = ["benches/bench-libproc-macro"]
+members = ["benches/bench-libproc-macro", "tests/ui"]
 
 [patch.crates-io]
 # Our doc tests depend on quote which depends on proc-macro2. Without this line,
