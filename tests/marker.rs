@@ -1,4 +1,5 @@
 use proc_macro2::*;
+use std::panic::{RefUnwindSafe, UnwindSafe};
 
 macro_rules! assert_impl {
     ($ty:ident is $($marker:ident) and +) => {
@@ -10,7 +11,7 @@ macro_rules! assert_impl {
         }
     };
 
-    ($ty:ident is not $($marker:ident) or +) => {
+    ($ty:ident is not $($marker:ident) or + but is $($implemented:ident) and +) => {
         #[test]
         #[allow(non_snake_case)]
         fn $ty() {
@@ -33,27 +34,30 @@ macro_rules! assert_impl {
                     <$ty>::assert_not_implemented();
                 }
             )+
+
+            fn assert_implemented<T: $($implemented +)+>() {}
+            assert_implemented::<$ty>();
         }
     };
 }
 
-assert_impl!(Delimiter is Send and Sync);
-assert_impl!(Spacing is Send and Sync);
+assert_impl!(Delimiter is Send and Sync and UnwindSafe and RefUnwindSafe);
+assert_impl!(Spacing is Send and Sync and UnwindSafe and RefUnwindSafe);
 
-assert_impl!(Group is not Send or Sync);
-assert_impl!(Ident is not Send or Sync);
-assert_impl!(LexError is not Send or Sync);
-assert_impl!(Literal is not Send or Sync);
-assert_impl!(Punct is not Send or Sync);
-assert_impl!(Span is not Send or Sync);
-assert_impl!(TokenStream is not Send or Sync);
-assert_impl!(TokenTree is not Send or Sync);
+assert_impl!(Group is not Send or Sync but is UnwindSafe and RefUnwindSafe);
+assert_impl!(Ident is not Send or Sync but is UnwindSafe and RefUnwindSafe);
+assert_impl!(LexError is not Send or Sync but is UnwindSafe and RefUnwindSafe);
+assert_impl!(Literal is not Send or Sync but is UnwindSafe and RefUnwindSafe);
+assert_impl!(Punct is not Send or Sync but is UnwindSafe and RefUnwindSafe);
+assert_impl!(Span is not Send or Sync but is UnwindSafe and RefUnwindSafe);
+assert_impl!(TokenStream is not Send or Sync but is UnwindSafe and RefUnwindSafe);
+assert_impl!(TokenTree is not Send or Sync but is UnwindSafe and RefUnwindSafe);
 
 #[cfg(procmacro2_semver_exempt)]
 mod semver_exempt {
     use super::*;
 
-    assert_impl!(LineColumn is Send and Sync);
+    assert_impl!(LineColumn is Send and Sync and UnwindSafe and RefUnwindSafe);
 
-    assert_impl!(SourceFile is not Send or Sync);
+    assert_impl!(SourceFile is not Send or Sync but is UnwindSafe and RefUnwindSafe);
 }
