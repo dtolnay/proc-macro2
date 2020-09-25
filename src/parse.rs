@@ -585,8 +585,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
         }
     }
 
-    let rest = input.advance(len);
-    if !(has_dot || has_exp || rest.starts_with("f32") || rest.starts_with("f64")) {
+    if !(has_dot || has_exp) {
         return Err(LexError);
     }
 
