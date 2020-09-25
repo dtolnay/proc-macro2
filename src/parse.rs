@@ -3,7 +3,6 @@ use crate::fallback::{
 };
 use crate::{Delimiter, Punct, Spacing, TokenTree};
 use std::str::{Bytes, CharIndices, Chars};
-use unicode_xid::UnicodeXID;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub(crate) struct Cursor<'a> {
@@ -143,7 +142,7 @@ fn is_whitespace(ch: char) -> bool {
 
 fn word_break(input: Cursor) -> Result<Cursor, LexError> {
     match input.chars().next() {
-        Some(ch) if UnicodeXID::is_xid_continue(ch) => Err(LexError),
+        Some(ch) if is_ident_continue(ch) => Err(LexError),
         Some(_) | None => Ok(input),
     }
 }
