@@ -590,6 +590,11 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
     }
 
     if has_exp {
+        let token_before_exp = if has_dot {
+            Ok(input.advance(len - 1))
+        } else {
+            Err(LexError)
+        };
         let mut has_sign = false;
         let mut has_exp_value = false;
         while let Some(&ch) = chars.peek() {
@@ -599,7 +604,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
                         break;
                     }
                     if has_sign {
-                        return Err(LexError);
+                        return token_before_exp;
                     }
                     chars.next();
                     len += 1;
@@ -618,7 +623,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
             }
         }
         if !has_exp_value {
-            return Err(LexError);
+            return token_before_exp;
         }
     }
 
