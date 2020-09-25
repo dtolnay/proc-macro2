@@ -648,10 +648,25 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
     let mut len = 0;
     let mut empty = true;
     for b in input.bytes() {
-        let digit = match b {
-            b'0'..=b'9' => (b - b'0') as u64,
-            b'a'..=b'f' => 10 + (b - b'a') as u64,
-            b'A'..=b'F' => 10 + (b - b'A') as u64,
+        match b {
+            b'0'..=b'9' => {
+                let digit = (b - b'0') as u64;
+                if digit >= base {
+                    return Err(LexError);
+                }
+            }
+            b'a'..=b'f' => {
+                let digit = 10 + (b - b'a') as u64;
+                if digit >= base {
+                    break;
+                }
+            }
+            b'A'..=b'F' => {
+                let digit = 10 + (b - b'A') as u64;
+                if digit >= base {
+                    break;
+                }
+            }
             b'_' => {
                 if empty && base == 10 {
                     return Err(LexError);
@@ -661,9 +676,6 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
             }
             _ => break,
         };
-        if digit >= base {
-            return Err(LexError);
-        }
         len += 1;
         empty = false;
     }
