@@ -117,6 +117,7 @@ fn literal_suffix() {
     assert_eq!(token_count("b'b'b"), 1);
     assert_eq!(token_count("0E"), 1);
     assert_eq!(token_count("0o0A"), 1);
+    assert_eq!(token_count("0E--0"), 4);
 }
 
 #[test]

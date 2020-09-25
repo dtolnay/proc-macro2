@@ -591,6 +591,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
     }
 
     if has_exp {
+        let mut has_sign = false;
         let mut has_exp_value = false;
         while let Some(&ch) = chars.peek() {
             match ch {
@@ -598,8 +599,12 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
                     if has_exp_value {
                         break;
                     }
+                    if has_sign {
+                        return Err(LexError);
+                    }
                     chars.next();
                     len += 1;
+                    has_sign = true;
                 }
                 '0'..='9' => {
                     chars.next();
