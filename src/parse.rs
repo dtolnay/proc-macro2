@@ -340,13 +340,10 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
                 let input = input.advance(i + 1);
                 return Ok(literal_suffix(input));
             }
-            '\r' => {
-                if let Some((_, '\n')) = chars.next() {
-                    // ...
-                } else {
-                    break;
-                }
-            }
+            '\r' => match chars.next() {
+                Some((_, '\n')) => {}
+                _ => break,
+            },
             '\\' => match chars.next() {
                 Some((_, 'x')) => {
                     if !backslash_x_char(&mut chars) {
@@ -401,13 +398,10 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                 let input = input.advance(offset + 1);
                 return Ok(literal_suffix(input));
             }
-            b'\r' => {
-                if let Some((_, b'\n')) = bytes.next() {
-                    // ...
-                } else {
-                    break;
-                }
-            }
+            b'\r' => match bytes.next() {
+                Some((_, b'\n')) => {}
+                _ => break,
+            },
             b'\\' => match bytes.next() {
                 Some((_, b'x')) => {
                     if !backslash_x_byte(&mut bytes) {
@@ -463,11 +457,10 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
                 let rest = input.advance(i + 1 + n);
                 return Ok(literal_suffix(rest));
             }
-            '\r' => {
-                if chars.next().map_or(true, |(_, ch)| ch != '\n') {
-                    return Err(LexError);
-                }
-            }
+            '\r' => match chars.next() {
+                Some((_, '\n')) => {}
+                _ => break,
+            },
             _ => {}
         }
     }
