@@ -84,6 +84,11 @@ fn literal_string() {
 }
 
 #[test]
+fn literal_raw_string() {
+    "r\"\r\n\"".parse::<TokenStream>().unwrap();
+}
+
+#[test]
 fn literal_character() {
     assert_eq!(Literal::character('x').to_string(), "'x'");
     assert_eq!(Literal::character('\'').to_string(), "'\\''");
