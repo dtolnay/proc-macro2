@@ -197,6 +197,7 @@ fn fail() {
     fail("\"\\u{}\""); // empty
     fail("b\"\r\""); // bare carriage return in byte string
     fail("r\"\r\""); // bare carriage return in raw string
+    fail("\"\\\r  \""); // backslash carriage return
 }
 
 #[cfg(span_locations)]
