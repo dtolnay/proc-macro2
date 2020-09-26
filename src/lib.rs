@@ -82,6 +82,7 @@
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
 #![allow(clippy::needless_doctest_main)]
+#![forbid(unsafe_code)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;

@@ -33,6 +33,7 @@
 //     location of a token. Enabled by procmacro2_semver_exempt or the
 //     "span-locations" Cargo cfg. This is behind a cfg because tracking
 //     location inside spans is a performance hit.
+#![forbid(unsafe_code)]
 
 use std::env;
 use std::process::{self, Command};
