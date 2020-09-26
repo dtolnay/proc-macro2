@@ -438,7 +438,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
                 let rest = input.advance(i + 1 + n);
                 return Ok(literal_suffix(rest));
             }
-            '\r' => {}
+            '\r' => return Err(LexError),
             _ => {}
         }
     }
