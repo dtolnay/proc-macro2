@@ -238,6 +238,17 @@ fn leaf_token(input: Cursor) -> PResult<TokenTree> {
 }
 
 fn ident(input: Cursor) -> PResult<crate::Ident> {
+    if ["r\"", "r#\"", "r##", "b\"", "b\'", "br\"", "br#"]
+        .iter()
+        .any(|prefix| input.starts_with(prefix))
+    {
+        Err(LexError)
+    } else {
+        ident_any(input)
+    }
+}
+
+fn ident_any(input: Cursor) -> PResult<crate::Ident> {
     let raw = input.starts_with("r#");
     let rest = input.advance((raw as usize) << 1);
 
@@ -716,7 +727,7 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
 fn op(input: Cursor) -> PResult<Punct> {
     match op_char(input) {
         Ok((rest, '\'')) => {
-            if ident(rest)?.0.starts_with("'") {
+            if ident_any(rest)?.0.starts_with("'") {
                 Err(LexError)
             } else {
                 Ok((rest, Punct::new('\'', Spacing::Joint)))

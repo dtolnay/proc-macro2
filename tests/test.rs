@@ -199,6 +199,7 @@ fn fail() {
     fail("r\"\r\""); // bare carriage return in raw string
     fail("\"\\\r  \""); // backslash carriage return
     fail("'aa'aa");
+    fail("br##\"\"#");
 }
 
 #[cfg(span_locations)]
