@@ -449,13 +449,17 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
             _ => return Err(LexError),
         }
     }
-    for (i, ch) in chars {
+    while let Some((i, ch)) = chars.next() {
         match ch {
             '"' if input.rest[i + 1..].starts_with(&input.rest[..n]) => {
                 let rest = input.advance(i + 1 + n);
                 return Ok(literal_suffix(rest));
             }
-            '\r' => return Err(LexError),
+            '\r' => {
+                if chars.next().map_or(true, |(_, ch)| ch != '\n') {
+                    return Err(LexError);
+                }
+            }
             _ => {}
         }
     }
