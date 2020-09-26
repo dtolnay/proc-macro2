@@ -195,6 +195,8 @@ fn fail() {
     fail("\"\\u{999999}\""); // outside of valid range of char
     fail("\"\\u{_0}\""); // leading underscore
     fail("\"\\u{}\""); // empty
+    fail("b\"\r\""); // bare carriage return in byte string
+    fail("r\"\r\""); // bare carriage return in raw string
 }
 
 #[cfg(span_locations)]
