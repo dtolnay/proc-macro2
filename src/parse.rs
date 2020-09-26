@@ -532,7 +532,7 @@ where
             '0'..='9' => ch as u8 - b'0',
             'a'..='f' => 10 + ch as u8 - b'a',
             'A'..='F' => 10 + ch as u8 - b'A',
-            '_' => continue,
+            '_' if len > 0 => continue,
             '}' => return char::from_u32(value).is_some(),
             _ => return false,
         };
