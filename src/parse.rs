@@ -349,7 +349,10 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
                         break;
                     }
                 }
-                Some((_, '\n')) | Some((_, '\r')) => {
+                Some((_, ch @ '\n')) | Some((_, ch @ '\r')) => {
+                    if ch == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
+                        return Err(LexError);
+                    }
                     while let Some(&(_, ch)) = chars.peek() {
                         if ch.is_whitespace() {
                             chars.next();
@@ -399,7 +402,10 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                 }
                 Some((_, b'n')) | Some((_, b'r')) | Some((_, b't')) | Some((_, b'\\'))
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
-                Some((newline, b'\n')) | Some((newline, b'\r')) => {
+                Some((newline, b @ b'\n')) | Some((newline, b @ b'\r')) => {
+                    if b == b'\r' && bytes.next().map_or(true, |(_, b)| b != b'\n') {
+                        return Err(LexError);
+                    }
                     let rest = input.advance(newline + 1);
                     for (offset, ch) in rest.char_indices() {
                         if !ch.is_whitespace() {
