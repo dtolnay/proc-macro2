@@ -716,8 +716,11 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
 fn op(input: Cursor) -> PResult<Punct> {
     match op_char(input) {
         Ok((rest, '\'')) => {
-            ident(rest)?;
-            Ok((rest, Punct::new('\'', Spacing::Joint)))
+            if ident(rest)?.0.starts_with("'") {
+                Err(LexError)
+            } else {
+                Ok((rest, Punct::new('\'', Spacing::Joint)))
+            }
         }
         Ok((rest, ch)) => {
             let kind = match op_char(rest) {
