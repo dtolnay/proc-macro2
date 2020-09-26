@@ -525,12 +525,21 @@ where
 {
     next_ch!(chars @ '{');
     next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
-    loop {
-        let c = next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F' | '_' | '}');
-        if c == '}' {
-            return true;
+    let mut digits = 1;
+    while let Some((_, ch)) = chars.next() {
+        match ch {
+            '}' => return true,
+            '0'..='9' | 'a'..='f' | 'A'..='F' => {
+                digits += 1;
+                if digits > 6 {
+                    return false;
+                }
+            }
+            '_' => {}
+            _ => return false,
         }
     }
+    false
 }
 
 fn float(input: Cursor) -> Result<Cursor, LexError> {
