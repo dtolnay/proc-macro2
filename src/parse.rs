@@ -2,6 +2,7 @@ use crate::fallback::{
     is_ident_continue, is_ident_start, Group, LexError, Literal, Span, TokenStream,
 };
 use crate::{Delimiter, Punct, Spacing, TokenTree};
+use std::char;
 use std::str::{Bytes, CharIndices, Chars};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -524,20 +525,23 @@ where
     I: Iterator<Item = (usize, char)>,
 {
     next_ch!(chars @ '{');
-    next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
-    let mut digits = 1;
+    let mut value = 0;
+    let mut len = 0;
     while let Some((_, ch)) = chars.next() {
-        match ch {
-            '}' => return true,
-            '0'..='9' | 'a'..='f' | 'A'..='F' => {
-                digits += 1;
-                if digits > 6 {
-                    return false;
-                }
-            }
-            '_' => {}
+        let digit = match ch {
+            '0'..='9' => ch as u8 - b'0',
+            'a'..='f' => 10 + ch as u8 - b'a',
+            'A'..='F' => 10 + ch as u8 - b'A',
+            '_' if len > 0 => continue,
+            '}' if len > 0 => return char::from_u32(value).is_some(),
             _ => return false,
+        };
+        if len == 6 {
+            return false;
         }
+        value *= 0x10;
+        value += u32::from(digit);
+        len += 1;
     }
     false
 }
