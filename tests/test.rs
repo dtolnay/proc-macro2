@@ -192,6 +192,7 @@ fn fail() {
     fail("r#1");
     fail("r#_");
     fail("\"\\u{0000000}\""); // overlong unicode escape (rust allows at most 6 hex digits)
+    fail("\"\\u{999999}\""); // outside of valid range of char
 }
 
 #[cfg(span_locations)]
