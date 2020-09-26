@@ -361,14 +361,17 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
                     }
                 }
                 Some((_, ch @ '\n')) | Some((_, ch @ '\r')) => {
-                    if ch == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
-                        return Err(LexError);
-                    }
-                    while let Some(&(_, ch)) = chars.peek() {
-                        if ch.is_whitespace() {
-                            chars.next();
-                        } else {
-                            break;
+                    let mut last = ch;
+                    loop {
+                        if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
+                            return Err(LexError);
+                        }
+                        match chars.peek() {
+                            Some((_, ch)) if ch.is_whitespace() => {
+                                last = *ch;
+                                chars.next();
+                            }
+                            _ => break,
                         }
                     }
                 }
@@ -392,7 +395,7 @@ fn byte_string(input: Cursor) -> Result<Cursor, LexError> {
 
 fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
     let mut bytes = input.bytes().enumerate();
-    'outer: while let Some((offset, b)) = bytes.next() {
+    while let Some((offset, b)) = bytes.next() {
         match b {
             b'"' => {
                 let input = input.advance(offset + 1);
@@ -414,18 +417,23 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                 Some((_, b'n')) | Some((_, b'r')) | Some((_, b't')) | Some((_, b'\\'))
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
                 Some((newline, b @ b'\n')) | Some((newline, b @ b'\r')) => {
-                    if b == b'\r' && bytes.next().map_or(true, |(_, b)| b != b'\n') {
-                        return Err(LexError);
-                    }
+                    let mut last = b as char;
                     let rest = input.advance(newline + 1);
-                    for (offset, ch) in rest.char_indices() {
-                        if !ch.is_whitespace() {
-                            input = rest.advance(offset);
-                            bytes = input.bytes().enumerate();
-                            continue 'outer;
+                    let mut chars = rest.char_indices();
+                    loop {
+                        if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
+                            return Err(LexError);
+                        }
+                        match chars.next() {
+                            Some((_, ch)) if ch.is_whitespace() => last = ch,
+                            Some((offset, _)) => {
+                                input = rest.advance(offset);
+                                bytes = input.bytes().enumerate();
+                                break;
+                            }
+                            None => return Err(LexError),
                         }
                     }
-                    break;
                 }
                 _ => break,
             },

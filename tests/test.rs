@@ -205,6 +205,7 @@ fn fail() {
     fail("\"\\\r  \""); // backslash carriage return
     fail("'aa'aa");
     fail("br##\"\"#");
+    fail("\"\\\n\u{85}\r\"");
 }
 
 #[cfg(span_locations)]
