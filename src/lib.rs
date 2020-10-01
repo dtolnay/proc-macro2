@@ -105,6 +105,7 @@ mod imp;
 
 use crate::marker::Marker;
 use std::cmp::Ordering;
+use std::error::Error;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
@@ -253,6 +254,14 @@ impl Debug for LexError {
         Debug::fmt(&self.inner, f)
     }
 }
+
+impl Display for LexError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.inner, f)
+    }
+}
+
+impl Error for LexError {}
 
 /// The source file of a given `Span`.
 ///
