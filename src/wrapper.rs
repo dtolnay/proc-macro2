@@ -264,6 +264,15 @@ impl Debug for LexError {
     }
 }
 
+impl Display for LexError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LexError::Compiler(e) => Display::fmt(e, f),
+            LexError::Fallback(e) => Display::fmt(e, f),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub(crate) enum TokenTreeIter {
     Compiler(proc_macro::token_stream::IntoIter),

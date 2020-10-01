@@ -148,6 +148,12 @@ impl FromStr for TokenStream {
     }
 }
 
+impl Display for LexError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("cannot parse string into token stream")
+    }
+}
+
 impl Display for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut joint = false;

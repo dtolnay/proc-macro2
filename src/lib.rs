@@ -254,6 +254,12 @@ impl Debug for LexError {
     }
 }
 
+impl Display for LexError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.inner, f)
+    }
+}
+
 /// The source file of a given `Span`.
 ///
 /// This type is semver exempt and not exposed by default.
