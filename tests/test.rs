@@ -1,4 +1,4 @@
-use proc_macro2::{Ident, Literal, Spacing, Span, TokenStream, TokenTree};
+use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::str::{self, FromStr};
 
 #[test]
@@ -302,6 +302,22 @@ fn punct_before_comment() {
         }
         wrong => panic!("wrong token {:?}", wrong),
     }
+}
+
+#[test]
+fn joint_last_token() {
+    // This test verifies that we match the behavior of libproc_macro *not* in
+    // the range nightly-2020-09-06 through nightly-2020-09-10, in which this
+    // behavior was temporarily broken.
+    // See https://github.com/rust-lang/rust/issues/76399
+
+    let joint_punct = Punct::new(':', Spacing::Joint);
+    let stream = TokenStream::from(TokenTree::Punct(joint_punct));
+    let punct = match stream.into_iter().next().unwrap() {
+        TokenTree::Punct(punct) => punct,
+        _ => unreachable!(),
+    };
+    assert_eq!(punct.spacing(), Spacing::Joint);
 }
 
 #[test]
