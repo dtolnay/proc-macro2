@@ -228,7 +228,7 @@ fn leaf_token(input: Cursor) -> PResult<TokenTree> {
     if let Ok((input, l)) = literal(input) {
         // must be parsed before ident
         Ok((input, TokenTree::Literal(crate::Literal::_new_stable(l))))
-    } else if let Ok((input, p)) = op(input) {
+    } else if let Ok((input, p)) = punct(input) {
         Ok((input, TokenTree::Punct(p)))
     } else if let Ok((input, i)) = ident(input) {
         Ok((input, TokenTree::Ident(i)))
@@ -729,8 +729,8 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
     }
 }
 
-fn op(input: Cursor) -> PResult<Punct> {
-    match op_char(input) {
+fn punct(input: Cursor) -> PResult<Punct> {
+    match punct_char(input) {
         Ok((rest, '\'')) => {
             if ident_any(rest)?.0.starts_with("'") {
                 Err(LexError)
@@ -739,7 +739,7 @@ fn op(input: Cursor) -> PResult<Punct> {
             }
         }
         Ok((rest, ch)) => {
-            let kind = match op_char(rest) {
+            let kind = match punct_char(rest) {
                 Ok(_) => Spacing::Joint,
                 Err(LexError) => Spacing::Alone,
             };
@@ -749,9 +749,9 @@ fn op(input: Cursor) -> PResult<Punct> {
     }
 }
 
-fn op_char(input: Cursor) -> PResult<char> {
+fn punct_char(input: Cursor) -> PResult<char> {
     if input.starts_with("//") || input.starts_with("/*") {
-        // Do not accept `/` of a comment as an op.
+        // Do not accept `/` of a comment as a punct.
         return Err(LexError);
     }
 

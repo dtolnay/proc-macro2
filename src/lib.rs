@@ -696,7 +696,7 @@ impl Debug for Group {
 /// `Punct` with different forms of `Spacing` returned.
 #[derive(Clone)]
 pub struct Punct {
-    op: char,
+    ch: char,
     spacing: Spacing,
     span: Span,
 }
@@ -722,9 +722,9 @@ impl Punct {
     ///
     /// The returned `Punct` will have the default span of `Span::call_site()`
     /// which can be further configured with the `set_span` method below.
-    pub fn new(op: char, spacing: Spacing) -> Punct {
+    pub fn new(ch: char, spacing: Spacing) -> Punct {
         Punct {
-            op,
+            ch,
             spacing,
             span: Span::call_site(),
         }
@@ -732,7 +732,7 @@ impl Punct {
 
     /// Returns the value of this punctuation character as `char`.
     pub fn as_char(&self) -> char {
-        self.op
+        self.ch
     }
 
     /// Returns the spacing of this punctuation character, indicating whether
@@ -759,14 +759,14 @@ impl Punct {
 /// convertible back into the same character.
 impl Display for Punct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.op, f)
+        Display::fmt(&self.ch, f)
     }
 }
 
 impl Debug for Punct {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Punct");
-        debug.field("op", &self.op);
+        debug.field("char", &self.ch);
         debug.field("spacing", &self.spacing);
         imp::debug_span_field_if_nontrivial(&mut debug, self.span.inner);
         debug.finish()
