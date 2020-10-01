@@ -267,7 +267,10 @@ impl Debug for LexError {
 impl Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            #[cfg(lexerror_display)]
             LexError::Compiler(e) => Display::fmt(e, f),
+            #[cfg(not(lexerror_display))]
+            LexError::Compiler(_e) => Display::fmt(&fallback::LexError, f),
             LexError::Fallback(e) => Display::fmt(e, f),
         }
     }
