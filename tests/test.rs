@@ -293,7 +293,7 @@ fn no_panic() {
 }
 
 #[test]
-fn op_before_comment() {
+fn punct_before_comment() {
     let mut tts = TokenStream::from_str("~// comment").unwrap().into_iter();
     match tts.next().unwrap() {
         TokenTree::Punct(tt) => {
