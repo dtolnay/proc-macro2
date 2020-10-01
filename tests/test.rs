@@ -341,7 +341,7 @@ TokenStream [
                 sym: a,
             },
             Punct {
-                op: '+',
+                char: '+',
                 spacing: Alone,
             },
             Literal {
@@ -362,7 +362,7 @@ TokenStream [
                 sym: a
             },
             Punct {
-                op: '+',
+                char: '+',
                 spacing: Alone
             },
             Literal {
@@ -384,7 +384,7 @@ TokenStream [
                 span: bytes(2..3),
             },
             Punct {
-                op: '+',
+                char: '+',
                 spacing: Alone,
                 span: bytes(4..5),
             },
@@ -409,7 +409,7 @@ TokenStream [
                 span: bytes(2..3)
             },
             Punct {
-                op: '+',
+                char: '+',
                 spacing: Alone,
                 span: bytes(4..5)
             },
