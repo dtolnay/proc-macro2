@@ -436,7 +436,8 @@ impl Span {
 
     /// Get the starting line/column in the source file for this span.
     ///
-    /// This method requires the `"span-locations"` feature to be enabled.
+    /// This method requires the `"span-locations"` feature to be enabled and to be on `nightly`. On `stable` rust this
+    /// currently returns a mocked LineColumn (`LineColumn { line: 0, column: 0 }`).
     #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
@@ -445,7 +446,8 @@ impl Span {
 
     /// Get the ending line/column in the source file for this span.
     ///
-    /// This method requires the `"span-locations"` feature to be enabled.
+    /// This method requires the `"span-locations"` feature to be enabled and to be on `nightly`. On `stable` rust this
+    /// currently returns a mocked LineColumn (`LineColumn { line: 0, column: 0 }`).
     #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
