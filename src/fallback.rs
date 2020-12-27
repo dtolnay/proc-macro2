@@ -665,14 +665,20 @@ pub(crate) fn is_ident_continue(c: char) -> bool {
         || (c > '\x7f' && UnicodeXID::is_xid_continue(c))
 }
 
-fn validate_ident(string: &str) {
+/// Returns Ok(()) if string is a valid identifier, otherwise returns Err(e),
+/// where e is a String stating the reason for it not being a valid identifier.
+pub fn is_valid_ident(string: &str) -> Result<(), String> {
     let validate = string;
     if validate.is_empty() {
-        panic!("Ident is not allowed to be empty; use Option<Ident>");
+        return Err(String::from(
+            "Ident is not allowed to be empty; use Option<Ident>",
+        ));
     }
 
     if validate.bytes().all(|digit| digit >= b'0' && digit <= b'9') {
-        panic!("Ident cannot be a number; use Literal instead");
+        return Err(String::from(
+            "Ident cannot be a number; use Literal instead",
+        ));
     }
 
     fn ident_ok(string: &str) -> bool {
@@ -690,7 +696,14 @@ fn validate_ident(string: &str) {
     }
 
     if !ident_ok(validate) {
-        panic!("{:?} is not a valid Ident", string);
+        return Err(format!("{:?} is not a valid Ident", string));
+    }
+    Ok(())
+}
+
+fn validate_ident(string: &str) {
+    if let Err(e) = is_valid_ident(string) {
+        panic!(e);
     }
 }
 
