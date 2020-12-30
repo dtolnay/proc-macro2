@@ -58,3 +58,16 @@ jobs:
           profile: minimal
           override: true
       - run: cargo test --target wasm32-unknown-unknown --no-run
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+          components: clippy
+      - run: cargo clippy -- -Dclippy::all

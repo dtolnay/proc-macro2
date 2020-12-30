@@ -549,7 +549,7 @@ where
     next_ch!(chars @ '{');
     let mut value = 0;
     let mut len = 0;
-    while let Some((_, ch)) = chars.next() {
+    for (_, ch) in chars {
         let digit = match ch {
             '0'..='9' => ch as u8 - b'0',
             'a'..='f' => 10 + ch as u8 - b'a',
