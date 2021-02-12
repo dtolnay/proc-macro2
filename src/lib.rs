@@ -76,6 +76,7 @@
 //! Most types in this crate are `!Sync` because the underlying compiler
 //! types make use of thread-local memory, meaning they cannot be accessed from
 //! a different thread.
+#![forbid(unsafe_code)]
 
 // Proc-macro2 types in rustdoc of other crates get linked to here.
 #![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.24")]
