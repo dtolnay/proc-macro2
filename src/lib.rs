@@ -701,7 +701,7 @@ impl Debug for Group {
     }
 }
 
-/// An `Punct` is an single punctuation character like `+`, `-` or `#`.
+/// A `Punct` is a single punctuation character like `+`, `-` or `#`.
 ///
 /// Multicharacter operators like `+=` are represented as two instances of
 /// `Punct` with different forms of `Spacing` returned.
@@ -712,7 +712,7 @@ pub struct Punct {
     span: Span,
 }
 
-/// Whether an `Punct` is followed immediately by another `Punct` or followed by
+/// Whether a `Punct` is followed immediately by another `Punct` or followed by
 /// another token or whitespace.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Spacing {
