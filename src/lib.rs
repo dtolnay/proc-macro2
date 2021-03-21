@@ -989,7 +989,7 @@ macro_rules! suffixed_int_literals {
         /// This function will create an integer like `1u32` where the integer
         /// value specified is the first part of the token and the integral is
         /// also suffixed at the end. Literals created from negative numbers may
-        /// not survive rountrips through `TokenStream` or strings and may be
+        /// not survive roundtrips through `TokenStream` or strings and may be
         /// broken into two tokens (`-` and positive literal).
         ///
         /// Literals created through this method have the `Span::call_site()`
@@ -1010,7 +1010,7 @@ macro_rules! unsuffixed_int_literals {
         /// specified on this token, meaning that invocations like
         /// `Literal::i8_unsuffixed(1)` are equivalent to
         /// `Literal::u32_unsuffixed(1)`. Literals created from negative numbers
-        /// may not survive rountrips through `TokenStream` or strings and may
+        /// may not survive roundtrips through `TokenStream` or strings and may
         /// be broken into two tokens (`-` and positive literal).
         ///
         /// Literals created through this method have the `Span::call_site()`
