@@ -287,13 +287,9 @@ fn ident_not_raw(input: Cursor) -> PResult<&str> {
 }
 
 fn literal(input: Cursor) -> PResult<Literal> {
-    match literal_nocapture(input) {
-        Ok(a) => {
-            let end = input.len() - a.len();
-            Ok((a, Literal::_new(input.rest[..end].to_string())))
-        }
-        Err(LexError) => Err(LexError),
-    }
+    let rest = literal_nocapture(input)?;
+    let end = input.len() - rest.len();
+    Ok((rest, Literal::_new(input.rest[..end].to_string())))
 }
 
 fn literal_nocapture(input: Cursor) -> Result<Cursor, LexError> {
@@ -730,22 +726,19 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
 }
 
 fn punct(input: Cursor) -> PResult<Punct> {
-    match punct_char(input) {
-        Ok((rest, '\'')) => {
-            if ident_any(rest)?.0.starts_with("'") {
-                Err(LexError)
-            } else {
-                Ok((rest, Punct::new('\'', Spacing::Joint)))
-            }
+    let (rest, ch) = punct_char(input)?;
+    if ch == '\'' {
+        if ident_any(rest)?.0.starts_with("'") {
+            Err(LexError)
+        } else {
+            Ok((rest, Punct::new('\'', Spacing::Joint)))
         }
-        Ok((rest, ch)) => {
-            let kind = match punct_char(rest) {
-                Ok(_) => Spacing::Joint,
-                Err(LexError) => Spacing::Alone,
-            };
-            Ok((rest, Punct::new(ch, kind)))
-        }
-        Err(LexError) => Err(LexError),
+    } else {
+        let kind = match punct_char(rest) {
+            Ok(_) => Spacing::Joint,
+            Err(LexError) => Spacing::Alone,
+        };
+        Ok((rest, Punct::new(ch, kind)))
     }
 }
 
