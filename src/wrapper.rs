@@ -243,6 +243,15 @@ impl Debug for TokenStream {
     }
 }
 
+impl LexError {
+    pub(crate) fn span(&self) -> Span {
+        match self {
+            LexError::Compiler(_) => Span::call_site(),
+            LexError::Fallback(e) => Span::Fallback(e.span()),
+        }
+    }
+}
+
 impl From<proc_macro::LexError> for LexError {
     fn from(e: proc_macro::LexError) -> LexError {
         LexError::Compiler(e)

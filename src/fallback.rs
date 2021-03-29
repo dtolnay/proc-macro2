@@ -47,6 +47,10 @@ impl LexError {
             span: Span::call_site(),
         }
     }
+
+    pub(crate) fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl TokenStream {
