@@ -287,13 +287,9 @@ fn ident_not_raw(input: Cursor) -> PResult<&str> {
 }
 
 fn literal(input: Cursor) -> PResult<Literal> {
-    match literal_nocapture(input) {
-        Ok(a) => {
-            let end = input.len() - a.len();
-            Ok((a, Literal::_new(input.rest[..end].to_string())))
-        }
-        Err(LexError) => Err(LexError),
-    }
+    let rest = literal_nocapture(input)?;
+    let end = input.len() - rest.len();
+    Ok((rest, Literal::_new(input.rest[..end].to_string())))
 }
 
 fn literal_nocapture(input: Cursor) -> Result<Cursor, LexError> {
