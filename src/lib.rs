@@ -81,6 +81,7 @@
 #![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.24")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(clippy::needless_doctest_main, clippy::vec_init_then_push)]
 
 #[cfg(use_proc_macro)]
@@ -267,6 +268,7 @@ impl Error for LexError {}
 ///
 /// This type is semver exempt and not exposed by default.
 #[cfg(procmacro2_semver_exempt)]
+#[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     inner: imp::SourceFile,
@@ -317,6 +319,7 @@ impl Debug for SourceFile {
 ///
 /// This type is semver exempt and not exposed by default.
 #[cfg(span_locations)]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct LineColumn {
     /// The 1-indexed line in the source file on which the span starts or ends
@@ -388,6 +391,7 @@ impl Span {
     ///
     /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
+    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn def_site() -> Span {
         Span::_new(imp::Span::def_site())
     }
@@ -430,6 +434,7 @@ impl Span {
     ///
     /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
+    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn source_file(&self) -> SourceFile {
         SourceFile::_new(self.inner.source_file())
     }
@@ -444,6 +449,7 @@ impl Span {
     /// outside of a procedural macro, such as main.rs or build.rs, the
     /// line/column are always meaningful regardless of toolchain.
     #[cfg(span_locations)]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
         LineColumn { line, column }
@@ -459,6 +465,7 @@ impl Span {
     /// outside of a procedural macro, such as main.rs or build.rs, the
     /// line/column are always meaningful regardless of toolchain.
     #[cfg(span_locations)]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
         LineColumn { line, column }
@@ -481,6 +488,7 @@ impl Span {
     ///
     /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
+    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn eq(&self, other: &Span) -> bool {
         self.inner.eq(&other.inner)
     }
@@ -911,6 +919,7 @@ impl Ident {
     ///
     /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
+    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn new_raw(string: &str, span: Span) -> Ident {
         Ident::_new_raw(string, span)
     }
