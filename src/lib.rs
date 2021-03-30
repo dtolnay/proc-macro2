@@ -436,8 +436,13 @@ impl Span {
 
     /// Get the starting line/column in the source file for this span.
     ///
-    /// This method requires the `"span-locations"` feature to be enabled and to be on `nightly`. On `stable` rust this
-    /// currently returns a mocked LineColumn (`LineColumn { line: 0, column: 0 }`).
+    /// This method requires the `"span-locations"` feature to be enabled.
+    ///
+    /// When executing in a procedural macro context, the returned line/column
+    /// are only meaningful if compiled with a nightly toolchain. The stable
+    /// toolchain does not have this information available. When executing
+    /// outside of a procedural macro, such as main.rs or build.rs, the
+    /// line/column are always meaningful regardless of toolchain.
     #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
@@ -446,8 +451,13 @@ impl Span {
 
     /// Get the ending line/column in the source file for this span.
     ///
-    /// This method requires the `"span-locations"` feature to be enabled and to be on `nightly`. On `stable` rust this
-    /// currently returns a mocked LineColumn (`LineColumn { line: 0, column: 0 }`).
+    /// This method requires the `"span-locations"` feature to be enabled.
+    ///
+    /// When executing in a procedural macro context, the returned line/column
+    /// are only meaningful if compiled with a nightly toolchain. The stable
+    /// toolchain does not have this information available. When executing
+    /// outside of a procedural macro, such as main.rs or build.rs, the
+    /// line/column are always meaningful regardless of toolchain.
     #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
