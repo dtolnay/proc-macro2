@@ -40,14 +40,6 @@ pub(crate) struct LexError {
 }
 
 impl LexError {
-    // Codepaths that will need a meaningful span attached as part of
-    // https://github.com/alexcrichton/proc-macro2/issues/178
-    pub(crate) fn todo() -> Self {
-        LexError {
-            span: Span::call_site(),
-        }
-    }
-
     pub(crate) fn span(&self) -> Span {
         self.span
     }
