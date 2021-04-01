@@ -167,8 +167,17 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
 
         let first = match input.bytes().next() {
             Some(first) => first,
-            None if stack.is_empty() => return Ok(TokenStream { inner: trees }),
-            None => return Err(LexError::todo()),
+            None => match stack.last() {
+                None => return Ok(TokenStream { inner: trees }),
+                #[cfg(span_locations)]
+                Some((lo, _frame)) => {
+                    return Err(LexError {
+                        span: Span { lo: *lo, hi: *lo },
+                    })
+                }
+                #[cfg(not(span_locations))]
+                Some(_frame) => return Err(LexError { span: Span {} }),
+            },
         };
 
         if let Some(open_delimiter) = match first {
