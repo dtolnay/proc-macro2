@@ -35,7 +35,15 @@ pub(crate) struct TokenStream {
 }
 
 #[derive(Debug)]
-pub(crate) struct LexError;
+pub(crate) struct LexError {}
+
+impl LexError {
+    // Codepaths that will need a meaningful span attached as part of
+    // https://github.com/alexcrichton/proc-macro2/issues/178
+    pub(crate) fn todo() -> Self {
+        LexError {}
+    }
+}
 
 impl TokenStream {
     pub fn new() -> TokenStream {
