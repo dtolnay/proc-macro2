@@ -193,13 +193,13 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
                 Some(frame) => frame,
                 None => return Err(lex_error(input)),
             };
-            input = input.advance(1);
             #[cfg(span_locations)]
             let (lo, frame) = frame;
             let (open_delimiter, outer) = frame;
             if open_delimiter != close_delimiter {
-                return Err(LexError::todo());
+                return Err(lex_error(input));
             }
+            input = input.advance(1);
             let mut g = Group::new(open_delimiter, TokenStream { inner: trees });
             g.set_span(Span {
                 #[cfg(span_locations)]
