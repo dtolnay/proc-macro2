@@ -189,8 +189,11 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
             b'}' => Some(Delimiter::Brace),
             _ => None,
         } {
+            let frame = match stack.pop() {
+                Some(frame) => frame,
+                None => return Err(lex_error(input)),
+            };
             input = input.advance(1);
-            let frame = stack.pop().ok_or_else(LexError::todo)?;
             #[cfg(span_locations)]
             let (lo, frame) = frame;
             let (open_delimiter, outer) = frame;
