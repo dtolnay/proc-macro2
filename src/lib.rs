@@ -250,6 +250,12 @@ impl Debug for TokenStream {
     }
 }
 
+impl LexError {
+    pub fn span(&self) -> Span {
+        Span::_new(self.inner.span())
+    }
+}
+
 impl Debug for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(&self.inner, f)

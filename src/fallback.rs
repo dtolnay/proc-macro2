@@ -35,7 +35,15 @@ pub(crate) struct TokenStream {
 }
 
 #[derive(Debug)]
-pub(crate) struct LexError;
+pub(crate) struct LexError {
+    pub(crate) span: Span,
+}
+
+impl LexError {
+    pub(crate) fn span(&self) -> Span {
+        self.span
+    }
+}
 
 impl TokenStream {
     pub fn new() -> TokenStream {
