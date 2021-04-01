@@ -166,7 +166,8 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
 
         let first = match input.bytes().next() {
             Some(first) => first,
-            None => break,
+            None if stack.is_empty() => return Ok(TokenStream { inner: trees }),
+            None => return Err(LexError),
         };
 
         if let Some(open_delimiter) = match first {
@@ -215,12 +216,6 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
             trees.push(tt);
             input = rest;
         }
-    }
-
-    if stack.is_empty() && input.is_empty() {
-        Ok(TokenStream { inner: trees })
-    } else {
-        Err(LexError)
     }
 }
 
