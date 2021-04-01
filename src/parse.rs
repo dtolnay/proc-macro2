@@ -26,7 +26,7 @@ impl<'a> Cursor<'a> {
         self.rest.starts_with(s)
     }
 
-    pub(crate) fn is_empty(&self) -> bool {
+    fn is_empty(&self) -> bool {
         self.rest.is_empty()
     }
 
@@ -148,7 +148,7 @@ fn word_break(input: Cursor) -> Result<Cursor, LexError> {
     }
 }
 
-pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
+pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
     let mut trees = Vec::new();
     let mut stack = Vec::new();
 
@@ -217,8 +217,8 @@ pub(crate) fn token_stream(mut input: Cursor) -> PResult<TokenStream> {
         }
     }
 
-    if stack.is_empty() {
-        Ok((input, TokenStream { inner: trees }))
+    if stack.is_empty() && input.is_empty() {
+        Ok(TokenStream { inner: trees })
     } else {
         Err(LexError)
     }
