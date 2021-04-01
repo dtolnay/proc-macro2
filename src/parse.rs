@@ -50,16 +50,17 @@ impl<'a> Cursor<'a> {
         self.rest.char_indices()
     }
 
-    fn parse(&self, tag: &str) -> Result<Cursor<'a>, LexError> {
+    fn parse(&self, tag: &str) -> Result<Cursor<'a>, Reject> {
         if self.starts_with(tag) {
             Ok(self.advance(tag.len()))
         } else {
-            Err(LexError)
+            Err(Reject)
         }
     }
 }
 
-type PResult<'a, O> = Result<(Cursor<'a>, O), LexError>;
+struct Reject;
+type PResult<'a, O> = Result<(Cursor<'a>, O), Reject>;
 
 fn skip_whitespace(input: Cursor) -> Cursor {
     let mut s = input;
@@ -86,7 +87,7 @@ fn skip_whitespace(input: Cursor) -> Cursor {
                         s = rest;
                         continue;
                     }
-                    Err(LexError) => return s,
+                    Err(Reject) => return s,
                 }
             }
         }
@@ -111,7 +112,7 @@ fn skip_whitespace(input: Cursor) -> Cursor {
 
 fn block_comment(input: Cursor) -> PResult<&str> {
     if !input.starts_with("/*") {
-        return Err(LexError);
+        return Err(Reject);
     }
 
     let mut depth = 0;
@@ -133,7 +134,7 @@ fn block_comment(input: Cursor) -> PResult<&str> {
         i += 1;
     }
 
-    Err(LexError)
+    Err(Reject)
 }
 
 fn is_whitespace(ch: char) -> bool {
@@ -141,9 +142,9 @@ fn is_whitespace(ch: char) -> bool {
     ch.is_whitespace() || ch == '\u{200e}' || ch == '\u{200f}'
 }
 
-fn word_break(input: Cursor) -> Result<Cursor, LexError> {
+fn word_break(input: Cursor) -> Result<Cursor, Reject> {
     match input.chars().next() {
-        Some(ch) if is_ident_continue(ch) => Err(LexError),
+        Some(ch) if is_ident_continue(ch) => Err(Reject),
         Some(_) | None => Ok(input),
     }
 }
@@ -206,7 +207,10 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
             trees = outer;
             trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
         } else {
-            let (rest, mut tt) = leaf_token(input)?;
+            let (rest, mut tt) = match leaf_token(input) {
+                Ok((rest, tt)) => (rest, tt),
+                Err(Reject) => return Err(LexError),
+            };
             tt.set_span(crate::Span::_new_stable(Span {
                 #[cfg(span_locations)]
                 lo,
@@ -228,7 +232,7 @@ fn leaf_token(input: Cursor) -> PResult<TokenTree> {
     } else if let Ok((input, i)) = ident(input) {
         Ok((input, TokenTree::Ident(i)))
     } else {
-        Err(LexError)
+        Err(Reject)
     }
 }
 
@@ -237,7 +241,7 @@ fn ident(input: Cursor) -> PResult<crate::Ident> {
         .iter()
         .any(|prefix| input.starts_with(prefix))
     {
-        Err(LexError)
+        Err(Reject)
     } else {
         ident_any(input)
     }
@@ -255,7 +259,7 @@ fn ident_any(input: Cursor) -> PResult<crate::Ident> {
     }
 
     if sym == "_" {
-        return Err(LexError);
+        return Err(Reject);
     }
 
     let ident = crate::Ident::_new_raw(sym, crate::Span::call_site());
@@ -267,7 +271,7 @@ fn ident_not_raw(input: Cursor) -> PResult<&str> {
 
     match chars.next() {
         Some((_, ch)) if is_ident_start(ch) => {}
-        _ => return Err(LexError),
+        _ => return Err(Reject),
     }
 
     let mut end = input.len();
@@ -287,7 +291,7 @@ fn literal(input: Cursor) -> PResult<Literal> {
     Ok((rest, Literal::_new(input.rest[..end].to_string())))
 }
 
-fn literal_nocapture(input: Cursor) -> Result<Cursor, LexError> {
+fn literal_nocapture(input: Cursor) -> Result<Cursor, Reject> {
     if let Ok(ok) = string(input) {
         Ok(ok)
     } else if let Ok(ok) = byte_string(input) {
@@ -301,28 +305,28 @@ fn literal_nocapture(input: Cursor) -> Result<Cursor, LexError> {
     } else if let Ok(ok) = int(input) {
         Ok(ok)
     } else {
-        Err(LexError)
+        Err(Reject)
     }
 }
 
 fn literal_suffix(input: Cursor) -> Cursor {
     match ident_not_raw(input) {
         Ok((input, _)) => input,
-        Err(LexError) => input,
+        Err(Reject) => input,
     }
 }
 
-fn string(input: Cursor) -> Result<Cursor, LexError> {
+fn string(input: Cursor) -> Result<Cursor, Reject> {
     if let Ok(input) = input.parse("\"") {
         cooked_string(input)
     } else if let Ok(input) = input.parse("r") {
         raw_string(input)
     } else {
-        Err(LexError)
+        Err(Reject)
     }
 }
 
-fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
+fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
     let mut chars = input.char_indices().peekable();
 
     while let Some((i, ch)) = chars.next() {
@@ -352,7 +356,7 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
                     let mut last = ch;
                     loop {
                         if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
-                            return Err(LexError);
+                            return Err(Reject);
                         }
                         match chars.peek() {
                             Some((_, ch)) if ch.is_whitespace() => {
@@ -368,20 +372,20 @@ fn cooked_string(input: Cursor) -> Result<Cursor, LexError> {
             _ch => {}
         }
     }
-    Err(LexError)
+    Err(Reject)
 }
 
-fn byte_string(input: Cursor) -> Result<Cursor, LexError> {
+fn byte_string(input: Cursor) -> Result<Cursor, Reject> {
     if let Ok(input) = input.parse("b\"") {
         cooked_byte_string(input)
     } else if let Ok(input) = input.parse("br") {
         raw_string(input)
     } else {
-        Err(LexError)
+        Err(Reject)
     }
 }
 
-fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
+fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
     let mut bytes = input.bytes().enumerate();
     while let Some((offset, b)) = bytes.next() {
         match b {
@@ -407,7 +411,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                     let mut chars = rest.char_indices();
                     loop {
                         if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
-                            return Err(LexError);
+                            return Err(Reject);
                         }
                         match chars.next() {
                             Some((_, ch)) if ch.is_whitespace() => last = ch,
@@ -416,7 +420,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
                                 bytes = input.bytes().enumerate();
                                 break;
                             }
-                            None => return Err(LexError),
+                            None => return Err(Reject),
                         }
                     }
                 }
@@ -426,10 +430,10 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, LexError> {
             _ => break,
         }
     }
-    Err(LexError)
+    Err(Reject)
 }
 
-fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
+fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
     let mut chars = input.char_indices();
     let mut n = 0;
     while let Some((i, ch)) = chars.next() {
@@ -439,7 +443,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
                 break;
             }
             '#' => {}
-            _ => return Err(LexError),
+            _ => return Err(Reject),
         }
     }
     while let Some((i, ch)) = chars.next() {
@@ -455,10 +459,10 @@ fn raw_string(input: Cursor) -> Result<Cursor, LexError> {
             _ => {}
         }
     }
-    Err(LexError)
+    Err(Reject)
 }
 
-fn byte(input: Cursor) -> Result<Cursor, LexError> {
+fn byte(input: Cursor) -> Result<Cursor, Reject> {
     let input = input.parse("b'")?;
     let mut bytes = input.bytes().enumerate();
     let ok = match bytes.next().map(|(_, b)| b) {
@@ -471,17 +475,17 @@ fn byte(input: Cursor) -> Result<Cursor, LexError> {
         b => b.is_some(),
     };
     if !ok {
-        return Err(LexError);
+        return Err(Reject);
     }
-    let (offset, _) = bytes.next().ok_or(LexError)?;
+    let (offset, _) = bytes.next().ok_or(Reject)?;
     if !input.chars().as_str().is_char_boundary(offset) {
-        return Err(LexError);
+        return Err(Reject);
     }
     let input = input.advance(offset).parse("'")?;
     Ok(literal_suffix(input))
 }
 
-fn character(input: Cursor) -> Result<Cursor, LexError> {
+fn character(input: Cursor) -> Result<Cursor, Reject> {
     let input = input.parse("'")?;
     let mut chars = input.char_indices();
     let ok = match chars.next().map(|(_, ch)| ch) {
@@ -496,9 +500,9 @@ fn character(input: Cursor) -> Result<Cursor, LexError> {
         ch => ch.is_some(),
     };
     if !ok {
-        return Err(LexError);
+        return Err(Reject);
     }
-    let (idx, _) = chars.next().ok_or(LexError)?;
+    let (idx, _) = chars.next().ok_or(Reject)?;
     let input = input.advance(idx).parse("'")?;
     Ok(literal_suffix(input))
 }
@@ -559,7 +563,7 @@ where
     false
 }
 
-fn float(input: Cursor) -> Result<Cursor, LexError> {
+fn float(input: Cursor) -> Result<Cursor, Reject> {
     let mut rest = float_digits(input)?;
     if let Some(ch) = rest.chars().next() {
         if is_ident_start(ch) {
@@ -569,11 +573,11 @@ fn float(input: Cursor) -> Result<Cursor, LexError> {
     word_break(rest)
 }
 
-fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
+fn float_digits(input: Cursor) -> Result<Cursor, Reject> {
     let mut chars = input.chars().peekable();
     match chars.next() {
         Some(ch) if ch >= '0' && ch <= '9' => {}
-        _ => return Err(LexError),
+        _ => return Err(Reject),
     }
 
     let mut len = 1;
@@ -595,7 +599,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
                     .map(|&ch| ch == '.' || is_ident_start(ch))
                     .unwrap_or(false)
                 {
-                    return Err(LexError);
+                    return Err(Reject);
                 }
                 len += 1;
                 has_dot = true;
@@ -611,14 +615,14 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
     }
 
     if !(has_dot || has_exp) {
-        return Err(LexError);
+        return Err(Reject);
     }
 
     if has_exp {
         let token_before_exp = if has_dot {
             Ok(input.advance(len - 1))
         } else {
-            Err(LexError)
+            Err(Reject)
         };
         let mut has_sign = false;
         let mut has_exp_value = false;
@@ -655,7 +659,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, LexError> {
     Ok(input.advance(len))
 }
 
-fn int(input: Cursor) -> Result<Cursor, LexError> {
+fn int(input: Cursor) -> Result<Cursor, Reject> {
     let mut rest = digits(input)?;
     if let Some(ch) = rest.chars().next() {
         if is_ident_start(ch) {
@@ -665,7 +669,7 @@ fn int(input: Cursor) -> Result<Cursor, LexError> {
     word_break(rest)
 }
 
-fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
+fn digits(mut input: Cursor) -> Result<Cursor, Reject> {
     let base = if input.starts_with("0x") {
         input = input.advance(2);
         16
@@ -686,7 +690,7 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
             b'0'..=b'9' => {
                 let digit = (b - b'0') as u64;
                 if digit >= base {
-                    return Err(LexError);
+                    return Err(Reject);
                 }
             }
             b'a'..=b'f' => {
@@ -703,7 +707,7 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
             }
             b'_' => {
                 if empty && base == 10 {
-                    return Err(LexError);
+                    return Err(Reject);
                 }
                 len += 1;
                 continue;
@@ -714,7 +718,7 @@ fn digits(mut input: Cursor) -> Result<Cursor, LexError> {
         empty = false;
     }
     if empty {
-        Err(LexError)
+        Err(Reject)
     } else {
         Ok(input.advance(len))
     }
@@ -724,14 +728,14 @@ fn punct(input: Cursor) -> PResult<Punct> {
     let (rest, ch) = punct_char(input)?;
     if ch == '\'' {
         if ident_any(rest)?.0.starts_with("'") {
-            Err(LexError)
+            Err(Reject)
         } else {
             Ok((rest, Punct::new('\'', Spacing::Joint)))
         }
     } else {
         let kind = match punct_char(rest) {
             Ok(_) => Spacing::Joint,
-            Err(LexError) => Spacing::Alone,
+            Err(Reject) => Spacing::Alone,
         };
         Ok((rest, Punct::new(ch, kind)))
     }
@@ -740,21 +744,21 @@ fn punct(input: Cursor) -> PResult<Punct> {
 fn punct_char(input: Cursor) -> PResult<char> {
     if input.starts_with("//") || input.starts_with("/*") {
         // Do not accept `/` of a comment as a punct.
-        return Err(LexError);
+        return Err(Reject);
     }
 
     let mut chars = input.chars();
     let first = match chars.next() {
         Some(ch) => ch,
         None => {
-            return Err(LexError);
+            return Err(Reject);
         }
     };
     let recognized = "~!@#$%^&*-=+|;:,<.>/?'";
     if recognized.contains(first) {
         Ok((input.advance(first.len_utf8()), first))
     } else {
-        Err(LexError)
+        Err(Reject)
     }
 }
 
@@ -773,7 +777,7 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
     while let Some(cr) = scan_for_bare_cr.find('\r') {
         let rest = &scan_for_bare_cr[cr + 1..];
         if !rest.starts_with('\n') {
-            return Err(LexError);
+            return Err(Reject);
         }
         scan_for_bare_cr = rest;
     }
@@ -810,7 +814,7 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
     } else if input.starts_with("///") {
         let input = input.advance(3);
         if input.starts_with("/") {
-            return Err(LexError);
+            return Err(Reject);
         }
         let (input, s) = take_until_newline_or_eof(input);
         Ok((input, (s, false)))
@@ -818,7 +822,7 @@ fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
         let (input, s) = block_comment(input)?;
         Ok((input, (&s[3..s.len() - 2], false)))
     } else {
-        Err(LexError)
+        Err(Reject)
     }
 }
 
