@@ -36,7 +36,7 @@ pub(crate) struct TokenStream {
 
 #[derive(Debug)]
 pub(crate) struct LexError {
-    span: Span,
+    pub(crate) span: Span,
 }
 
 impl LexError {

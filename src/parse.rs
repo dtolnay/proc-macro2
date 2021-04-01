@@ -209,7 +209,7 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
         } else {
             let (rest, mut tt) = match leaf_token(input) {
                 Ok((rest, tt)) => (rest, tt),
-                Err(Reject) => return Err(LexError::todo()),
+                Err(Reject) => return Err(lex_error(input)),
             };
             tt.set_span(crate::Span::_new_stable(Span {
                 #[cfg(span_locations)]
@@ -220,6 +220,19 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
             trees.push(tt);
             input = rest;
         }
+    }
+}
+
+fn lex_error(cursor: Cursor) -> LexError {
+    #[cfg(not(span_locations))]
+    let _ = cursor;
+    LexError {
+        span: Span {
+            #[cfg(span_locations)]
+            lo: cursor.off,
+            #[cfg(span_locations)]
+            hi: cursor.off,
+        },
     }
 }
 
