@@ -29,6 +29,14 @@ pub(crate) enum LexError {
     Fallback(fallback::LexError),
 }
 
+impl LexError {
+    fn call_site() -> Self {
+        LexError::Fallback(fallback::LexError {
+            span: fallback::Span::call_site(),
+        })
+    }
+}
+
 fn mismatch() -> ! {
     panic!("stable/nightly mismatch")
 }
@@ -108,11 +116,7 @@ impl FromStr for TokenStream {
 // Work around https://github.com/rust-lang/rust/issues/58736.
 fn proc_macro_parse(src: &str) -> Result<proc_macro::TokenStream, LexError> {
     let result = panic::catch_unwind(|| src.parse().map_err(LexError::Compiler));
-    result.unwrap_or_else(|_| {
-        Err(LexError::Fallback(fallback::LexError {
-            span: fallback::Span::call_site(),
-        }))
-    })
+    result.unwrap_or_else(|_| Err(LexError::call_site()))
 }
 
 impl Display for TokenStream {
@@ -909,6 +913,30 @@ impl Literal {
 impl From<fallback::Literal> for Literal {
     fn from(s: fallback::Literal) -> Literal {
         Literal::Fallback(s)
+    }
+}
+
+impl FromStr for Literal {
+    type Err = LexError;
+
+    fn from_str(repr: &str) -> Result<Self, Self::Err> {
+        if inside_proc_macro() {
+            // TODO: use libproc_macro's FromStr impl once it is available in
+            // rustc. https://github.com/rust-lang/rust/pull/84717
+            let tokens = proc_macro_parse(repr)?;
+            let mut iter = tokens.into_iter();
+            if let (Some(proc_macro::TokenTree::Literal(literal)), None) =
+                (iter.next(), iter.next())
+            {
+                if literal.to_string().len() == repr.len() {
+                    return Ok(Literal::Compiler(literal));
+                }
+            }
+            Err(LexError::call_site())
+        } else {
+            let literal = fallback::Literal::from_str(repr)?;
+            Ok(Literal::Fallback(literal))
+        }
     }
 }
 

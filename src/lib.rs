@@ -1203,6 +1203,17 @@ impl Literal {
     }
 }
 
+impl FromStr for Literal {
+    type Err = LexError;
+
+    fn from_str(repr: &str) -> Result<Self, LexError> {
+        repr.parse().map(Literal::_new).map_err(|inner| LexError {
+            inner,
+            _marker: Marker,
+        })
+    }
+}
+
 impl Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(&self.inner, f)

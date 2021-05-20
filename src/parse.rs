@@ -59,7 +59,7 @@ impl<'a> Cursor<'a> {
     }
 }
 
-struct Reject;
+pub(crate) struct Reject;
 type PResult<'a, O> = Result<(Cursor<'a>, O), Reject>;
 
 fn skip_whitespace(input: Cursor) -> Cursor {
@@ -310,7 +310,7 @@ fn ident_not_raw(input: Cursor) -> PResult<&str> {
     Ok((input.advance(end), &input.rest[..end]))
 }
 
-fn literal(input: Cursor) -> PResult<Literal> {
+pub(crate) fn literal(input: Cursor) -> PResult<Literal> {
     let rest = literal_nocapture(input)?;
     let end = input.len() - rest.len();
     Ok((rest, Literal::_new(input.rest[..end].to_string())))
