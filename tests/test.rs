@@ -164,6 +164,20 @@ fn literal_iter_negative() {
 }
 
 #[test]
+fn literal_parse() {
+    assert!("1".parse::<Literal>().is_ok());
+    assert!("1.0".parse::<Literal>().is_ok());
+    assert!("'a'".parse::<Literal>().is_ok());
+    assert!("\"\n\"".parse::<Literal>().is_ok());
+    assert!("0 1".parse::<Literal>().is_err());
+    assert!(" 0".parse::<Literal>().is_err());
+    assert!("0 ".parse::<Literal>().is_err());
+    assert!("/* comment */0".parse::<Literal>().is_err());
+    assert!("0/* comment */".parse::<Literal>().is_err());
+    assert!("0// comment".parse::<Literal>().is_err());
+}
+
+#[test]
 fn roundtrip() {
     fn roundtrip(p: &str) {
         println!("parse: {}", p);

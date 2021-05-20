@@ -43,6 +43,12 @@ impl LexError {
     pub(crate) fn span(&self) -> Span {
         self.span
     }
+
+    fn call_site() -> Self {
+        LexError {
+            span: Span::call_site(),
+        }
+    }
 }
 
 impl TokenStream {
@@ -884,6 +890,20 @@ impl Literal {
 
     pub fn subspan<R: RangeBounds<usize>>(&self, _range: R) -> Option<Span> {
         None
+    }
+}
+
+impl FromStr for Literal {
+    type Err = LexError;
+
+    fn from_str(repr: &str) -> Result<Self, Self::Err> {
+        let cursor = get_cursor(repr);
+        if let Ok((_rest, literal)) = parse::literal(cursor) {
+            if literal.text.len() == repr.len() {
+                return Ok(literal);
+            }
+        }
+        Err(LexError::call_site())
     }
 }
 
