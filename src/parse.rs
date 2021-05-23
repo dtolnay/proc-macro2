@@ -461,7 +461,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
 fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
     let mut chars = input.char_indices();
     let mut n = 0;
-    while let Some((i, ch)) = chars.next() {
+    for (i, ch) in &mut chars {
         match ch {
             '"' => {
                 n = i;
