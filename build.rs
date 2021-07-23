@@ -35,6 +35,7 @@
 //     location inside spans is a performance hit.
 
 use std::env;
+use std::iter;
 use std::process::{self, Command};
 use std::str;
 
@@ -132,15 +133,33 @@ fn feature_allowed(feature: &str) -> bool {
     //
     //     -Zallow-features=feature1,feature2
 
-    if let Some(rustflags) = env::var_os("RUSTFLAGS") {
-        for mut flag in rustflags.to_string_lossy().split(' ') {
-            if flag.starts_with("-Z") {
-                flag = &flag["-Z".len()..];
-            }
-            if flag.starts_with("allow-features=") {
-                flag = &flag["allow-features=".len()..];
-                return flag.split(',').any(|allowed| allowed == feature);
-            }
+    let flags_var;
+    let flags_var_string;
+    let mut flags_var_split;
+    let mut flags_none;
+    let flags: &mut dyn Iterator<Item = &str> =
+        if let Some(encoded_rustflags) = env::var_os("CARGO_ENCODED_RUSTFLAGS") {
+            flags_var = encoded_rustflags;
+            flags_var_string = flags_var.to_string_lossy();
+            flags_var_split = flags_var_string.split('\x1f');
+            &mut flags_var_split
+        } else if let Some(rustflags) = env::var_os("RUSTFLAGS") {
+            flags_var = rustflags;
+            flags_var_string = flags_var.to_string_lossy();
+            flags_var_split = flags_var_string.split(' ');
+            &mut flags_var_split
+        } else {
+            flags_none = iter::empty();
+            &mut flags_none
+        };
+
+    for mut flag in flags {
+        if flag.starts_with("-Z") {
+            flag = &flag["-Z".len()..];
+        }
+        if flag.starts_with("allow-features=") {
+            flag = &flag["allow-features=".len()..];
+            return flag.split(',').any(|allowed| allowed == feature);
         }
     }
 
