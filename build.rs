@@ -78,6 +78,10 @@ fn main() {
         println!("cargo:rustc-cfg=hygiene");
     }
 
+    if version.minor >= 54 {
+        println!("cargo:rustc-cfg=literal_from_str");
+    }
+
     let target = env::var("TARGET").unwrap();
     if !enable_use_proc_macro(&target) {
         return;
