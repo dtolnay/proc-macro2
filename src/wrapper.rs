@@ -921,18 +921,25 @@ impl FromStr for Literal {
 
     fn from_str(repr: &str) -> Result<Self, Self::Err> {
         if inside_proc_macro() {
-            // TODO: use libproc_macro's FromStr impl once it is available in
-            // rustc. https://github.com/rust-lang/rust/pull/84717
-            let tokens = proc_macro_parse(repr)?;
-            let mut iter = tokens.into_iter();
-            if let (Some(proc_macro::TokenTree::Literal(literal)), None) =
-                (iter.next(), iter.next())
+            #[cfg(literal_from_str)]
             {
-                if literal.to_string().len() == repr.len() {
-                    return Ok(Literal::Compiler(literal));
-                }
+                proc_macro::Literal::from_str(repr)
+                    .map(Literal::Compiler)
+                    .map_err(LexError::Compiler)
             }
-            Err(LexError::call_site())
+            #[cfg(not(literal_from_str))]
+            {
+                let tokens = proc_macro_parse(repr)?;
+                let mut iter = tokens.into_iter();
+                if let (Some(proc_macro::TokenTree::Literal(literal)), None) =
+                    (iter.next(), iter.next())
+                {
+                    if literal.to_string().len() == repr.len() {
+                        return Ok(Literal::Compiler(literal));
+                    }
+                }
+                Err(LexError::call_site())
+            }
         } else {
             let literal = fallback::Literal::from_str(repr)?;
             Ok(Literal::Fallback(literal))
