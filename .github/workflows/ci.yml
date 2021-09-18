@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: Rust ${{ matrix.rust }}
+    name: Rust ${{matrix.rust}}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -15,11 +15,9 @@ jobs:
         rust: [1.31.0, stable, beta]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.rust }}
-          profile: minimal
-          override: true
+          toolchain: ${{matrix.rust}}
       - run: cargo test
       - run: cargo test --no-default-features
       - run: cargo test --features span-locations
@@ -31,11 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          override: true
+      - uses: dtolnay/rust-toolchain@nightly
       - run: cargo test
       - run: cargo test --no-default-features
       - run: cargo test --no-default-features -- --ignored # run the ignored test to make sure the `proc-macro` feature is disabled
@@ -51,12 +45,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
           target: wasm32-unknown-unknown
-          profile: minimal
-          override: true
       - run: cargo test --target wasm32-unknown-unknown --no-run
 
   clippy:
@@ -65,10 +56,5 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          override: true
-          components: clippy
+      - uses: dtolnay/rust-toolchain@clippy
       - run: cargo clippy -- -Dclippy::all
