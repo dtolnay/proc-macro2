@@ -119,7 +119,7 @@ impl Drop for TokenStream {
             #[cfg(wrap_proc_macro)]
             let group = match group {
                 crate::imp::Group::Fallback(group) => group,
-                _ => continue,
+                crate::imp::Group::Compiler(_) => continue,
             };
             let mut group = group;
             self.inner.extend(group.stream.take_inner());

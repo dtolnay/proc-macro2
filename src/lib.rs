@@ -87,7 +87,6 @@
     clippy::doc_markdown,
     clippy::if_then_panic,
     clippy::items_after_statements,
-    clippy::match_wildcard_for_single_variants,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
     clippy::semicolon_if_nothing_returned,
