@@ -1,3 +1,5 @@
+#![allow(clippy::non_ascii_literal)]
+
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::panic;
 use std::str::{self, FromStr};

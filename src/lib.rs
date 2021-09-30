@@ -84,14 +84,17 @@
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(
     clippy::cast_lossless,
+    clippy::cast_possible_truncation,
     clippy::doc_markdown,
     clippy::if_then_panic,
     clippy::items_after_statements,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
+    clippy::shadow_unrelated,
     clippy::trivially_copy_pass_by_ref,
     clippy::unnecessary_wraps,
     clippy::unused_self,
+    clippy::used_underscore_binding,
     clippy::vec_init_then_push
 )]
 
