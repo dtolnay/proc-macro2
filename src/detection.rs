@@ -1,5 +1,5 @@
 use std::panic::{self, PanicInfo};
-use std::sync::atomic::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
 
 static WORKS: AtomicUsize = AtomicUsize::new(0);

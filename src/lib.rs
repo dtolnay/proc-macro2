@@ -92,8 +92,7 @@
     clippy::trivially_copy_pass_by_ref,
     clippy::unnecessary_wraps,
     clippy::unused_self,
-    clippy::vec_init_then_push,
-    clippy::wildcard_imports
+    clippy::vec_init_then_push
 )]
 
 #[cfg(use_proc_macro)]
