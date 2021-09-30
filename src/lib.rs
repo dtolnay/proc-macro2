@@ -82,7 +82,11 @@
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
-#![allow(clippy::needless_doctest_main, clippy::vec_init_then_push)]
+#![allow(
+    clippy::if_then_panic,
+    clippy::needless_doctest_main,
+    clippy::vec_init_then_push
+)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
