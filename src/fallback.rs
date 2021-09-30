@@ -179,7 +179,7 @@ impl Display for TokenStream {
                     Display::fmt(tt, f)
                 }
                 TokenTree::Literal(tt) => Display::fmt(tt, f),
-            }?
+            }?;
         }
 
         Ok(())
