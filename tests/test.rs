@@ -1,5 +1,3 @@
-#![allow(clippy::default_trait_access)]
-
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::panic;
 use std::str::{self, FromStr};
@@ -481,7 +479,7 @@ TokenStream [
 
 #[test]
 fn default_tokenstream_is_empty() {
-    let default_token_stream: TokenStream = Default::default();
+    let default_token_stream = <TokenStream as Default>::default();
 
     assert!(default_token_stream.is_empty());
 }
