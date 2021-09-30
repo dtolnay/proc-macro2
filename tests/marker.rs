@@ -1,3 +1,5 @@
+#![allow(clippy::wildcard_imports)]
+
 use proc_macro2::*;
 
 macro_rules! assert_impl {

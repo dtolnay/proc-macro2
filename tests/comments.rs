@@ -1,3 +1,5 @@
+#![allow(clippy::needless_pass_by_value)]
+
 use proc_macro2::{Delimiter, Literal, Spacing, TokenStream, TokenTree};
 
 // #[doc = "..."] -> "..."
