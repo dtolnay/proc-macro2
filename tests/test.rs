@@ -1,4 +1,4 @@
-#![allow(clippy::redundant_clone, clippy::default_trait_access)]
+#![allow(clippy::default_trait_access)]
 
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::panic;
@@ -185,7 +185,7 @@ fn roundtrip() {
         println!("parse: {}", p);
         let s = p.parse::<TokenStream>().unwrap().to_string();
         println!("first: {}", s);
-        let s2 = s.to_string().parse::<TokenStream>().unwrap().to_string();
+        let s2 = s.parse::<TokenStream>().unwrap().to_string();
         assert_eq!(s, s2);
     }
     roundtrip("a");
