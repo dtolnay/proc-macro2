@@ -83,9 +83,21 @@
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(
+    clippy::cast_lossless,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
     clippy::if_then_panic,
+    clippy::items_after_statements,
+    clippy::map_unwrap_or,
+    clippy::match_wildcard_for_single_variants,
+    clippy::must_use_candidate,
     clippy::needless_doctest_main,
-    clippy::vec_init_then_push
+    clippy::semicolon_if_nothing_returned,
+    clippy::trivially_copy_pass_by_ref,
+    clippy::unnecessary_wraps,
+    clippy::unused_self,
+    clippy::vec_init_then_push,
+    clippy::wildcard_imports
 )]
 
 #[cfg(use_proc_macro)]
