@@ -53,7 +53,7 @@ assert_impl!(TokenTree is not Send or Sync);
 
 #[cfg(procmacro2_semver_exempt)]
 mod semver_exempt {
-    use super::*;
+    use proc_macro2::{LineColumn, SourceFile};
 
     assert_impl!(LineColumn is Send and Sync);
 
@@ -65,6 +65,8 @@ mod unwind_safe {
     use proc_macro2::{
         Delimiter, Group, Ident, LexError, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
     };
+    #[cfg(procmacro2_semver_exempt)]
+    use proc_macro2::{LineColumn, SourceFile};
     use std::panic::{RefUnwindSafe, UnwindSafe};
 
     macro_rules! assert_unwind_safe {
