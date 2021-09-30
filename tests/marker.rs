@@ -1,6 +1,6 @@
-#![allow(clippy::wildcard_imports)]
-
-use proc_macro2::*;
+use proc_macro2::{
+    Delimiter, Group, Ident, LexError, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
+};
 
 macro_rules! assert_impl {
     ($ty:ident is $($marker:ident) and +) => {
@@ -62,7 +62,9 @@ mod semver_exempt {
 
 #[cfg(not(no_libprocmacro_unwind_safe))]
 mod unwind_safe {
-    use super::*;
+    use proc_macro2::{
+        Delimiter, Group, Ident, LexError, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
+    };
     use std::panic::{RefUnwindSafe, UnwindSafe};
 
     macro_rules! assert_unwind_safe {
