@@ -85,7 +85,6 @@
 #![allow(
     clippy::cast_lossless,
     clippy::doc_markdown,
-    clippy::explicit_iter_loop,
     clippy::if_then_panic,
     clippy::items_after_statements,
     clippy::map_unwrap_or,

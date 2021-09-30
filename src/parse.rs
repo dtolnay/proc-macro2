@@ -817,12 +817,12 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
         TokenTree::Punct(Punct::new('=', Spacing::Alone)),
         TokenTree::Literal(crate::Literal::string(comment)),
     ];
-    for tt in stream.iter_mut() {
+    for tt in &mut stream {
         tt.set_span(span);
     }
     let group = Group::new(Delimiter::Bracket, stream.into_iter().collect());
     trees.push(crate::Group::_new_stable(group).into());
-    for tt in trees.iter_mut() {
+    for tt in &mut trees {
         tt.set_span(span);
     }
     Ok((rest, trees))
