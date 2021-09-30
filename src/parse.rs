@@ -621,8 +621,7 @@ fn float_digits(input: Cursor) -> Result<Cursor, Reject> {
                 chars.next();
                 if chars
                     .peek()
-                    .map(|&ch| ch == '.' || is_ident_start(ch))
-                    .unwrap_or(false)
+                    .map_or(false, |&ch| ch == '.' || is_ident_start(ch))
                 {
                     return Err(Reject);
                 }

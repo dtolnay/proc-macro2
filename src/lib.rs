@@ -87,7 +87,6 @@
     clippy::doc_markdown,
     clippy::if_then_panic,
     clippy::items_after_statements,
-    clippy::map_unwrap_or,
     clippy::match_wildcard_for_single_variants,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
