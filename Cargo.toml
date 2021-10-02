@@ -9,6 +9,7 @@ repository = "https://github.com/alexcrichton/proc-macro2"
 documentation = "https://docs.rs/proc-macro2"
 categories = ["development-tools::procedural-macro-helpers"]
 edition = "2018"
+rust-version = "1.31"
 description = """
 A substitute implementation of the compiler's `proc_macro` API to decouple
 token-based libraries from the procedural macro use case.
