@@ -1,5 +1,5 @@
 error[E0277]: `proc_macro::Span` cannot be sent between threads safely
- --> $DIR/test-not-send.rs:5:5
+ --> test-not-send.rs:5:5
   |
 5 |     requires_send::<Span>();
   |     ^^^^^^^^^^^^^^^^^^^^^ `proc_macro::Span` cannot be sent between threads safely
@@ -8,13 +8,13 @@ error[E0277]: `proc_macro::Span` cannot be sent between threads safely
   = note: required because it appears within the type `proc_macro2::imp::Span`
   = note: required because it appears within the type `Span`
 note: required by a bound in `requires_send`
- --> $DIR/test-not-send.rs:4:25
+ --> test-not-send.rs:4:25
   |
 4 |     fn requires_send<T: Send>() {}
   |                         ^^^^ required by this bound in `requires_send`
 
 error[E0277]: `Rc<()>` cannot be sent between threads safely
- --> $DIR/test-not-send.rs:5:5
+ --> test-not-send.rs:5:5
   |
 5 |     requires_send::<Span>();
   |     ^^^^^^^^^^^^^^^^^^^^^ `Rc<()>` cannot be sent between threads safely
@@ -24,7 +24,7 @@ error[E0277]: `Rc<()>` cannot be sent between threads safely
   = note: required because it appears within the type `PhantomData<proc_macro2::marker::ProcMacroAutoTraits>`
   = note: required because it appears within the type `Span`
 note: required by a bound in `requires_send`
- --> $DIR/test-not-send.rs:4:25
+ --> test-not-send.rs:4:25
   |
 4 |     fn requires_send<T: Send>() {}
   |                         ^^^^ required by this bound in `requires_send`
