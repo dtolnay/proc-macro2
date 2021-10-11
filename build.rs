@@ -33,6 +33,12 @@
 //     location of a token. Enabled by procmacro2_semver_exempt or the
 //     "span-locations" Cargo cfg. This is behind a cfg because tracking
 //     location inside spans is a performance hit.
+//
+// "is_available"
+//     Use `proc_macro::is_available()` to detect if the proc macro API is
+//     available or needs to be polyfilled instead of trying to use the proc
+//     macro API and catching a panic if it isn't available.
+//     Enabled on Rust 1.57+
 
 use std::env;
 use std::iter;
@@ -80,6 +86,10 @@ fn main() {
 
     if version.minor >= 54 {
         println!("cargo:rustc-cfg=literal_from_str");
+    }
+
+    if version.minor >= 57 {
+        println!("cargo:rustc-cfg=is_available");
     }
 
     let target = env::var("TARGET").unwrap();

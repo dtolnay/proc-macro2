@@ -12,8 +12,16 @@ pub(crate) fn inside_proc_macro() -> bool {
         _ => {}
     }
 
-    INIT.call_once(initialize);
-    inside_proc_macro()
+    #[cfg(feature = "is_available")]
+    {
+        proc_macro::is_available()
+    }
+
+    #[cfg(not(feature = "is_available"))]
+    {
+        INIT.call_once(initialize);
+        inside_proc_macro()
+    }
 }
 
 pub(crate) fn force_fallback() {
@@ -21,7 +29,7 @@ pub(crate) fn force_fallback() {
 }
 
 pub(crate) fn unforce_fallback() {
-    initialize();
+    WORKS.store(0, Ordering::SeqCst);
 }
 
 // Swap in a null panic hook to avoid printing "thread panicked" to stderr,
