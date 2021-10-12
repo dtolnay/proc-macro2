@@ -49,19 +49,27 @@ pub(crate) fn unforce_fallback() {
 // not occur, they need to call e.g. `proc_macro2::Span::call_site()` from
 // the main thread before launching any other threads.
 fn initialize() {
-    type PanicHook = dyn Fn(&PanicInfo) + Sync + Send + 'static;
+    #[cfg(feature = "is_available")]
+    {
+        WORKS.store(proc_macro::is_available() as usize + 1, Ordering::SeqCst);
+    }
 
-    let null_hook: Box<PanicHook> = Box::new(|_panic_info| { /* ignore */ });
-    let sanity_check = &*null_hook as *const PanicHook;
-    let original_hook = panic::take_hook();
-    panic::set_hook(null_hook);
+    #[cfg(not(feature = "is_available"))]
+    {
+        type PanicHook = dyn Fn(&PanicInfo) + Sync + Send + 'static;
 
-    let works = panic::catch_unwind(proc_macro::Span::call_site).is_ok();
-    WORKS.store(works as usize + 1, Ordering::SeqCst);
+        let null_hook: Box<PanicHook> = Box::new(|_panic_info| { /* ignore */ });
+        let sanity_check = &*null_hook as *const PanicHook;
+        let original_hook = panic::take_hook();
+        panic::set_hook(null_hook);
 
-    let hopefully_null_hook = panic::take_hook();
-    panic::set_hook(original_hook);
-    if sanity_check != &*hopefully_null_hook {
-        panic!("observed race condition in proc_macro2::inside_proc_macro");
+        let works = panic::catch_unwind(proc_macro::Span::call_site).is_ok();
+        WORKS.store(works as usize + 1, Ordering::SeqCst);
+
+        let hopefully_null_hook = panic::take_hook();
+        panic::set_hook(original_hook);
+        if sanity_check != &*hopefully_null_hook {
+            panic!("observed race condition in proc_macro2::inside_proc_macro");
+        }
     }
 }
