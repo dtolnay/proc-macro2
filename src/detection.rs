@@ -24,6 +24,12 @@ pub(crate) fn unforce_fallback() {
     initialize();
 }
 
+#[cfg(feature = "is_available")]
+fn initialize() {
+    let available = proc_macro::is_available();
+    WORKS.store(available as usize + 1, Ordering::SeqCst);
+}
+
 // Swap in a null panic hook to avoid printing "thread panicked" to stderr,
 // then use catch_unwind to determine whether the compiler's proc_macro is
 // working. When proc-macro2 is used from outside of a procedural macro all
@@ -48,28 +54,21 @@ pub(crate) fn unforce_fallback() {
 // here. For now, if a user needs to guarantee that this failure mode does
 // not occur, they need to call e.g. `proc_macro2::Span::call_site()` from
 // the main thread before launching any other threads.
+#[cfg(not(feature = "is_available"))]
 fn initialize() {
-    #[cfg(feature = "is_available")]
-    {
-        WORKS.store(proc_macro::is_available() as usize + 1, Ordering::SeqCst);
-    }
+    type PanicHook = dyn Fn(&PanicInfo) + Sync + Send + 'static;
 
-    #[cfg(not(feature = "is_available"))]
-    {
-        type PanicHook = dyn Fn(&PanicInfo) + Sync + Send + 'static;
+    let null_hook: Box<PanicHook> = Box::new(|_panic_info| { /* ignore */ });
+    let sanity_check = &*null_hook as *const PanicHook;
+    let original_hook = panic::take_hook();
+    panic::set_hook(null_hook);
 
-        let null_hook: Box<PanicHook> = Box::new(|_panic_info| { /* ignore */ });
-        let sanity_check = &*null_hook as *const PanicHook;
-        let original_hook = panic::take_hook();
-        panic::set_hook(null_hook);
+    let works = panic::catch_unwind(proc_macro::Span::call_site).is_ok();
+    WORKS.store(works as usize + 1, Ordering::SeqCst);
 
-        let works = panic::catch_unwind(proc_macro::Span::call_site).is_ok();
-        WORKS.store(works as usize + 1, Ordering::SeqCst);
-
-        let hopefully_null_hook = panic::take_hook();
-        panic::set_hook(original_hook);
-        if sanity_check != &*hopefully_null_hook {
-            panic!("observed race condition in proc_macro2::inside_proc_macro");
-        }
+    let hopefully_null_hook = panic::take_hook();
+    panic::set_hook(original_hook);
+    if sanity_check != &*hopefully_null_hook {
+        panic!("observed race condition in proc_macro2::inside_proc_macro");
     }
 }

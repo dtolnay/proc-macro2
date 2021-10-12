@@ -35,10 +35,10 @@
 //     location inside spans is a performance hit.
 //
 // "is_available"
-//     Use `proc_macro::is_available()` to detect if the proc macro API is
+//     Use proc_macro::is_available() to detect if the proc macro API is
 //     available or needs to be polyfilled instead of trying to use the proc
-//     macro API and catching a panic if it isn't available.
-//     Enabled on Rust 1.57+
+//     macro API and catching a panic if it isn't available. Enabled on Rust
+//     1.57+.
 
 use std::env;
 use std::iter;
