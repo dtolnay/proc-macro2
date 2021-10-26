@@ -168,7 +168,11 @@ fn literal_iter_negative() {
 #[test]
 fn literal_parse() {
     assert!("1".parse::<Literal>().is_ok());
+    assert!("-1".parse::<Literal>().is_ok());
+    assert!("-1u12".parse::<Literal>().is_ok());
     assert!("1.0".parse::<Literal>().is_ok());
+    assert!("-1.0".parse::<Literal>().is_ok());
+    assert!("-1.0f12".parse::<Literal>().is_ok());
     assert!("'a'".parse::<Literal>().is_ok());
     assert!("\"\n\"".parse::<Literal>().is_ok());
     assert!("0 1".parse::<Literal>().is_err());
@@ -177,6 +181,9 @@ fn literal_parse() {
     assert!("/* comment */0".parse::<Literal>().is_err());
     assert!("0/* comment */".parse::<Literal>().is_err());
     assert!("0// comment".parse::<Literal>().is_err());
+    assert!("- 1".parse::<Literal>().is_err());
+    assert!("- 1.0".parse::<Literal>().is_err());
+    assert!("-\"\"".parse::<Literal>().is_err());
 }
 
 #[test]
