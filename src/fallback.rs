@@ -65,7 +65,7 @@ impl TokenStream {
     }
 
     fn push_token(&mut self, token: TokenTree) {
-        // https://github.com/alexcrichton/proc-macro2/issues/235
+        // https://github.com/dtolnay/proc-macro2/issues/235
         match token {
             #[cfg(not(no_bind_by_move_pattern_guard))]
             TokenTree::Literal(crate::Literal {

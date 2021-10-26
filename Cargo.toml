@@ -1,11 +1,11 @@
 [package]
 name = "proc-macro2"
 version = "1.0.30" # remember to update html_root_url
-authors = ["Alex Crichton <alex@alexcrichton.com>", "David Tolnay <dtolnay@gmail.com>"]
+authors = ["David Tolnay <dtolnay@gmail.com>", "Alex Crichton <alex@alexcrichton.com>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["macros"]
-repository = "https://github.com/alexcrichton/proc-macro2"
+repository = "https://github.com/dtolnay/proc-macro2"
 documentation = "https://docs.rs/proc-macro2"
 categories = ["development-tools::procedural-macro-helpers"]
 edition = "2018"

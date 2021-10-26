@@ -60,7 +60,7 @@ fn main() {
 
     let semver_exempt = cfg!(procmacro2_semver_exempt);
     if semver_exempt {
-        // https://github.com/alexcrichton/proc-macro2/issues/147
+        // https://github.com/dtolnay/proc-macro2/issues/147
         println!("cargo:rustc-cfg=procmacro2_semver_exempt");
     }
 
