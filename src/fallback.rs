@@ -896,10 +896,20 @@ impl Literal {
 impl FromStr for Literal {
     type Err = LexError;
 
-    fn from_str(repr: &str) -> Result<Self, Self::Err> {
+    fn from_str(mut repr: &str) -> Result<Self, Self::Err> {
+        let negative = repr.starts_with('-');
+        if negative {
+            repr = &repr[1..];
+            if !repr.starts_with(|ch: char| ch.is_ascii_digit()) {
+                return Err(LexError::call_site());
+            }
+        }
         let cursor = get_cursor(repr);
-        if let Ok((_rest, literal)) = parse::literal(cursor) {
+        if let Ok((_rest, mut literal)) = parse::literal(cursor) {
             if literal.text.len() == repr.len() {
+                if negative {
+                    literal.text.insert(0, '-');
+                }
                 return Ok(literal);
             }
         }
