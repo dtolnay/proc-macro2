@@ -1,3 +1,4 @@
+#[cfg(not(is_available))]
 use std::panic::{self, PanicInfo};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
