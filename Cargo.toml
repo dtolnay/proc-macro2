@@ -1,6 +1,6 @@
 [package]
 name = "proc-macro2"
-version = "1.0.32" # remember to update html_root_url
+version = "1.0.33" # remember to update html_root_url
 authors = ["David Tolnay <dtolnay@gmail.com>", "Alex Crichton <alex@alexcrichton.com>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
