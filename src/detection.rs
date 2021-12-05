@@ -1,5 +1,3 @@
-#[cfg(not(is_available))]
-use std::panic::{self, PanicInfo};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
 
@@ -57,6 +55,8 @@ fn initialize() {
 // the main thread before launching any other threads.
 #[cfg(not(is_available))]
 fn initialize() {
+    use std::panic::{self, PanicInfo};
+
     type PanicHook = dyn Fn(&PanicInfo) + Sync + Send + 'static;
 
     let null_hook: Box<PanicHook> = Box::new(|_panic_info| { /* ignore */ });
