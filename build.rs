@@ -76,20 +76,20 @@ fn main() {
         println!("cargo:rustc-cfg=no_bind_by_move_pattern_guard");
     }
 
-    if version.minor >= 44 {
-        println!("cargo:rustc-cfg=lexerror_display");
+    if version.minor < 44 {
+        println!("cargo:rustc-cfg=no_lexerror_display");
     }
 
-    if version.minor >= 45 {
-        println!("cargo:rustc-cfg=hygiene");
+    if version.minor < 45 {
+        println!("cargo:rustc-cfg=no_hygiene");
     }
 
-    if version.minor >= 54 {
-        println!("cargo:rustc-cfg=literal_from_str");
+    if version.minor < 54 {
+        println!("cargo:rustc-cfg=no_literal_from_str");
     }
 
-    if version.minor >= 57 {
-        println!("cargo:rustc-cfg=is_available");
+    if version.minor < 57 {
+        println!("cargo:rustc-cfg=no_is_available");
     }
 
     let target = env::var("TARGET").unwrap();

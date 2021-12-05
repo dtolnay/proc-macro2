@@ -410,7 +410,7 @@ impl Span {
     /// of the macro. This is the same hygiene behavior as `macro_rules`.
     ///
     /// This function requires Rust 1.45 or later.
-    #[cfg(hygiene)]
+    #[cfg(not(no_hygiene))]
     pub fn mixed_site() -> Span {
         Span::_new(imp::Span::mixed_site())
     }

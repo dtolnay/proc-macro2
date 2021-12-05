@@ -426,7 +426,7 @@ impl Span {
         Span { lo: 0, hi: 0 }
     }
 
-    #[cfg(hygiene)]
+    #[cfg(not(no_hygiene))]
     pub fn mixed_site() -> Span {
         Span::call_site()
     }
