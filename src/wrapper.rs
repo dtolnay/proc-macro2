@@ -284,9 +284,9 @@ impl Debug for LexError {
 impl Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            #[cfg(lexerror_display)]
+            #[cfg(not(no_lexerror_display))]
             LexError::Compiler(e) => Display::fmt(e, f),
-            #[cfg(not(lexerror_display))]
+            #[cfg(no_lexerror_display)]
             LexError::Compiler(_e) => Display::fmt(
                 &fallback::LexError {
                     span: fallback::Span::call_site(),
@@ -416,7 +416,7 @@ impl Span {
         }
     }
 
-    #[cfg(hygiene)]
+    #[cfg(not(no_hygiene))]
     pub fn mixed_site() -> Span {
         if inside_proc_macro() {
             Span::Compiler(proc_macro::Span::mixed_site())
@@ -436,11 +436,11 @@ impl Span {
 
     pub fn resolved_at(&self, other: Span) -> Span {
         match (self, other) {
-            #[cfg(hygiene)]
+            #[cfg(not(no_hygiene))]
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.resolved_at(b)),
 
             // Name resolution affects semantics, but location is only cosmetic
-            #[cfg(not(hygiene))]
+            #[cfg(no_hygiene)]
             (Span::Compiler(_), Span::Compiler(_)) => other,
 
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.resolved_at(b)),
@@ -450,11 +450,11 @@ impl Span {
 
     pub fn located_at(&self, other: Span) -> Span {
         match (self, other) {
-            #[cfg(hygiene)]
+            #[cfg(not(no_hygiene))]
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.located_at(b)),
 
             // Name resolution affects semantics, but location is only cosmetic
-            #[cfg(not(hygiene))]
+            #[cfg(no_hygiene)]
             (Span::Compiler(_), Span::Compiler(_)) => *self,
 
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.located_at(b)),
@@ -921,13 +921,13 @@ impl FromStr for Literal {
 
     fn from_str(repr: &str) -> Result<Self, Self::Err> {
         if inside_proc_macro() {
-            #[cfg(literal_from_str)]
+            #[cfg(not(no_literal_from_str))]
             {
                 proc_macro::Literal::from_str(repr)
                     .map(Literal::Compiler)
                     .map_err(LexError::Compiler)
             }
-            #[cfg(not(literal_from_str))]
+            #[cfg(no_literal_from_str)]
             {
                 let tokens = proc_macro_parse(repr)?;
                 let mut iter = tokens.into_iter();
