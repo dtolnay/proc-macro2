@@ -106,6 +106,9 @@
     clippy::vec_init_then_push
 )]
 
+// For proc_macro::is_available()
+#![feature(proc_macro_is_available)]
+
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
 
