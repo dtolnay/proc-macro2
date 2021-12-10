@@ -819,7 +819,7 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
     for tt in &mut stream {
         tt.set_span(span);
     }
-    let group = Group::new(Delimiter::Bracket, stream.into_iter().collect());
+    let group = Group::new(Delimiter::Bracket, TokenStream { inner: stream });
     trees.push(crate::Group::_new_stable(group).into());
     for tt in &mut trees {
         tt.set_span(span);
