@@ -106,6 +106,14 @@
     clippy::vec_init_then_push
 )]
 
+#[cfg(all(procmacro2_semver_exempt, wrap_proc_macro, not(super_unstable)))]
+compile_error! {"\
+    Something is not right. If you've tried to turn on \
+    procmacro2_semver_exempt, you need to ensure that it \
+    is turned on for the compilation of the proc-macro2 \
+    build script as well.
+"}
+
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
 
@@ -295,7 +303,7 @@ impl Error for LexError {}
 /// The source file of a given `Span`.
 ///
 /// This type is semver exempt and not exposed by default.
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
 #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
@@ -303,7 +311,7 @@ pub struct SourceFile {
     _marker: Marker,
 }
 
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
 impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
@@ -336,7 +344,7 @@ impl SourceFile {
     }
 }
 
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
 impl Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(&self.inner, f)
@@ -461,7 +469,7 @@ impl Span {
     /// The original source file into which this span points.
     ///
     /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
     #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn source_file(&self) -> SourceFile {
         SourceFile::_new(self.inner.source_file())
