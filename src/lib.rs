@@ -98,6 +98,7 @@
     clippy::manual_assert,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
+    clippy::return_self_not_must_use,
     clippy::shadow_unrelated,
     clippy::trivially_copy_pass_by_ref,
     clippy::unnecessary_wraps,
