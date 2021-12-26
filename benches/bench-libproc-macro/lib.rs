@@ -4,7 +4,7 @@ use proc_macro::{Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::iter::once;
 use std::time::Instant;
 
-const N: u32 = 7000;
+const N: u32 = 20000;
 
 #[proc_macro]
 pub fn bench(_input: TokenStream) -> TokenStream {
