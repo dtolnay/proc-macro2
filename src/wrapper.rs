@@ -804,6 +804,14 @@ macro_rules! unsuffixed_integers {
 }
 
 impl Literal {
+    pub unsafe fn from_str_unchecked(repr: &str) -> Self {
+        if inside_proc_macro() {
+            Literal::Compiler(repr.parse().expect("invalid literal"))
+        } else {
+            Literal::Fallback(fallback::Literal::from_str_unchecked(repr))
+        }
+    }
+
     suffixed_numbers! {
         u8_suffixed => u8,
         u16_suffixed => u16,

@@ -784,6 +784,10 @@ impl Literal {
         }
     }
 
+    pub(crate) unsafe fn from_str_unchecked(repr: &str) -> Self {
+        Literal::_new(repr.to_owned())
+    }
+
     suffixed_numbers! {
         u8_suffixed => u8,
         u16_suffixed => u16,
