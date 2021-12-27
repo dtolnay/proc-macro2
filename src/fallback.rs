@@ -31,7 +31,7 @@ pub fn unforce() {
 
 #[derive(Clone)]
 pub(crate) struct TokenStream {
-    pub(crate) inner: Vec<TokenTree>,
+    inner: Vec<TokenTree>,
 }
 
 #[derive(Debug)]
@@ -105,6 +105,12 @@ impl TokenStream {
                 .inner
                 .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
         }
+    }
+}
+
+impl From<Vec<TokenTree>> for TokenStream {
+    fn from(inner: Vec<TokenTree>) -> Self {
+        TokenStream { inner }
     }
 }
 
