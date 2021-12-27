@@ -100,6 +100,7 @@
     clippy::needless_doctest_main,
     clippy::return_self_not_must_use,
     clippy::shadow_unrelated,
+    clippy::too_many_lines,
     clippy::trivially_copy_pass_by_ref,
     clippy::unnecessary_wraps,
     clippy::unused_self,

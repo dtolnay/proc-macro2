@@ -1,7 +1,8 @@
 use crate::detection::inside_proc_macro;
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 use std::fmt::{self, Debug, Display};
-use std::iter::FromIterator;
+use std::iter::{self, FromIterator};
+use std::mem;
 use std::ops::RangeBounds;
 use std::panic;
 #[cfg(super_unstable)]
@@ -18,10 +19,19 @@ pub(crate) enum TokenStream {
 // In `impl Extend<TokenTree> for TokenStream` which is used heavily by quote,
 // we hold on to the appended tokens and do proc_macro::TokenStream::extend as
 // late as possible to batch together consecutive uses of the Extend impl.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct DeferredTokenStream {
     stream: proc_macro::TokenStream,
-    extra: Vec<proc_macro::TokenTree>,
+    extra: Extra,
+}
+
+#[derive(Clone, Debug)]
+enum Extra {
+    // Invariant: nonempty
+    Tokens(Vec<proc_macro::TokenTree>),
+    // Invariant: nonempty
+    String(String),
+    None,
 }
 
 pub(crate) enum LexError {
@@ -30,6 +40,7 @@ pub(crate) enum LexError {
 }
 
 impl LexError {
+    #[cfg(no_literal_from_str)]
     fn call_site() -> Self {
         LexError::Fallback(fallback::LexError {
             span: fallback::Span::call_site(),
@@ -37,15 +48,15 @@ impl LexError {
     }
 }
 
-fn mismatch() -> ! {
-    panic!("stable/nightly mismatch")
+fn mismatch(line: u32) -> ! {
+    panic!("stable/nightly mismatch {}", line)
 }
 
 impl DeferredTokenStream {
     fn new(stream: proc_macro::TokenStream) -> Self {
         DeferredTokenStream {
             stream,
-            extra: Vec::new(),
+            extra: Extra::None,
         }
     }
 
@@ -57,14 +68,32 @@ impl DeferredTokenStream {
         // If-check provides a fast short circuit for the common case of `extra`
         // being empty, which saves a round trip over the proc macro bridge.
         // Improves macro expansion time in winrt by 6% in debug mode.
-        if !self.extra.is_empty() {
-            self.stream.extend(self.extra.drain(..));
+        match &mut self.extra {
+            Extra::Tokens(extra_tokens) => {
+                self.stream.extend(extra_tokens.drain(..));
+                self.extra = Extra::None;
+            }
+            Extra::String(extra_string) => {
+                self.stream
+                    .extend(extra_string.parse::<proc_macro::TokenStream>().unwrap());
+                self.extra = Extra::None;
+            }
+            Extra::None => {}
         }
     }
 
     fn into_token_stream(mut self) -> proc_macro::TokenStream {
         self.evaluate_now();
         self.stream
+    }
+}
+
+impl Extra {
+    fn is_empty(&self) -> bool {
+        match self {
+            Extra::Tokens(_) | Extra::String(_) => false,
+            Extra::None => true,
+        }
     }
 }
 
@@ -84,16 +113,9 @@ impl TokenStream {
         }
     }
 
-    fn unwrap_nightly(self) -> proc_macro::TokenStream {
-        match self {
-            TokenStream::Compiler(s) => s.into_token_stream(),
-            TokenStream::Fallback(_) => mismatch(),
-        }
-    }
-
     fn unwrap_stable(self) -> fallback::TokenStream {
         match self {
-            TokenStream::Compiler(_) => mismatch(),
+            TokenStream::Compiler(_) => mismatch(line!()),
             TokenStream::Fallback(s) => s,
         }
     }
@@ -104,9 +126,10 @@ impl FromStr for TokenStream {
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         if inside_proc_macro() {
-            Ok(TokenStream::Compiler(DeferredTokenStream::new(
-                proc_macro_parse(src)?,
-            )))
+            Ok(TokenStream::Compiler(DeferredTokenStream {
+                stream: proc_macro::TokenStream::new(),
+                extra: Extra::String(src.to_owned()), // FIXME: validate
+            }))
         } else {
             Ok(TokenStream::Fallback(src.parse()?))
         }
@@ -114,6 +137,7 @@ impl FromStr for TokenStream {
 }
 
 // Work around https://github.com/rust-lang/rust/issues/58736.
+#[cfg(no_literal_from_str)]
 fn proc_macro_parse(src: &str) -> Result<proc_macro::TokenStream, LexError> {
     let result = panic::catch_unwind(|| src.parse().map_err(LexError::Compiler));
     result.unwrap_or_else(|_| Err(LexError::call_site()))
@@ -197,14 +221,14 @@ impl FromIterator<TokenStream> for TokenStream {
                 first.evaluate_now();
                 first.stream.extend(streams.map(|s| match s {
                     TokenStream::Compiler(s) => s.into_token_stream(),
-                    TokenStream::Fallback(_) => mismatch(),
+                    TokenStream::Fallback(_) => mismatch(line!()),
                 }));
                 TokenStream::Compiler(first)
             }
             Some(TokenStream::Fallback(mut first)) => {
                 first.extend(streams.map(|s| match s {
                     TokenStream::Fallback(s) => s,
-                    TokenStream::Compiler(_) => mismatch(),
+                    TokenStream::Compiler(_) => mismatch(line!()),
                 }));
                 TokenStream::Fallback(first)
             }
@@ -219,7 +243,164 @@ impl Extend<TokenTree> for TokenStream {
             TokenStream::Compiler(tts) => {
                 // Here is the reason for DeferredTokenStream.
                 for token in stream {
-                    tts.extra.push(into_compiler_token(token));
+                    match token {
+                        TokenTree::Ident(crate::Ident {
+                            inner: Ident::CallSite(mut ident),
+                            ..
+                        }) => match &mut tts.extra {
+                            Extra::Tokens(extra_tokens) => {
+                                tts.stream.extend(extra_tokens.drain(..));
+                                ident.push(' ');
+                                tts.extra = Extra::String(ident);
+                            }
+                            Extra::String(extra_string) => {
+                                extra_string.push_str(&ident);
+                                extra_string.push(' ');
+                            }
+                            Extra::None => {
+                                ident.push(' ');
+                                tts.extra = Extra::String(ident);
+                            }
+                        },
+                        TokenTree::Punct(crate::Punct {
+                            ch,
+                            spacing,
+                            span:
+                                crate::Span {
+                                    inner: Span::CallSite,
+                                    ..
+                                },
+                        }) => match &mut tts.extra {
+                            Extra::Tokens(extra_tokens) => {
+                                tts.stream.extend(extra_tokens.drain(..));
+                                let mut extra_string = ch.to_string();
+                                if spacing == Spacing::Alone {
+                                    extra_string.push(' ');
+                                }
+                                tts.extra = Extra::String(extra_string);
+                            }
+                            Extra::String(extra_string) => {
+                                extra_string.push(ch);
+                                if spacing == Spacing::Alone {
+                                    extra_string.push(' ');
+                                }
+                            }
+                            Extra::None => {
+                                let mut extra_string = ch.to_string();
+                                if spacing == Spacing::Alone {
+                                    extra_string.push(' ');
+                                }
+                                tts.extra = Extra::String(extra_string);
+                            }
+                        },
+                        TokenTree::Literal(crate::Literal {
+                            inner: Literal::CallSite(repr),
+                            ..
+                        }) => match &mut tts.extra {
+                            Extra::Tokens(extra_tokens) => {
+                                tts.stream.extend(extra_tokens.drain(..));
+                                let mut extra_string = repr.to_string();
+                                extra_string.push(' ');
+                                tts.extra = Extra::String(extra_string);
+                            }
+                            Extra::String(extra_string) => {
+                                extra_string.push_str(&repr);
+                                extra_string.push(' ');
+                            }
+                            Extra::None => {
+                                let mut extra_string = repr.to_string();
+                                extra_string.push(' ');
+                                tts.extra = Extra::String(extra_string);
+                            }
+                        },
+                        TokenTree::Group(crate::Group {
+                            inner: Group::CallSite(delimiter, content),
+                        }) => {
+                            if content.stream.is_empty() {
+                                match content.extra {
+                                    Extra::Tokens(_) => {}
+                                    Extra::String(mut content) => {
+                                        let (open, close) = match delimiter {
+                                            Delimiter::Parenthesis => ('(', ')'),
+                                            Delimiter::Bracket => ('[', ']'),
+                                            Delimiter::Brace => ('{', '}'),
+                                            Delimiter::None => unimplemented!(concat!(line!())),
+                                        };
+                                        match &mut tts.extra {
+                                            Extra::Tokens(extra_tokens) => {
+                                                tts.stream.extend(extra_tokens.drain(..));
+                                                content.insert(0, open);
+                                                content.push(close);
+                                                tts.extra = Extra::String(content);
+                                            }
+                                            Extra::String(extra_string) => {
+                                                extra_string.push(open);
+                                                extra_string.push_str(&content);
+                                                extra_string.push(close);
+                                            }
+                                            Extra::None => {
+                                                content.insert(0, open);
+                                                content.push(close);
+                                                tts.extra = Extra::String(content);
+                                            }
+                                        }
+                                        continue;
+                                    }
+                                    Extra::None => {
+                                        let openclose = match delimiter {
+                                            Delimiter::Parenthesis => "()",
+                                            Delimiter::Bracket => "[]",
+                                            Delimiter::Brace => "{}",
+                                            Delimiter::None => unimplemented!(concat!(line!())),
+                                        };
+                                        match &mut tts.extra {
+                                            Extra::Tokens(extra_tokens) => {
+                                                tts.stream.extend(extra_tokens.drain(..));
+                                                tts.extra = Extra::String(openclose.to_owned());
+                                            }
+                                            Extra::String(extra_string) => {
+                                                extra_string.push_str(openclose);
+                                            }
+                                            Extra::None => {
+                                                tts.extra = Extra::String(openclose.to_owned());
+                                            }
+                                        }
+                                        continue;
+                                    }
+                                }
+                            }
+                            let group_token =
+                                proc_macro::TokenTree::Group(proc_macro_group(delimiter, content));
+                            match &mut tts.extra {
+                                Extra::Tokens(extra_tokens) => {
+                                    extra_tokens.push(group_token);
+                                }
+                                Extra::String(extra_string) => {
+                                    tts.stream.extend(
+                                        extra_string.parse::<proc_macro::TokenStream>().unwrap(),
+                                    );
+                                    tts.extra = Extra::Tokens(vec![group_token]);
+                                }
+                                Extra::None => {
+                                    tts.extra = Extra::Tokens(vec![group_token]);
+                                }
+                            }
+                        }
+                        _ => match &mut tts.extra {
+                            Extra::Tokens(extra_tokens) => {
+                                extra_tokens.push(into_compiler_token(token));
+                            }
+                            Extra::String(extra_string) => {
+                                tts.stream.extend(
+                                    extra_string.parse::<proc_macro::TokenStream>().unwrap(),
+                                );
+                                tts.extra = Extra::Tokens(vec![into_compiler_token(token)]);
+                            }
+                            Extra::None => {
+                                tts.extra = Extra::Tokens(vec![into_compiler_token(token)]);
+                            }
+                        },
+                    }
                 }
             }
             TokenStream::Fallback(tts) => tts.extend(stream),
@@ -231,9 +412,43 @@ impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
         match self {
             TokenStream::Compiler(tts) => {
-                tts.evaluate_now();
-                tts.stream
-                    .extend(streams.into_iter().map(TokenStream::unwrap_nightly));
+                for next in streams {
+                    let next = match next {
+                        TokenStream::Compiler(next) => next,
+                        TokenStream::Fallback(_) => mismatch(line!()),
+                    };
+                    if next.stream.is_empty() {
+                        match &mut tts.extra {
+                            Extra::Tokens(extra_tokens) => match next.extra {
+                                Extra::Tokens(more_extra_tokens) => {
+                                    extra_tokens.extend(more_extra_tokens);
+                                }
+                                Extra::String(more_extra_string) => {
+                                    tts.stream.extend(extra_tokens.drain(..));
+                                    tts.extra = Extra::String(more_extra_string);
+                                }
+                                Extra::None => {}
+                            },
+                            Extra::String(extra_string) => match next.extra {
+                                Extra::Tokens(more_extra_tokens) => {
+                                    tts.stream.extend(
+                                        extra_string.parse::<proc_macro::TokenStream>().unwrap(),
+                                    );
+                                    tts.extra = Extra::Tokens(more_extra_tokens);
+                                }
+                                Extra::String(more_extra_string) => {
+                                    extra_string.push_str(&more_extra_string);
+                                }
+                                Extra::None => {}
+                            },
+                            Extra::None => tts.extra = next.extra,
+                        }
+                    } else {
+                        tts.evaluate_now();
+                        tts.stream.extend(iter::once(next.stream));
+                        tts.extra = next.extra;
+                    }
+                }
             }
             TokenStream::Fallback(tts) => {
                 tts.extend(streams.into_iter().map(TokenStream::unwrap_stable));
@@ -405,12 +620,13 @@ pub(crate) struct LineColumn {
 pub(crate) enum Span {
     Compiler(proc_macro::Span),
     Fallback(fallback::Span),
+    CallSite,
 }
 
 impl Span {
     pub fn call_site() -> Self {
         if inside_proc_macro() {
-            Span::Compiler(proc_macro::Span::call_site())
+            Span::CallSite
         } else {
             Span::Fallback(fallback::Span::call_site())
         }
@@ -444,7 +660,7 @@ impl Span {
             (Span::Compiler(_), Span::Compiler(_)) => other,
 
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.resolved_at(b)),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
@@ -458,7 +674,7 @@ impl Span {
             (Span::Compiler(_), Span::Compiler(_)) => *self,
 
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.located_at(b)),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
@@ -466,6 +682,7 @@ impl Span {
         match self {
             Span::Compiler(s) => s,
             Span::Fallback(_) => panic!("proc_macro::Span is only available in procedural macros"),
+            Span::CallSite => proc_macro::Span::call_site(),
         }
     }
 
@@ -474,6 +691,7 @@ impl Span {
         match self {
             Span::Compiler(s) => SourceFile::nightly(s.source_file()),
             Span::Fallback(s) => SourceFile::Fallback(s.source_file()),
+            Span::CallSite => SourceFile::nightly(proc_macro::Span::call_site().source_file()),
         }
     }
 
@@ -491,6 +709,7 @@ impl Span {
                 let fallback::LineColumn { line, column } = s.start();
                 LineColumn { line, column }
             }
+            Span::CallSite => LineColumn { line: 0, column: 0 },
         }
     }
 
@@ -508,6 +727,7 @@ impl Span {
                 let fallback::LineColumn { line, column } = s.end();
                 LineColumn { line, column }
             }
+            Span::CallSite => LineColumn { line: 0, column: 0 },
         }
     }
 
@@ -533,7 +753,8 @@ impl Span {
     fn unwrap_nightly(self) -> proc_macro::Span {
         match self {
             Span::Compiler(s) => s,
-            Span::Fallback(_) => mismatch(),
+            Span::Fallback(_) => mismatch(line!()),
+            Span::CallSite => proc_macro::Span::call_site(),
         }
     }
 }
@@ -555,6 +776,7 @@ impl Debug for Span {
         match self {
             Span::Compiler(s) => Debug::fmt(s, f),
             Span::Fallback(s) => Debug::fmt(s, f),
+            Span::CallSite => Debug::fmt(&proc_macro::Span::call_site(), f),
         }
     }
 }
@@ -565,6 +787,9 @@ pub(crate) fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span:
             debug.field("span", &s);
         }
         Span::Fallback(s) => fallback::debug_span_field_if_nontrivial(debug, s),
+        Span::CallSite => {
+            debug.field("span", &proc_macro::Span::call_site());
+        }
     }
 }
 
@@ -572,20 +797,13 @@ pub(crate) fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span:
 pub(crate) enum Group {
     Compiler(proc_macro::Group),
     Fallback(fallback::Group),
+    CallSite(Delimiter, DeferredTokenStream),
 }
 
 impl Group {
     pub fn new(delimiter: Delimiter, stream: TokenStream) -> Self {
         match stream {
-            TokenStream::Compiler(tts) => {
-                let delimiter = match delimiter {
-                    Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
-                    Delimiter::Bracket => proc_macro::Delimiter::Bracket,
-                    Delimiter::Brace => proc_macro::Delimiter::Brace,
-                    Delimiter::None => proc_macro::Delimiter::None,
-                };
-                Group::Compiler(proc_macro::Group::new(delimiter, tts.into_token_stream()))
-            }
+            TokenStream::Compiler(tts) => Group::CallSite(delimiter, tts),
             TokenStream::Fallback(stream) => {
                 Group::Fallback(fallback::Group::new(delimiter, stream))
             }
@@ -601,6 +819,7 @@ impl Group {
                 proc_macro::Delimiter::None => Delimiter::None,
             },
             Group::Fallback(g) => g.delimiter(),
+            Group::CallSite(delimiter, _stream) => *delimiter,
         }
     }
 
@@ -608,6 +827,7 @@ impl Group {
         match self {
             Group::Compiler(g) => TokenStream::Compiler(DeferredTokenStream::new(g.stream())),
             Group::Fallback(g) => TokenStream::Fallback(g.stream()),
+            Group::CallSite(_delimiter, stream) => TokenStream::Compiler(stream.clone()),
         }
     }
 
@@ -615,6 +835,7 @@ impl Group {
         match self {
             Group::Compiler(g) => Span::Compiler(g.span()),
             Group::Fallback(g) => Span::Fallback(g.span()),
+            Group::CallSite(..) => Span::CallSite,
         }
     }
 
@@ -625,6 +846,7 @@ impl Group {
             #[cfg(no_group_open_close)]
             Group::Compiler(g) => Span::Compiler(g.span()),
             Group::Fallback(g) => Span::Fallback(g.span_open()),
+            Group::CallSite(..) => Span::CallSite,
         }
     }
 
@@ -635,23 +857,43 @@ impl Group {
             #[cfg(no_group_open_close)]
             Group::Compiler(g) => Span::Compiler(g.span()),
             Group::Fallback(g) => Span::Fallback(g.span_close()),
+            Group::CallSite(..) => Span::CallSite,
         }
     }
 
     pub fn set_span(&mut self, span: Span) {
-        match (self, span) {
+        match (&mut *self, span) {
             (Group::Compiler(g), Span::Compiler(s)) => g.set_span(s),
             (Group::Fallback(g), Span::Fallback(s)) => g.set_span(s),
-            _ => mismatch(),
+            (Group::Compiler(g), Span::CallSite) => g.set_span(proc_macro::Span::call_site()),
+            (Group::CallSite(..), Span::CallSite) => {}
+            (Group::CallSite(delimiter, stream), Span::Compiler(s)) => {
+                let empty = DeferredTokenStream::new(proc_macro::TokenStream::new());
+                let mut group = proc_macro_group(*delimiter, mem::replace(stream, empty));
+                group.set_span(s);
+                *self = Group::Compiler(group);
+            }
+            _ => mismatch(line!()),
         }
     }
 
     fn unwrap_nightly(self) -> proc_macro::Group {
         match self {
             Group::Compiler(g) => g,
-            Group::Fallback(_) => mismatch(),
+            Group::Fallback(_) => mismatch(line!()),
+            Group::CallSite(delimiter, tts) => proc_macro_group(delimiter, tts),
         }
     }
+}
+
+fn proc_macro_group(delimiter: Delimiter, tts: DeferredTokenStream) -> proc_macro::Group {
+    let delimiter = match delimiter {
+        Delimiter::Parenthesis => proc_macro::Delimiter::Parenthesis,
+        Delimiter::Bracket => proc_macro::Delimiter::Bracket,
+        Delimiter::Brace => proc_macro::Delimiter::Brace,
+        Delimiter::None => proc_macro::Delimiter::None,
+    };
+    proc_macro::Group::new(delimiter, tts.into_token_stream())
 }
 
 impl From<fallback::Group> for Group {
@@ -665,6 +907,7 @@ impl Display for Group {
         match self {
             Group::Compiler(group) => Display::fmt(group, formatter),
             Group::Fallback(group) => Display::fmt(group, formatter),
+            Group::CallSite(..) => unimplemented!(concat!(line!())),
         }
     }
 }
@@ -674,6 +917,7 @@ impl Debug for Group {
         match self {
             Group::Compiler(group) => Debug::fmt(group, formatter),
             Group::Fallback(group) => Debug::fmt(group, formatter),
+            Group::CallSite(..) => unimplemented!(concat!(line!())),
         }
     }
 }
@@ -682,6 +926,7 @@ impl Debug for Group {
 pub(crate) enum Ident {
     Compiler(proc_macro::Ident),
     Fallback(fallback::Ident),
+    CallSite(String),
 }
 
 impl Ident {
@@ -689,6 +934,7 @@ impl Ident {
         match span {
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new(string, s)),
             Span::Fallback(s) => Ident::Fallback(fallback::Ident::new(string, s)),
+            Span::CallSite => Ident::CallSite(string.to_owned()),
         }
     }
 
@@ -706,6 +952,14 @@ impl Ident {
                 Ident::Compiler(ident)
             }
             Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_raw(string, s)),
+            Span::CallSite => {
+                let p: proc_macro::TokenStream = string.parse().unwrap();
+                let ident = match p.into_iter().next() {
+                    Some(proc_macro::TokenTree::Ident(i)) => i,
+                    _ => panic!(),
+                };
+                Ident::Compiler(ident)
+            }
         }
     }
 
@@ -713,6 +967,7 @@ impl Ident {
         match self {
             Ident::Compiler(t) => Span::Compiler(t.span()),
             Ident::Fallback(t) => Span::Fallback(t.span()),
+            Ident::CallSite(_) => Span::CallSite,
         }
     }
 
@@ -720,14 +975,15 @@ impl Ident {
         match (self, span) {
             (Ident::Compiler(t), Span::Compiler(s)) => t.set_span(s),
             (Ident::Fallback(t), Span::Fallback(s)) => t.set_span(s),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
     fn unwrap_nightly(self) -> proc_macro::Ident {
         match self {
             Ident::Compiler(s) => s,
-            Ident::Fallback(_) => mismatch(),
+            Ident::Fallback(_) => mismatch(line!()),
+            Ident::CallSite(s) => proc_macro::Ident::new(&s, proc_macro::Span::call_site()),
         }
     }
 }
@@ -737,7 +993,7 @@ impl PartialEq for Ident {
         match (self, other) {
             (Ident::Compiler(t), Ident::Compiler(o)) => t.to_string() == o.to_string(),
             (Ident::Fallback(t), Ident::Fallback(o)) => t == o,
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 }
@@ -751,6 +1007,7 @@ where
         match self {
             Ident::Compiler(t) => t.to_string() == other,
             Ident::Fallback(t) => t == other,
+            Ident::CallSite(t) => t == other,
         }
     }
 }
@@ -760,6 +1017,7 @@ impl Display for Ident {
         match self {
             Ident::Compiler(t) => Display::fmt(t, f),
             Ident::Fallback(t) => Display::fmt(t, f),
+            Ident::CallSite(t) => Display::fmt(t, f),
         }
     }
 }
@@ -769,6 +1027,9 @@ impl Debug for Ident {
         match self {
             Ident::Compiler(t) => Debug::fmt(t, f),
             Ident::Fallback(t) => Debug::fmt(t, f),
+            Ident::CallSite(t) => {
+                Debug::fmt(&proc_macro::Ident::new(t, proc_macro::Span::call_site()), f)
+            }
         }
     }
 }
@@ -777,6 +1038,7 @@ impl Debug for Ident {
 pub(crate) enum Literal {
     Compiler(proc_macro::Literal),
     Fallback(fallback::Literal),
+    CallSite(String),
 }
 
 macro_rules! suffixed_numbers {
@@ -806,7 +1068,7 @@ macro_rules! unsuffixed_integers {
 impl Literal {
     pub unsafe fn from_str_unchecked(repr: &str) -> Self {
         if inside_proc_macro() {
-            Literal::Compiler(compiler_literal_from_str(repr).expect("invalid literal"))
+            Literal::CallSite(repr.to_owned())
         } else {
             Literal::Fallback(fallback::Literal::from_str_unchecked(repr))
         }
@@ -889,14 +1151,22 @@ impl Literal {
         match self {
             Literal::Compiler(lit) => Span::Compiler(lit.span()),
             Literal::Fallback(lit) => Span::Fallback(lit.span()),
+            Literal::CallSite(_) => Span::CallSite,
         }
     }
 
     pub fn set_span(&mut self, span: Span) {
-        match (self, span) {
+        match (&mut *self, span) {
             (Literal::Compiler(lit), Span::Compiler(s)) => lit.set_span(s),
             (Literal::Fallback(lit), Span::Fallback(s)) => lit.set_span(s),
-            _ => mismatch(),
+            (Literal::Compiler(lit), Span::CallSite) => lit.set_span(proc_macro::Span::call_site()),
+            (Literal::CallSite(_), Span::CallSite) => {}
+            (Literal::CallSite(repr), Span::Compiler(s)) => {
+                let mut literal = compiler_literal_from_str(repr).expect("invalid literal");
+                literal.set_span(s);
+                *self = Literal::Compiler(literal);
+            }
+            _ => mismatch(line!()),
         }
     }
 
@@ -907,13 +1177,15 @@ impl Literal {
             #[cfg(not(proc_macro_span))]
             Literal::Compiler(_lit) => None,
             Literal::Fallback(lit) => lit.subspan(range).map(Span::Fallback),
+            Literal::CallSite(_) => None,
         }
     }
 
     fn unwrap_nightly(self) -> proc_macro::Literal {
         match self {
             Literal::Compiler(s) => s,
-            Literal::Fallback(_) => mismatch(),
+            Literal::Fallback(_) => mismatch(line!()),
+            Literal::CallSite(repr) => compiler_literal_from_str(&repr).expect("invalid literal"),
         }
     }
 }
@@ -929,7 +1201,7 @@ impl FromStr for Literal {
 
     fn from_str(repr: &str) -> Result<Self, Self::Err> {
         if inside_proc_macro() {
-            compiler_literal_from_str(repr).map(Literal::Compiler)
+            Ok(Literal::CallSite(repr.to_owned())) // FIXME: validate
         } else {
             let literal = fallback::Literal::from_str(repr)?;
             Ok(Literal::Fallback(literal))
@@ -960,6 +1232,7 @@ impl Display for Literal {
         match self {
             Literal::Compiler(t) => Display::fmt(t, f),
             Literal::Fallback(t) => Display::fmt(t, f),
+            Literal::CallSite(_) => unimplemented!(concat!(line!())),
         }
     }
 }
@@ -969,6 +1242,10 @@ impl Debug for Literal {
         match self {
             Literal::Compiler(t) => Debug::fmt(t, f),
             Literal::Fallback(t) => Debug::fmt(t, f),
+            Literal::CallSite(repr) => Debug::fmt(
+                &compiler_literal_from_str(repr).expect("invalid literal"),
+                f,
+            ),
         }
     }
 }
