@@ -74,7 +74,7 @@ impl TokenStream {
                 #[cfg(not(wrap_proc_macro))]
                     inner: literal,
                 ..
-            }) if literal.text.starts_with('-') => {
+            }) if literal.repr.starts_with('-') => {
                 push_negative_literal(self, literal);
             }
             #[cfg(no_bind_by_move_pattern_guard)]
@@ -85,7 +85,7 @@ impl TokenStream {
                     inner: literal,
                 ..
             }) => {
-                if literal.text.starts_with('-') {
+                if literal.repr.starts_with('-') {
                     push_negative_literal(self, literal);
                 } else {
                     self.inner
@@ -97,7 +97,7 @@ impl TokenStream {
 
         #[cold]
         fn push_negative_literal(stream: &mut TokenStream, mut literal: Literal) {
-            literal.text.remove(0);
+            literal.repr.remove(0);
             let mut punct = crate::Punct::new('-', Spacing::Alone);
             punct.set_span(crate::Span::_new_stable(literal.span));
             stream.inner.push(TokenTree::Punct(punct));
@@ -756,7 +756,7 @@ impl Debug for Ident {
 
 #[derive(Clone)]
 pub(crate) struct Literal {
-    text: String,
+    repr: String,
     span: Span,
 }
 
@@ -777,9 +777,9 @@ macro_rules! unsuffixed_numbers {
 }
 
 impl Literal {
-    pub(crate) fn _new(text: String) -> Self {
+    pub(crate) fn _new(repr: String) -> Self {
         Literal {
-            text,
+            repr,
             span: Span::call_site(),
         }
     }
@@ -838,31 +838,31 @@ impl Literal {
     }
 
     pub fn string(t: &str) -> Literal {
-        let mut text = String::with_capacity(t.len() + 2);
-        text.push('"');
+        let mut repr = String::with_capacity(t.len() + 2);
+        repr.push('"');
         for c in t.chars() {
             if c == '\'' {
                 // escape_debug turns this into "\'" which is unnecessary.
-                text.push(c);
+                repr.push(c);
             } else {
-                text.extend(c.escape_debug());
+                repr.extend(c.escape_debug());
             }
         }
-        text.push('"');
-        Literal::_new(text)
+        repr.push('"');
+        Literal::_new(repr)
     }
 
     pub fn character(t: char) -> Literal {
-        let mut text = String::new();
-        text.push('\'');
+        let mut repr = String::new();
+        repr.push('\'');
         if t == '"' {
             // escape_debug turns this into '\"' which is unnecessary.
-            text.push(t);
+            repr.push(t);
         } else {
-            text.extend(t.escape_debug());
+            repr.extend(t.escape_debug());
         }
-        text.push('\'');
-        Literal::_new(text)
+        repr.push('\'');
+        Literal::_new(repr)
     }
 
     pub fn byte_string(bytes: &[u8]) -> Literal {
@@ -910,9 +910,9 @@ impl FromStr for Literal {
         }
         let cursor = get_cursor(repr);
         if let Ok((_rest, mut literal)) = parse::literal(cursor) {
-            if literal.text.len() == repr.len() {
+            if literal.repr.len() == repr.len() {
                 if negative {
-                    literal.text.insert(0, '-');
+                    literal.repr.insert(0, '-');
                 }
                 return Ok(literal);
             }
@@ -923,14 +923,14 @@ impl FromStr for Literal {
 
 impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.text, f)
+        Display::fmt(&self.repr, f)
     }
 }
 
 impl Debug for Literal {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Literal");
-        debug.field("lit", &format_args!("{}", self.text));
+        debug.field("lit", &format_args!("{}", self.repr));
         debug_span_field_if_nontrivial(&mut debug, self.span);
         debug.finish()
     }
