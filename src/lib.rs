@@ -1232,6 +1232,15 @@ impl Literal {
     pub fn subspan<R: RangeBounds<usize>>(&self, range: R) -> Option<Span> {
         self.inner.subspan(range).map(Span::_new)
     }
+
+    // Intended for the `quote!` macro to use when constructing a proc-macro2
+    // token out of a macro_rules $:literal token, which is already known to be
+    // a valid literal. This avoids reparsing/validating the literal's string
+    // representation. This is not public API other than for quote.
+    #[doc(hidden)]
+    pub unsafe fn from_str_unchecked(repr: &str) -> Self {
+        Literal::_new(imp::Literal::from_str_unchecked(repr))
+    }
 }
 
 impl FromStr for Literal {
