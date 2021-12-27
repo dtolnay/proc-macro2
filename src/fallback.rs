@@ -52,7 +52,7 @@ impl LexError {
 }
 
 impl TokenStream {
-    pub fn new() -> TokenStream {
+    pub fn new() -> Self {
         TokenStream { inner: Vec::new() }
     }
 
@@ -417,22 +417,22 @@ pub(crate) struct Span {
 
 impl Span {
     #[cfg(not(span_locations))]
-    pub fn call_site() -> Span {
+    pub fn call_site() -> Self {
         Span {}
     }
 
     #[cfg(span_locations)]
-    pub fn call_site() -> Span {
+    pub fn call_site() -> Self {
         Span { lo: 0, hi: 0 }
     }
 
     #[cfg(not(no_hygiene))]
-    pub fn mixed_site() -> Span {
+    pub fn mixed_site() -> Self {
         Span::call_site()
     }
 
     #[cfg(procmacro2_semver_exempt)]
-    pub fn def_site() -> Span {
+    pub fn def_site() -> Self {
         Span::call_site()
     }
 
@@ -554,7 +554,7 @@ pub(crate) struct Group {
 }
 
 impl Group {
-    pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
+    pub fn new(delimiter: Delimiter, stream: TokenStream) -> Self {
         Group {
             delimiter,
             stream,
@@ -632,7 +632,7 @@ pub(crate) struct Ident {
 }
 
 impl Ident {
-    fn _new(string: &str, raw: bool, span: Span) -> Ident {
+    fn _new(string: &str, raw: bool, span: Span) -> Self {
         validate_ident(string);
 
         Ident {
@@ -642,11 +642,11 @@ impl Ident {
         }
     }
 
-    pub fn new(string: &str, span: Span) -> Ident {
+    pub fn new(string: &str, span: Span) -> Self {
         Ident::_new(string, false, span)
     }
 
-    pub fn new_raw(string: &str, span: Span) -> Ident {
+    pub fn new_raw(string: &str, span: Span) -> Self {
         Ident::_new(string, true, span)
     }
 
@@ -777,7 +777,7 @@ macro_rules! unsuffixed_numbers {
 }
 
 impl Literal {
-    pub(crate) fn _new(text: String) -> Literal {
+    pub(crate) fn _new(text: String) -> Self {
         Literal {
             text,
             span: Span::call_site(),

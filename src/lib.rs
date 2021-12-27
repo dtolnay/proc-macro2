@@ -166,14 +166,14 @@ pub struct LexError {
 }
 
 impl TokenStream {
-    fn _new(inner: imp::TokenStream) -> TokenStream {
+    fn _new(inner: imp::TokenStream) -> Self {
         TokenStream {
             inner,
             _marker: Marker,
         }
     }
 
-    fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
+    fn _new_stable(inner: fallback::TokenStream) -> Self {
         TokenStream {
             inner: inner.into(),
             _marker: Marker,
@@ -181,7 +181,7 @@ impl TokenStream {
     }
 
     /// Returns an empty `TokenStream` containing no token trees.
-    pub fn new() -> TokenStream {
+    pub fn new() -> Self {
         TokenStream::_new(imp::TokenStream::new())
     }
 
@@ -391,14 +391,14 @@ pub struct Span {
 }
 
 impl Span {
-    fn _new(inner: imp::Span) -> Span {
+    fn _new(inner: imp::Span) -> Self {
         Span {
             inner,
             _marker: Marker,
         }
     }
 
-    fn _new_stable(inner: fallback::Span) -> Span {
+    fn _new_stable(inner: fallback::Span) -> Self {
         Span {
             inner: inner.into(),
             _marker: Marker,
@@ -410,7 +410,7 @@ impl Span {
     /// Identifiers created with this span will be resolved as if they were
     /// written directly at the macro call location (call-site hygiene) and
     /// other code at the macro call site will be able to refer to them as well.
-    pub fn call_site() -> Span {
+    pub fn call_site() -> Self {
         Span::_new(imp::Span::call_site())
     }
 
@@ -420,7 +420,7 @@ impl Span {
     ///
     /// This function requires Rust 1.45 or later.
     #[cfg(not(no_hygiene))]
-    pub fn mixed_site() -> Span {
+    pub fn mixed_site() -> Self {
         Span::_new(imp::Span::mixed_site())
     }
 
@@ -429,7 +429,7 @@ impl Span {
     /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
-    pub fn def_site() -> Span {
+    pub fn def_site() -> Self {
         Span::_new(imp::Span::def_site())
     }
 
@@ -680,7 +680,7 @@ impl Group {
     /// This constructor will set the span for this group to
     /// `Span::call_site()`. To change the span you can use the `set_span`
     /// method below.
-    pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
+    pub fn new(delimiter: Delimiter, stream: TokenStream) -> Self {
         Group {
             inner: imp::Group::new(delimiter, stream.inner),
         }
@@ -788,7 +788,7 @@ impl Punct {
     ///
     /// The returned `Punct` will have the default span of `Span::call_site()`
     /// which can be further configured with the `set_span` method below.
-    pub fn new(ch: char, spacing: Spacing) -> Punct {
+    pub fn new(ch: char, spacing: Spacing) -> Self {
         Punct {
             ch,
             spacing,
@@ -910,7 +910,7 @@ pub struct Ident {
 }
 
 impl Ident {
-    fn _new(inner: imp::Ident) -> Ident {
+    fn _new(inner: imp::Ident) -> Self {
         Ident {
             inner,
             _marker: Marker,
@@ -948,7 +948,7 @@ impl Ident {
     ///   style="padding-right:0;">syn::parse_str</code></a><code
     ///   style="padding-left:0;">::&lt;Ident&gt;</code>
     /// rather than `Ident::new`.
-    pub fn new(string: &str, span: Span) -> Ident {
+    pub fn new(string: &str, span: Span) -> Self {
         Ident::_new(imp::Ident::new(string, span.inner))
     }
 
@@ -957,11 +957,11 @@ impl Ident {
     /// This method is semver exempt and not exposed by default.
     #[cfg(procmacro2_semver_exempt)]
     #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
-    pub fn new_raw(string: &str, span: Span) -> Ident {
+    pub fn new_raw(string: &str, span: Span) -> Self {
         Ident::_new_raw(string, span)
     }
 
-    fn _new_raw(string: &str, span: Span) -> Ident {
+    fn _new_raw(string: &str, span: Span) -> Self {
         Ident::_new(imp::Ident::new_raw(string, span.inner))
     }
 
@@ -1079,14 +1079,14 @@ macro_rules! unsuffixed_int_literals {
 }
 
 impl Literal {
-    fn _new(inner: imp::Literal) -> Literal {
+    fn _new(inner: imp::Literal) -> Self {
         Literal {
             inner,
             _marker: Marker,
         }
     }
 
-    fn _new_stable(inner: fallback::Literal) -> Literal {
+    fn _new_stable(inner: fallback::Literal) -> Self {
         Literal {
             inner: inner.into(),
             _marker: Marker,
