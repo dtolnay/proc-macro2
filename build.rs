@@ -157,10 +157,6 @@ fn feature_allowed(feature: &str) -> bool {
         flags_var = encoded_rustflags;
         flags_var_string = flags_var.to_string_lossy();
         flags_var_string.split('\x1f')
-    } else if let Some(rustflags) = env::var_os("RUSTFLAGS") {
-        flags_var = rustflags;
-        flags_var_string = flags_var.to_string_lossy();
-        flags_var_string.split(' ')
     } else {
         return true;
     };
