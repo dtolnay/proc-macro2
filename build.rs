@@ -92,7 +92,7 @@ fn main() {
         println!("cargo:rustc-cfg=no_group_open_close");
     }
 
-    if version.minor < 57 {
+    if version.minor < 57 || version.minor == 57 && version.nightly {
         println!("cargo:rustc-cfg=no_is_available");
     }
 
