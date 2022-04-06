@@ -666,18 +666,11 @@ impl Ident {
 }
 
 pub(crate) fn is_ident_start(c: char) -> bool {
-    ('a' <= c && c <= 'z')
-        || ('A' <= c && c <= 'Z')
-        || c == '_'
-        || (c > '\x7f' && UnicodeXID::is_xid_start(c))
+    c == '_' || UnicodeXID::is_xid_start(c)
 }
 
 pub(crate) fn is_ident_continue(c: char) -> bool {
-    ('a' <= c && c <= 'z')
-        || ('A' <= c && c <= 'Z')
-        || c == '_'
-        || ('0' <= c && c <= '9')
-        || (c > '\x7f' && UnicodeXID::is_xid_continue(c))
+    UnicodeXID::is_xid_continue(c)
 }
 
 fn validate_ident(string: &str) {
