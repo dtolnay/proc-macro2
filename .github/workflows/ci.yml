@@ -78,6 +78,16 @@ jobs:
       - run: cargo clippy --tests -- -Dclippy::all -Dclippy::pedantic
       - run: cargo clippy --tests --all-features -- -Dclippy::all -Dclippy::pedantic
 
+  miri:
+    name: Miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@miri
+      - run: cargo miri test
+        env:
+          MIRIFLAGS: -Zmiri-tag-raw-pointers
+
   outdated:
     name: Outdated
     runs-on: ubuntu-latest
