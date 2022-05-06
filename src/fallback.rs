@@ -4,7 +4,7 @@ use crate::{Delimiter, Spacing, TokenTree};
 use std::cell::RefCell;
 #[cfg(span_locations)]
 use std::cmp;
-use std::fmt::{self, Debug, Display, Write as _};
+use std::fmt::{self, Debug, Display, Write};
 use std::iter::FromIterator;
 use std::mem;
 use std::ops::RangeBounds;
