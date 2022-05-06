@@ -4,7 +4,7 @@ use crate::{Delimiter, Spacing, TokenTree};
 use std::cell::RefCell;
 #[cfg(span_locations)]
 use std::cmp;
-use std::fmt::{self, Debug, Display};
+use std::fmt::{self, Debug, Display, Write as _};
 use std::iter::FromIterator;
 use std::mem;
 use std::ops::RangeBounds;
@@ -876,7 +876,9 @@ impl Literal {
                 b'"' => escaped.push_str("\\\""),
                 b'\\' => escaped.push_str("\\\\"),
                 b'\x20'..=b'\x7E' => escaped.push(*b as char),
-                _ => escaped.push_str(&format!("\\x{:02X}", b)),
+                _ => {
+                    let _ = write!(escaped, "\\x{:02X}", b);
+                }
             }
         }
         escaped.push('"');
