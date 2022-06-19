@@ -15,7 +15,6 @@ fn idents() {
 }
 
 #[test]
-#[cfg(procmacro2_semver_exempt)]
 fn raw_idents() {
     assert_eq!(
         Ident::new_raw("String", Span::call_site()).to_string(),
