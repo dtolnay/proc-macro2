@@ -703,7 +703,8 @@ impl Ident {
                 // successfully converted into an identifier. Try to produce a valid raw
                 // identifier by running the `TokenStream` parser, and unwrapping the first
                 // token as an `Ident`.
-                if let Ok(ts) = format!("r#{}", string).parse::<proc_macro::TokenStream>() {
+                let raw_prefixed = format!("r#{}", string);
+                if let Ok(ts) = raw_prefixed.parse::<proc_macro::TokenStream>() {
                     let mut iter = ts.into_iter();
                     if let (Some(proc_macro::TokenTree::Ident(mut id)), None) =
                         (iter.next(), iter.next())
@@ -712,7 +713,7 @@ impl Ident {
                         return Ident::Compiler(id);
                     }
                 }
-                panic!("not allowed as a raw identifier: {}", string)
+                panic!("not allowed as a raw identifier: `{}`", raw_prefixed)
             }
             Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_raw(string, s)),
         }
