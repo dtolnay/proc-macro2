@@ -699,9 +699,9 @@ impl Ident {
             #[cfg(no_ident_new_raw)]
             Span::Compiler(s) => {
                 let _ = proc_macro::Ident::new(string, s);
-                // At this point, the identifier is raw, and the unraw-ed version of it was
-                // successfully converted into an identifier. Try to produce a valid raw
-                // identifier by running the `TokenStream` parser, and unwrapping the first
+                // At this point the un-r#-prefixed string is known to be a
+                // valid identifier. Try to produce a valid raw identifier by
+                // running the `TokenStream` parser, and unwrapping the first
                 // token as an `Ident`.
                 let raw_prefixed = format!("r#{}", string);
                 if let Ok(ts) = raw_prefixed.parse::<proc_macro::TokenStream>() {
