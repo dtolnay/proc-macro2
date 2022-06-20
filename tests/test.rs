@@ -15,14 +15,22 @@ fn idents() {
 }
 
 #[test]
-#[cfg(procmacro2_semver_exempt)]
 fn raw_idents() {
     assert_eq!(
         Ident::new_raw("String", Span::call_site()).to_string(),
         "r#String"
     );
     assert_eq!(Ident::new_raw("fn", Span::call_site()).to_string(), "r#fn");
-    assert_eq!(Ident::new_raw("_", Span::call_site()).to_string(), "r#_");
+}
+
+#[test]
+#[should_panic(expected = "`_` cannot be a raw identifier")]
+fn ident_raw_blocked() {
+    Ident::new_raw("_", Span::call_site());
+    Ident::new_raw("super", Span::call_site());
+    Ident::new_raw("self", Span::call_site());
+    Ident::new_raw("Self", Span::call_site());
+    Ident::new_raw("crate", Span::call_site());
 }
 
 #[test]

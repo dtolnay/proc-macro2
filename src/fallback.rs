@@ -640,10 +640,21 @@ impl Ident {
     fn _new(string: &str, raw: bool, span: Span) -> Self {
         validate_ident(string);
 
+        if raw && !Self::can_be_raw(string) {
+            panic!("`{}` cannot be a raw identifier", string);
+        }
+
         Ident {
             sym: string.to_owned(),
             span,
             raw,
+        }
+    }
+
+    fn can_be_raw(string: &str) -> bool {
+        match string {
+            "" | "_" | "super" | "self" | "Self" | "crate" | "$crate" | "{{root}}" => false,
+            _ => true,
         }
     }
 

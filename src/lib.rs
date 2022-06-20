@@ -953,10 +953,6 @@ impl Ident {
     }
 
     /// Same as `Ident::new`, but creates a raw identifier (`r#ident`).
-    ///
-    /// This method is semver exempt and not exposed by default.
-    #[cfg(procmacro2_semver_exempt)]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn new_raw(string: &str, span: Span) -> Self {
         Ident::_new_raw(string, span)
     }
