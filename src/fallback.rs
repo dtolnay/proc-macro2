@@ -701,7 +701,7 @@ fn validate_ident(string: &str, raw: bool) {
 
     if raw {
         match string {
-            "" | "_" | "super" | "self" | "Self" | "crate" | "$crate" | "{{root}}" => {
+            "_" | "super" | "self" | "Self" | "crate" => {
                 panic!("`{}` cannot be a raw identifier", string);
             }
             _ => {}
