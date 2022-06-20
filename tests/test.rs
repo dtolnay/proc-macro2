@@ -25,12 +25,14 @@ fn raw_idents() {
 
 #[test]
 #[should_panic(expected = "`_` cannot be a raw identifier")]
-fn ident_raw_blocked() {
+fn ident_raw_underscore() {
     Ident::new_raw("_", Span::call_site());
+}
+
+#[test]
+#[should_panic(expected = "`super` cannot be a raw identifier")]
+fn ident_raw_reserved() {
     Ident::new_raw("super", Span::call_site());
-    Ident::new_raw("self", Span::call_site());
-    Ident::new_raw("Self", Span::call_site());
-    Ident::new_raw("crate", Span::call_site());
 }
 
 #[test]
