@@ -638,23 +638,12 @@ pub(crate) struct Ident {
 
 impl Ident {
     fn _new(string: &str, raw: bool, span: Span) -> Self {
-        validate_ident(string);
-
-        if raw && !Self::can_be_raw(string) {
-            panic!("`{}` cannot be a raw identifier", string);
-        }
+        validate_ident(string, raw);
 
         Ident {
             sym: string.to_owned(),
             span,
             raw,
-        }
-    }
-
-    fn can_be_raw(string: &str) -> bool {
-        match string {
-            "" | "_" | "super" | "self" | "Self" | "crate" | "$crate" | "{{root}}" => false,
-            _ => true,
         }
     }
 
@@ -683,7 +672,7 @@ pub(crate) fn is_ident_continue(c: char) -> bool {
     unicode_ident::is_xid_continue(c)
 }
 
-fn validate_ident(string: &str) {
+fn validate_ident(string: &str, raw: bool) {
     let validate = string;
     if validate.is_empty() {
         panic!("Ident is not allowed to be empty; use Option<Ident>");
@@ -709,6 +698,15 @@ fn validate_ident(string: &str) {
 
     if !ident_ok(validate) {
         panic!("{:?} is not a valid Ident", string);
+    }
+
+    if raw {
+        match string {
+            "" | "_" | "super" | "self" | "Self" | "crate" | "$crate" | "{{root}}" => {
+                panic!("`{}` cannot be a raw identifier", string);
+            }
+            _ => {}
+        }
     }
 }
 
