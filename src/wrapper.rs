@@ -705,7 +705,9 @@ impl Ident {
                 // token as an `Ident`.
                 if let Ok(ts) = format!("r#{}", string).parse::<proc_macro::TokenStream>() {
                     let mut iter = ts.into_iter();
-                    if let (Some(proc_macro::TokenTree::Ident(mut id)), None) = (iter.next(), iter.next()) {
+                    if let (Some(proc_macro::TokenTree::Ident(mut id)), None) =
+                        (iter.next(), iter.next())
+                    {
                         id.set_span(s);
                         return Ident::Compiler(id);
                     }
