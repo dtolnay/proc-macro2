@@ -952,7 +952,11 @@ impl Ident {
         Ident::_new(imp::Ident::new(string, span.inner))
     }
 
-    /// Same as `Ident::new`, but creates a raw identifier (`r#ident`).
+    /// Same as `Ident::new`, but creates a raw identifier (`r#ident`). The
+    /// `string` argument must be a valid identifier permitted by the language
+    /// (including keywords, e.g. `fn`). Keywords which are usable in path
+    /// segments (e.g. `self`, `super`) are not supported, and will cause a
+    /// panic.
     pub fn new_raw(string: &str, span: Span) -> Self {
         Ident::_new_raw(string, span)
     }
