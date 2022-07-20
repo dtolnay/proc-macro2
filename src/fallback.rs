@@ -383,7 +383,7 @@ impl SourceMap {
     fn add_file(&mut self, name: &str, src: &str) -> Span {
         let (len, lines) = lines_offsets(src);
         let lo = self.next_start_pos();
-        // XXX(nika): Shouild we bother doing a checked cast or checked add here?
+        // XXX(nika): Should we bother doing a checked cast or checked add here?
         let span = Span {
             lo,
             hi: lo + (len as u32),
