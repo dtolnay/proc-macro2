@@ -109,14 +109,6 @@ impl TokenStream {
     }
 }
 
-impl From<Vec<TokenTree>> for TokenStream {
-    fn from(inner: Vec<TokenTree>) -> Self {
-        TokenStream {
-            inner: Rc::new(inner),
-        }
-    }
-}
-
 // Nonrecursive to prevent stack overflow.
 impl Drop for TokenStream {
     fn drop(&mut self) {
@@ -136,6 +128,32 @@ impl Drop for TokenStream {
             };
             let mut group = group;
             inner.extend(group.stream.take_inner());
+        }
+    }
+}
+
+pub(crate) struct TokenStreamBuilder {
+    inner: Vec<TokenTree>,
+}
+
+impl TokenStreamBuilder {
+    pub fn new() -> Self {
+        TokenStreamBuilder { inner: Vec::new() }
+    }
+
+    pub fn with_capacity(cap: usize) -> Self {
+        TokenStreamBuilder {
+            inner: Vec::with_capacity(cap),
+        }
+    }
+
+    pub fn push(&mut self, tt: TokenTree) {
+        self.inner.push(tt);
+    }
+
+    pub fn build(self) -> TokenStream {
+        TokenStream {
+            inner: Rc::new(self.inner),
         }
     }
 }
