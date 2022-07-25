@@ -65,47 +65,45 @@ impl TokenStream {
     fn take_inner(&mut self) -> Vec<TokenTree> {
         mem::replace(Rc::make_mut(&mut self.inner), Vec::new())
     }
+}
 
-    fn push_token_from_proc_macro(&mut self, token: TokenTree) {
-        // https://github.com/dtolnay/proc-macro2/issues/235
-        match token {
-            #[cfg(not(no_bind_by_move_pattern_guard))]
-            TokenTree::Literal(crate::Literal {
-                #[cfg(wrap_proc_macro)]
-                    inner: crate::imp::Literal::Fallback(literal),
-                #[cfg(not(wrap_proc_macro))]
-                    inner: literal,
-                ..
-            }) if literal.repr.starts_with('-') => {
-                push_negative_literal(self, literal);
-            }
-            #[cfg(no_bind_by_move_pattern_guard)]
-            TokenTree::Literal(crate::Literal {
-                #[cfg(wrap_proc_macro)]
-                    inner: crate::imp::Literal::Fallback(literal),
-                #[cfg(not(wrap_proc_macro))]
-                    inner: literal,
-                ..
-            }) => {
-                if literal.repr.starts_with('-') {
-                    push_negative_literal(self, literal);
-                } else {
-                    Rc::make_mut(&mut self.inner)
-                        .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
-                }
-            }
-            _ => Rc::make_mut(&mut self.inner).push(token),
+fn push_token_from_proc_macro(vec: &mut Vec<TokenTree>, token: TokenTree) {
+    // https://github.com/dtolnay/proc-macro2/issues/235
+    match token {
+        #[cfg(not(no_bind_by_move_pattern_guard))]
+        TokenTree::Literal(crate::Literal {
+            #[cfg(wrap_proc_macro)]
+                inner: crate::imp::Literal::Fallback(literal),
+            #[cfg(not(wrap_proc_macro))]
+                inner: literal,
+            ..
+        }) if literal.repr.starts_with('-') => {
+            push_negative_literal(vec, literal);
         }
+        #[cfg(no_bind_by_move_pattern_guard)]
+        TokenTree::Literal(crate::Literal {
+            #[cfg(wrap_proc_macro)]
+                inner: crate::imp::Literal::Fallback(literal),
+            #[cfg(not(wrap_proc_macro))]
+                inner: literal,
+            ..
+        }) => {
+            if literal.repr.starts_with('-') {
+                push_negative_literal(vec, literal);
+            } else {
+                vec.push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
+            }
+        }
+        _ => vec.push(token),
+    }
 
-        #[cold]
-        fn push_negative_literal(stream: &mut TokenStream, mut literal: Literal) {
-            literal.repr.remove(0);
-            let mut punct = crate::Punct::new('-', Spacing::Alone);
-            punct.set_span(crate::Span::_new_stable(literal.span));
-            let inner = Rc::make_mut(&mut stream.inner);
-            inner.push(TokenTree::Punct(punct));
-            inner.push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
-        }
+    #[cold]
+    fn push_negative_literal(vec: &mut Vec<TokenTree>, mut literal: Literal) {
+        literal.repr.remove(0);
+        let mut punct = crate::Punct::new('-', Spacing::Alone);
+        punct.set_span(crate::Span::_new_stable(literal.span));
+        vec.push(TokenTree::Punct(punct));
+        vec.push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
     }
 }
 
@@ -246,9 +244,9 @@ impl From<TokenStream> for proc_macro::TokenStream {
 
 impl From<TokenTree> for TokenStream {
     fn from(tree: TokenTree) -> TokenStream {
-        let mut stream = TokenStream::new();
-        stream.push_token_from_proc_macro(tree);
-        stream
+        let mut stream = TokenStreamBuilder::new();
+        push_token_from_proc_macro(&mut stream.inner, tree);
+        stream.build()
     }
 }
 
@@ -274,9 +272,10 @@ impl FromIterator<TokenStream> for TokenStream {
 
 impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, tokens: I) {
+        let vec = Rc::make_mut(&mut self.inner);
         tokens
             .into_iter()
-            .for_each(|token| self.push_token_from_proc_macro(token));
+            .for_each(|token| push_token_from_proc_macro(vec, token));
     }
 }
 
