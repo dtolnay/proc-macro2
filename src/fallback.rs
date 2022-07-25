@@ -1,4 +1,5 @@
 use crate::parse::{self, Cursor};
+use crate::rcvec::{RcVec, RcVecBuilder, RcVecIntoIter, RcVecMut};
 use crate::{Delimiter, Spacing, TokenTree};
 #[cfg(span_locations)]
 use std::cell::RefCell;
@@ -6,14 +7,11 @@ use std::cell::RefCell;
 use std::cmp;
 use std::fmt::{self, Debug, Display, Write};
 use std::iter::FromIterator;
-use std::mem;
 use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::Path;
 use std::path::PathBuf;
-use std::rc::Rc;
 use std::str::FromStr;
-use std::vec;
 
 /// Force use of proc-macro2's fallback implementation of the API for now, even
 /// if the compiler's implementation is available.
@@ -31,7 +29,7 @@ pub fn unforce() {
 
 #[derive(Clone)]
 pub(crate) struct TokenStream {
-    inner: Rc<Vec<TokenTree>>,
+    inner: RcVec<TokenTree>,
 }
 
 #[derive(Debug)]
@@ -54,7 +52,7 @@ impl LexError {
 impl TokenStream {
     pub fn new() -> Self {
         TokenStream {
-            inner: Rc::new(Vec::new()),
+            inner: RcVec::new(),
         }
     }
 
@@ -62,12 +60,12 @@ impl TokenStream {
         self.inner.len() == 0
     }
 
-    fn take_inner(&mut self) -> Vec<TokenTree> {
-        mem::replace(Rc::make_mut(&mut self.inner), Vec::new())
+    fn take_inner(&mut self) -> RcVecBuilder<TokenTree> {
+        self.inner.make_mut().take()
     }
 }
 
-fn push_token_from_proc_macro(vec: &mut Vec<TokenTree>, token: TokenTree) {
+fn push_token_from_proc_macro(mut vec: RcVecMut<TokenTree>, token: TokenTree) {
     // https://github.com/dtolnay/proc-macro2/issues/235
     match token {
         #[cfg(not(no_bind_by_move_pattern_guard))]
@@ -98,7 +96,7 @@ fn push_token_from_proc_macro(vec: &mut Vec<TokenTree>, token: TokenTree) {
     }
 
     #[cold]
-    fn push_negative_literal(vec: &mut Vec<TokenTree>, mut literal: Literal) {
+    fn push_negative_literal(mut vec: RcVecMut<TokenTree>, mut literal: Literal) {
         literal.repr.remove(0);
         let mut punct = crate::Punct::new('-', Spacing::Alone);
         punct.set_span(crate::Span::_new_stable(literal.span));
@@ -110,7 +108,7 @@ fn push_token_from_proc_macro(vec: &mut Vec<TokenTree>, token: TokenTree) {
 // Nonrecursive to prevent stack overflow.
 impl Drop for TokenStream {
     fn drop(&mut self) {
-        let inner = match Rc::get_mut(&mut self.inner) {
+        let mut inner = match self.inner.get_mut() {
             Some(inner) => inner,
             None => return,
         };
@@ -131,17 +129,19 @@ impl Drop for TokenStream {
 }
 
 pub(crate) struct TokenStreamBuilder {
-    inner: Vec<TokenTree>,
+    inner: RcVecBuilder<TokenTree>,
 }
 
 impl TokenStreamBuilder {
     pub fn new() -> Self {
-        TokenStreamBuilder { inner: Vec::new() }
+        TokenStreamBuilder {
+            inner: RcVecBuilder::new(),
+        }
     }
 
     pub fn with_capacity(cap: usize) -> Self {
         TokenStreamBuilder {
-            inner: Vec::with_capacity(cap),
+            inner: RcVecBuilder::with_capacity(cap),
         }
     }
 
@@ -151,7 +151,7 @@ impl TokenStreamBuilder {
 
     pub fn build(self) -> TokenStream {
         TokenStream {
-            inner: Rc::new(self.inner),
+            inner: self.inner.build(),
         }
     }
 }
@@ -244,9 +244,11 @@ impl From<TokenStream> for proc_macro::TokenStream {
 
 impl From<TokenTree> for TokenStream {
     fn from(tree: TokenTree) -> TokenStream {
-        let mut stream = TokenStreamBuilder::new();
-        push_token_from_proc_macro(&mut stream.inner, tree);
-        stream.build()
+        let mut stream = RcVecBuilder::new();
+        push_token_from_proc_macro(stream.as_mut(), tree);
+        TokenStream {
+            inner: stream.build(),
+        }
     }
 }
 
@@ -260,32 +262,32 @@ impl FromIterator<TokenTree> for TokenStream {
 
 impl FromIterator<TokenStream> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
-        let mut v = Vec::new();
+        let mut v = RcVecBuilder::new();
 
         for mut stream in streams {
             v.extend(stream.take_inner());
         }
 
-        TokenStream { inner: Rc::new(v) }
+        TokenStream { inner: v.build() }
     }
 }
 
 impl Extend<TokenTree> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenTree>>(&mut self, tokens: I) {
-        let vec = Rc::make_mut(&mut self.inner);
+        let mut vec = self.inner.make_mut();
         tokens
             .into_iter()
-            .for_each(|token| push_token_from_proc_macro(vec, token));
+            .for_each(|token| push_token_from_proc_macro(vec.as_mut(), token));
     }
 }
 
 impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
-        Rc::make_mut(&mut self.inner).extend(streams.into_iter().flatten());
+        self.inner.make_mut().extend(streams.into_iter().flatten());
     }
 }
 
-pub(crate) type TokenTreeIter = vec::IntoIter<TokenTree>;
+pub(crate) type TokenTreeIter = RcVecIntoIter<TokenTree>;
 
 impl IntoIterator for TokenStream {
     type Item = TokenTree;
