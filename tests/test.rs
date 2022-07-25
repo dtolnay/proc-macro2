@@ -548,6 +548,13 @@ fn default_tokenstream_is_empty() {
 }
 
 #[test]
+fn tokenstream_size_hint() {
+    let tokens = "a b (c d) e".parse::<TokenStream>().unwrap();
+
+    assert_eq!(tokens.into_iter().size_hint(), (0, None)); // FIXME
+}
+
+#[test]
 fn tuple_indexing() {
     // This behavior may change depending on https://github.com/rust-lang/rust/pull/71322
     let mut tokens = "tuple.0.0".parse::<TokenStream>().unwrap().into_iter();
