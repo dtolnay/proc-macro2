@@ -46,6 +46,18 @@ impl<T> RcVec<T> {
         let inner = Rc::get_mut(&mut self.inner)?;
         Some(RcVecMut { inner })
     }
+
+    pub fn make_owned(mut self) -> RcVecBuilder<T>
+    where
+        T: Clone,
+    {
+        let vec = if let Some(owned) = Rc::get_mut(&mut self.inner) {
+            mem::replace(owned, Vec::new())
+        } else {
+            Vec::clone(&self.inner)
+        };
+        RcVecBuilder { inner: vec }
+    }
 }
 
 impl<T> RcVecBuilder<T> {
@@ -95,12 +107,6 @@ impl<'a, T> RcVecMut<'a, T> {
 
     pub fn as_mut(&mut self) -> RcVecMut<T> {
         RcVecMut { inner: self.inner }
-    }
-
-    pub fn take(self) -> RcVecBuilder<T> {
-        RcVecBuilder {
-            inner: mem::replace(self.inner, Vec::new()),
-        }
     }
 }
 

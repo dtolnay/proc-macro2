@@ -7,10 +7,12 @@ use std::cell::RefCell;
 use std::cmp;
 use std::fmt::{self, Debug, Display, Write};
 use std::iter::FromIterator;
+use std::mem::ManuallyDrop;
 use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::Path;
 use std::path::PathBuf;
+use std::ptr;
 use std::str::FromStr;
 
 /// Force use of proc-macro2's fallback implementation of the API for now, even
@@ -60,8 +62,9 @@ impl TokenStream {
         self.inner.len() == 0
     }
 
-    fn take_inner(&mut self) -> RcVecBuilder<TokenTree> {
-        self.inner.make_mut().take()
+    fn take_inner(self) -> RcVecBuilder<TokenTree> {
+        let nodrop = ManuallyDrop::new(self);
+        unsafe { ptr::read(&nodrop.inner) }.make_owned()
     }
 }
 
@@ -122,7 +125,6 @@ impl Drop for TokenStream {
                 crate::imp::Group::Fallback(group) => group,
                 crate::imp::Group::Compiler(_) => continue,
             };
-            let mut group = group;
             inner.extend(group.stream.take_inner());
         }
     }
@@ -264,7 +266,7 @@ impl FromIterator<TokenStream> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
         let mut v = RcVecBuilder::new();
 
-        for mut stream in streams {
+        for stream in streams {
             v.extend(stream.take_inner());
         }
 
@@ -293,7 +295,7 @@ impl IntoIterator for TokenStream {
     type Item = TokenTree;
     type IntoIter = TokenTreeIter;
 
-    fn into_iter(mut self) -> TokenTreeIter {
+    fn into_iter(self) -> TokenTreeIter {
         self.take_inner().into_iter()
     }
 }
