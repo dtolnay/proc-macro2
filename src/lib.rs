@@ -1290,6 +1290,10 @@ pub mod token_stream {
         fn next(&mut self) -> Option<TokenTree> {
             self.inner.next()
         }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            self.inner.size_hint()
+        }
     }
 
     impl Debug for IntoIter {
