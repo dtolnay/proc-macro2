@@ -11,6 +11,7 @@ use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::Path;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::vec;
 
@@ -30,7 +31,7 @@ pub fn unforce() {
 
 #[derive(Clone)]
 pub(crate) struct TokenStream {
-    inner: Vec<TokenTree>,
+    inner: Rc<Vec<TokenTree>>,
 }
 
 #[derive(Debug)]
@@ -52,7 +53,9 @@ impl LexError {
 
 impl TokenStream {
     pub fn new() -> Self {
-        TokenStream { inner: Vec::new() }
+        TokenStream {
+            inner: Rc::new(Vec::new()),
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -60,7 +63,7 @@ impl TokenStream {
     }
 
     fn take_inner(&mut self) -> Vec<TokenTree> {
-        mem::replace(&mut self.inner, Vec::new())
+        mem::replace(Rc::make_mut(&mut self.inner), Vec::new())
     }
 
     fn push_token(&mut self, token: TokenTree) {
@@ -87,11 +90,11 @@ impl TokenStream {
                 if literal.repr.starts_with('-') {
                     push_negative_literal(self, literal);
                 } else {
-                    self.inner
+                    Rc::make_mut(&mut self.inner)
                         .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
                 }
             }
-            _ => self.inner.push(token),
+            _ => Rc::make_mut(&mut self.inner).push(token),
         }
 
         #[cold]
@@ -99,24 +102,29 @@ impl TokenStream {
             literal.repr.remove(0);
             let mut punct = crate::Punct::new('-', Spacing::Alone);
             punct.set_span(crate::Span::_new_stable(literal.span));
-            stream.inner.push(TokenTree::Punct(punct));
-            stream
-                .inner
-                .push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
+            let inner = Rc::make_mut(&mut stream.inner);
+            inner.push(TokenTree::Punct(punct));
+            inner.push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
         }
     }
 }
 
 impl From<Vec<TokenTree>> for TokenStream {
     fn from(inner: Vec<TokenTree>) -> Self {
-        TokenStream { inner }
+        TokenStream {
+            inner: Rc::new(inner),
+        }
     }
 }
 
 // Nonrecursive to prevent stack overflow.
 impl Drop for TokenStream {
     fn drop(&mut self) {
-        while let Some(token) = self.inner.pop() {
+        let inner = match Rc::get_mut(&mut self.inner) {
+            Some(inner) => inner,
+            None => return,
+        };
+        while let Some(token) = inner.pop() {
             let group = match token {
                 TokenTree::Group(group) => group.inner,
                 _ => continue,
@@ -127,7 +135,7 @@ impl Drop for TokenStream {
                 crate::imp::Group::Compiler(_) => continue,
             };
             let mut group = group;
-            self.inner.extend(group.stream.take_inner());
+            inner.extend(group.stream.take_inner());
         }
     }
 }
@@ -242,7 +250,7 @@ impl FromIterator<TokenStream> for TokenStream {
             v.extend(stream.take_inner());
         }
 
-        TokenStream { inner: v }
+        TokenStream { inner: Rc::new(v) }
     }
 }
 
@@ -254,7 +262,7 @@ impl Extend<TokenTree> for TokenStream {
 
 impl Extend<TokenStream> for TokenStream {
     fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
-        self.inner.extend(streams.into_iter().flatten());
+        Rc::make_mut(&mut self.inner).extend(streams.into_iter().flatten());
     }
 }
 
