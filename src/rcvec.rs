@@ -21,12 +21,6 @@ pub(crate) struct RcVecIntoIter<T> {
 }
 
 impl<T> RcVec<T> {
-    pub fn new() -> Self {
-        RcVec {
-            inner: Rc::new(Vec::new()),
-        }
-    }
-
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }

@@ -52,7 +52,7 @@ impl LexError {
 impl TokenStream {
     pub fn new() -> Self {
         TokenStream {
-            inner: RcVec::new(),
+            inner: RcVecBuilder::new().build(),
         }
     }
 
