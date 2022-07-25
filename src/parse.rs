@@ -156,8 +156,7 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
     loop {
         input = skip_whitespace(input);
 
-        if let Ok((rest, tt)) = doc_comment(input) {
-            trees.extend(tt);
+        if let Ok((rest, ())) = doc_comment(input, &mut trees) {
             input = rest;
             continue;
         }
@@ -786,7 +785,7 @@ fn punct_char(input: Cursor) -> PResult<char> {
     }
 }
 
-fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
+fn doc_comment<'a>(input: Cursor<'a>, trees: &mut Vec<TokenTree>) -> PResult<'a, ()> {
     #[cfg(span_locations)]
     let lo = input.off;
     let (rest, (comment, inner)) = doc_comment_contents(input)?;
@@ -806,25 +805,32 @@ fn doc_comment(input: Cursor) -> PResult<Vec<TokenTree>> {
         scan_for_bare_cr = rest;
     }
 
-    let mut trees = Vec::new();
-    trees.push(TokenTree::Punct(Punct::new('#', Spacing::Alone)));
+    let mut pound = Punct::new('#', Spacing::Alone);
+    pound.set_span(span);
+    trees.push(TokenTree::Punct(pound));
+
     if inner {
-        trees.push(Punct::new('!', Spacing::Alone).into());
+        let mut bang = Punct::new('!', Spacing::Alone);
+        bang.set_span(span);
+        trees.push(TokenTree::Punct(bang));
     }
-    let mut stream = vec![
-        TokenTree::Ident(crate::Ident::new("doc", span)),
-        TokenTree::Punct(Punct::new('=', Spacing::Alone)),
-        TokenTree::Literal(crate::Literal::string(comment)),
-    ];
-    for tt in &mut stream {
-        tt.set_span(span);
-    }
-    let group = Group::new(Delimiter::Bracket, TokenStream::from(stream));
-    trees.push(crate::Group::_new_stable(group).into());
-    for tt in &mut trees {
-        tt.set_span(span);
-    }
-    Ok((rest, trees))
+
+    let doc_ident = crate::Ident::new("doc", span);
+    let mut equal = Punct::new('=', Spacing::Alone);
+    equal.set_span(span);
+    let mut literal = crate::Literal::string(comment);
+    literal.set_span(span);
+    let bracketed = TokenStream::from(vec![
+        TokenTree::Ident(doc_ident),
+        TokenTree::Punct(equal),
+        TokenTree::Literal(literal),
+    ]);
+    let group = Group::new(Delimiter::Bracket, bracketed);
+    let mut group = crate::Group::_new_stable(group);
+    group.set_span(span);
+    trees.push(TokenTree::Group(group));
+
+    Ok((rest, ()))
 }
 
 fn doc_comment_contents(input: Cursor) -> PResult<(&str, bool)> {
