@@ -217,7 +217,7 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
                 hi: input.off,
             });
             trees = outer;
-            trees.push(TokenTree::Group(crate::Group::_new_stable(g)));
+            trees.push_token_from_parser(TokenTree::Group(crate::Group::_new_stable(g)));
         } else {
             let (rest, mut tt) = match leaf_token(input) {
                 Ok((rest, tt)) => (rest, tt),
@@ -229,7 +229,7 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
                 #[cfg(span_locations)]
                 hi: rest.off,
             }));
-            trees.push(tt);
+            trees.push_token_from_parser(tt);
             input = rest;
         }
     }
@@ -808,12 +808,12 @@ fn doc_comment<'a>(input: Cursor<'a>, trees: &mut TokenStreamBuilder) -> PResult
 
     let mut pound = Punct::new('#', Spacing::Alone);
     pound.set_span(span);
-    trees.push(TokenTree::Punct(pound));
+    trees.push_token_from_parser(TokenTree::Punct(pound));
 
     if inner {
         let mut bang = Punct::new('!', Spacing::Alone);
         bang.set_span(span);
-        trees.push(TokenTree::Punct(bang));
+        trees.push_token_from_parser(TokenTree::Punct(bang));
     }
 
     let doc_ident = crate::Ident::new("doc", span);
@@ -822,13 +822,13 @@ fn doc_comment<'a>(input: Cursor<'a>, trees: &mut TokenStreamBuilder) -> PResult
     let mut literal = crate::Literal::string(comment);
     literal.set_span(span);
     let mut bracketed = TokenStreamBuilder::with_capacity(3);
-    bracketed.push(TokenTree::Ident(doc_ident));
-    bracketed.push(TokenTree::Punct(equal));
-    bracketed.push(TokenTree::Literal(literal));
+    bracketed.push_token_from_parser(TokenTree::Ident(doc_ident));
+    bracketed.push_token_from_parser(TokenTree::Punct(equal));
+    bracketed.push_token_from_parser(TokenTree::Literal(literal));
     let group = Group::new(Delimiter::Bracket, bracketed.build());
     let mut group = crate::Group::_new_stable(group);
     group.set_span(span);
-    trees.push(TokenTree::Group(group));
+    trees.push_token_from_parser(TokenTree::Group(group));
 
     Ok((rest, ()))
 }
