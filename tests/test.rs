@@ -551,7 +551,7 @@ fn default_tokenstream_is_empty() {
 fn tokenstream_size_hint() {
     let tokens = "a b (c d) e".parse::<TokenStream>().unwrap();
 
-    assert_eq!(tokens.into_iter().size_hint(), (0, None)); // FIXME
+    assert_eq!(tokens.into_iter().size_hint(), (4, Some(4)));
 }
 
 #[test]
