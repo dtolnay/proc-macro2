@@ -43,9 +43,8 @@ impl<T> RcVec<T> {
     }
 
     pub fn get_mut(&mut self) -> Option<RcVecMut<T>> {
-        Some(RcVecMut {
-            inner: Rc::get_mut(&mut self.inner)?,
-        })
+        let inner = Rc::get_mut(&mut self.inner)?;
+        Some(RcVecMut { inner })
     }
 }
 
