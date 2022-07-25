@@ -1298,7 +1298,8 @@ pub mod token_stream {
 
     impl Debug for IntoIter {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            Debug::fmt(&self.inner, f)
+            f.write_str("TokenStream ")?;
+            f.debug_list().entries(self.clone()).finish()
         }
     }
 

@@ -350,12 +350,6 @@ impl Iterator for TokenTreeIter {
     }
 }
 
-impl Debug for TokenTreeIter {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("TokenTreeIter").finish()
-    }
-}
-
 #[derive(Clone, PartialEq, Eq)]
 #[cfg(super_unstable)]
 pub(crate) enum SourceFile {
