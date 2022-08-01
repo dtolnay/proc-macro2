@@ -3,8 +3,8 @@ use crate::fallback::{
     TokenStreamBuilder,
 };
 use crate::{Delimiter, Punct, Spacing, TokenTree};
-use std::char;
-use std::str::{Bytes, CharIndices, Chars};
+use core::char;
+use core::str::{Bytes, CharIndices, Chars};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub(crate) struct Cursor<'a> {

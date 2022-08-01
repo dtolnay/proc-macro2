@@ -2,18 +2,18 @@ use crate::parse::{self, Cursor};
 use crate::rcvec::{RcVec, RcVecBuilder, RcVecIntoIter, RcVecMut};
 use crate::{Delimiter, Spacing, TokenTree};
 #[cfg(span_locations)]
-use std::cell::RefCell;
+use core::cell::RefCell;
 #[cfg(span_locations)]
-use std::cmp;
-use std::fmt::{self, Debug, Display, Write};
-use std::iter::FromIterator;
-use std::mem::ManuallyDrop;
-use std::ops::RangeBounds;
+use core::cmp;
+use core::fmt::{self, Debug, Display, Write};
+use core::iter::FromIterator;
+use core::mem::ManuallyDrop;
+use core::ops::RangeBounds;
+use core::ptr;
+use core::str::FromStr;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::Path;
 use std::path::PathBuf;
-use std::ptr;
-use std::str::FromStr;
 
 /// Force use of proc-macro2's fallback implementation of the API for now, even
 /// if the compiler's implementation is available.

@@ -137,15 +137,15 @@ use crate::fallback as imp;
 mod imp;
 
 use crate::marker::Marker;
-use std::cmp::Ordering;
+use core::cmp::Ordering;
+use core::fmt::{self, Debug, Display};
+use core::hash::{Hash, Hasher};
+use core::iter::FromIterator;
+use core::ops::RangeBounds;
+use core::str::FromStr;
 use std::error::Error;
-use std::fmt::{self, Debug, Display};
-use std::hash::{Hash, Hasher};
-use std::iter::FromIterator;
-use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
-use std::str::FromStr;
 
 /// An abstract stream of tokens, or more concretely a sequence of token trees.
 ///
@@ -1271,7 +1271,7 @@ impl Display for Literal {
 pub mod token_stream {
     use crate::marker::Marker;
     use crate::{imp, TokenTree};
-    use std::fmt::{self, Debug};
+    use core::fmt::{self, Debug};
 
     pub use crate::TokenStream;
 
