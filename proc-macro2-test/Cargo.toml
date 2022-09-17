@@ -1,0 +1,15 @@
+[package]
+name = "proc-macro2-test"
+version = "0.0.1"
+authors = ["David Tolnay <dtolnay@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Test `extern crate proc_macro2 as proc_macro;`"
+homepage = "https://github.com/dtolnay/proc-macro2/pull/347"
+
+[lib]
+proc-macro = true
+
+[dev-dependencies]
+proc-macro2 = "1"
+quote = "1"
