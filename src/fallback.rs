@@ -512,6 +512,26 @@ impl Span {
         })
     }
 
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn before(&self) -> Span {
+        Span {
+            #[cfg(span_locations)]
+            lo: self.lo,
+            #[cfg(span_locations)]
+            hi: self.lo,
+        }
+    }
+
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn after(&self) -> Span {
+        Span {
+            #[cfg(span_locations)]
+            lo: self.hi,
+            #[cfg(span_locations)]
+            hi: self.hi,
+        }
+    }
+
     #[cfg(not(span_locations))]
     pub fn join(&self, _other: Span) -> Option<Span> {
         Some(Span {})
