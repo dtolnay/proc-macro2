@@ -342,6 +342,7 @@ thread_local! {
         files: vec![FileInfo {
             #[cfg(procmacro2_semver_exempt)]
             name: "<unspecified>".to_owned(),
+            source_text: String::new(),
             span: Span { lo: 0, hi: 0 },
             lines: vec![0],
         }],
@@ -352,6 +353,7 @@ thread_local! {
 struct FileInfo {
     #[cfg(procmacro2_semver_exempt)]
     name: String,
+    source_text: String,
     span: Span,
     lines: Vec<usize>,
 }
@@ -378,6 +380,12 @@ impl FileInfo {
 
     fn span_within(&self, span: Span) -> bool {
         span.lo >= self.span.lo && span.hi <= self.span.hi
+    }
+
+    fn source_text(&self, span: Span) -> String {
+        let lo = (span.lo - self.span.lo) as usize;
+        let hi = (span.hi - self.span.lo) as usize;
+        self.source_text[lo..hi].to_owned()
     }
 }
 
@@ -425,6 +433,7 @@ impl SourceMap {
         self.files.push(FileInfo {
             #[cfg(procmacro2_semver_exempt)]
             name: name.to_owned(),
+            source_text: src.to_owned(),
             span,
             lines,
         });
@@ -552,6 +561,16 @@ impl Span {
                 hi: cmp::max(self.hi, other.hi),
             })
         })
+    }
+
+    #[cfg(not(span_locations))]
+    pub fn source_text(&self) -> Option<String> {
+        None
+    }
+
+    #[cfg(span_locations)]
+    pub fn source_text(&self) -> Option<String> {
+        SOURCE_MAP.with(|cm| Some(cm.borrow().fileinfo(*self).source_text(*self)))
     }
 
     #[cfg(not(span_locations))]
