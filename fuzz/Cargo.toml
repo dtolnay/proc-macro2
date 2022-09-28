@@ -1,0 +1,21 @@
+[package]
+name = "proc-macro2-fuzz"
+version = "0.0.0"
+authors = ["David Tolnay <dtolnay@gmail.com>"]
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+proc-macro2 = { path = ".." }
+
+[[bin]]
+name = "parse_token_stream"
+path = "fuzz_targets/parse_token_stream.rs"
+test = false
+doc = false
+
+[workspace]
