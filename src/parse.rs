@@ -14,7 +14,7 @@ pub(crate) struct Cursor<'a> {
 }
 
 impl<'a> Cursor<'a> {
-    fn advance(&self, bytes: usize) -> Cursor<'a> {
+    pub fn advance(&self, bytes: usize) -> Cursor<'a> {
         let (_front, rest) = self.rest.split_at(bytes);
         Cursor {
             rest,
@@ -23,7 +23,7 @@ impl<'a> Cursor<'a> {
         }
     }
 
-    fn starts_with(&self, s: &str) -> bool {
+    pub fn starts_with(&self, s: &str) -> bool {
         self.rest.starts_with(s)
     }
 
