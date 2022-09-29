@@ -639,4 +639,7 @@ fn byte_order_mark() {
         TokenTree::Ident(ident) => assert_eq!(ident, "foo"),
         _ => unreachable!(),
     }
+
+    let string = "foo\u{feff}";
+    string.parse::<TokenStream>().unwrap_err();
 }
