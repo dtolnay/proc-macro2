@@ -116,7 +116,7 @@ fn block_comment(input: Cursor) -> PResult<&str> {
         return Err(Reject);
     }
 
-    let mut depth = 0;
+    let mut depth = 0usize;
     let bytes = input.as_bytes();
     let mut i = 0;
     let upper = bytes.len() - 1;
