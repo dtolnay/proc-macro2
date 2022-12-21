@@ -389,7 +389,7 @@ impl Debug for SourceFile {
     }
 }
 
-#[cfg(any(super_unstable, feature = "span-locations"))]
+#[cfg(any(super_unstable, span_locations))]
 pub(crate) struct LineColumn {
     pub line: usize,
     pub column: usize,
@@ -471,7 +471,7 @@ impl Span {
         }
     }
 
-    #[cfg(any(super_unstable, feature = "span-locations"))]
+    #[cfg(any(super_unstable, span_locations))]
     pub fn start(&self) -> LineColumn {
         match self {
             #[cfg(proc_macro_span)]
@@ -488,7 +488,7 @@ impl Span {
         }
     }
 
-    #[cfg(any(super_unstable, feature = "span-locations"))]
+    #[cfg(any(super_unstable, span_locations))]
     pub fn end(&self) -> LineColumn {
         match self {
             #[cfg(proc_macro_span)]
