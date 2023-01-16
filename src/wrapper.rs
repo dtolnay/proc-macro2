@@ -1,4 +1,6 @@
 use crate::detection::inside_proc_macro;
+#[cfg(span_locations)]
+use crate::location::LineColumn;
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 use core::fmt::{self, Debug, Display};
 use core::iter::FromIterator;
@@ -389,12 +391,6 @@ impl Debug for SourceFile {
     }
 }
 
-#[cfg(any(super_unstable, feature = "span-locations"))]
-pub(crate) struct LineColumn {
-    pub line: usize,
-    pub column: usize,
-}
-
 #[derive(Copy, Clone)]
 pub(crate) enum Span {
     Compiler(proc_macro::Span),
@@ -471,7 +467,7 @@ impl Span {
         }
     }
 
-    #[cfg(any(super_unstable, feature = "span-locations"))]
+    #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
         match self {
             #[cfg(proc_macro_span)]
@@ -481,14 +477,11 @@ impl Span {
             }
             #[cfg(not(proc_macro_span))]
             Span::Compiler(_) => LineColumn { line: 0, column: 0 },
-            Span::Fallback(s) => {
-                let fallback::LineColumn { line, column } = s.start();
-                LineColumn { line, column }
-            }
+            Span::Fallback(s) => s.start(),
         }
     }
 
-    #[cfg(any(super_unstable, feature = "span-locations"))]
+    #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
         match self {
             #[cfg(proc_macro_span)]
@@ -498,10 +491,7 @@ impl Span {
             }
             #[cfg(not(proc_macro_span))]
             Span::Compiler(_) => LineColumn { line: 0, column: 0 },
-            Span::Fallback(s) => {
-                let fallback::LineColumn { line, column } = s.end();
-                LineColumn { line, column }
-            }
+            Span::Fallback(s) => s.end(),
         }
     }
 
