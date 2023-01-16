@@ -4,7 +4,7 @@ use core::cmp::Ordering;
 ///
 /// This type is semver exempt and not exposed by default.
 #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct LineColumn {
     /// The 1-indexed line in the source file on which the span starts or ends
     /// (inclusive).
