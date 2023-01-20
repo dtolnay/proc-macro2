@@ -231,14 +231,14 @@ impl FromStr for TokenStream {
 
 #[cfg(use_proc_macro)]
 impl From<proc_macro::TokenStream> for TokenStream {
-    fn from(inner: proc_macro::TokenStream) -> TokenStream {
+    fn from(inner: proc_macro::TokenStream) -> Self {
         TokenStream::_new(inner.into())
     }
 }
 
 #[cfg(use_proc_macro)]
 impl From<TokenStream> for proc_macro::TokenStream {
-    fn from(inner: TokenStream) -> proc_macro::TokenStream {
+    fn from(inner: TokenStream) -> Self {
         inner.inner.into()
     }
 }
@@ -574,25 +574,25 @@ impl TokenTree {
 }
 
 impl From<Group> for TokenTree {
-    fn from(g: Group) -> TokenTree {
+    fn from(g: Group) -> Self {
         TokenTree::Group(g)
     }
 }
 
 impl From<Ident> for TokenTree {
-    fn from(g: Ident) -> TokenTree {
+    fn from(g: Ident) -> Self {
         TokenTree::Ident(g)
     }
 }
 
 impl From<Punct> for TokenTree {
-    fn from(g: Punct) -> TokenTree {
+    fn from(g: Punct) -> Self {
         TokenTree::Punct(g)
     }
 }
 
 impl From<Literal> for TokenTree {
-    fn from(g: Literal) -> TokenTree {
+    fn from(g: Literal) -> Self {
         TokenTree::Literal(g)
     }
 }

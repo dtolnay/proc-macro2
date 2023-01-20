@@ -131,13 +131,13 @@ impl Display for TokenStream {
 }
 
 impl From<proc_macro::TokenStream> for TokenStream {
-    fn from(inner: proc_macro::TokenStream) -> TokenStream {
+    fn from(inner: proc_macro::TokenStream) -> Self {
         TokenStream::Compiler(DeferredTokenStream::new(inner))
     }
 }
 
 impl From<TokenStream> for proc_macro::TokenStream {
-    fn from(inner: TokenStream) -> proc_macro::TokenStream {
+    fn from(inner: TokenStream) -> Self {
         match inner {
             TokenStream::Compiler(inner) => inner.into_token_stream(),
             TokenStream::Fallback(inner) => inner.to_string().parse().unwrap(),
@@ -146,7 +146,7 @@ impl From<TokenStream> for proc_macro::TokenStream {
 }
 
 impl From<fallback::TokenStream> for TokenStream {
-    fn from(inner: fallback::TokenStream) -> TokenStream {
+    fn from(inner: fallback::TokenStream) -> Self {
         TokenStream::Fallback(inner)
     }
 }
@@ -170,7 +170,7 @@ fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
 }
 
 impl From<TokenTree> for TokenStream {
-    fn from(token: TokenTree) -> TokenStream {
+    fn from(token: TokenTree) -> Self {
         if inside_proc_macro() {
             TokenStream::Compiler(DeferredTokenStream::new(into_compiler_token(token).into()))
         } else {
@@ -263,13 +263,13 @@ impl LexError {
 }
 
 impl From<proc_macro::LexError> for LexError {
-    fn from(e: proc_macro::LexError) -> LexError {
+    fn from(e: proc_macro::LexError) -> Self {
         LexError::Compiler(e)
     }
 }
 
 impl From<fallback::LexError> for LexError {
-    fn from(e: fallback::LexError) -> LexError {
+    fn from(e: fallback::LexError) -> Self {
         LexError::Fallback(e)
     }
 }
@@ -539,13 +539,13 @@ impl Span {
 }
 
 impl From<proc_macro::Span> for crate::Span {
-    fn from(proc_span: proc_macro::Span) -> crate::Span {
+    fn from(proc_span: proc_macro::Span) -> Self {
         crate::Span::_new(Span::Compiler(proc_span))
     }
 }
 
 impl From<fallback::Span> for Span {
-    fn from(inner: fallback::Span) -> Span {
+    fn from(inner: fallback::Span) -> Self {
         Span::Fallback(inner)
     }
 }
@@ -929,7 +929,7 @@ impl Literal {
 }
 
 impl From<fallback::Literal> for Literal {
-    fn from(s: fallback::Literal) -> Literal {
+    fn from(s: fallback::Literal) -> Self {
         Literal::Fallback(s)
     }
 }
