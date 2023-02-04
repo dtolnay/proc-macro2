@@ -137,7 +137,7 @@ fn literal_raw_string() {
     // https://github.com/rust-lang/rust/pull/95251
     raw_string_literal_with_hashes(256)
         .parse::<TokenStream>()
-        .unwrap();
+        .unwrap_err();
 }
 
 #[test]
