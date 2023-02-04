@@ -1,4 +1,8 @@
-#![allow(clippy::assertions_on_result_states, clippy::non_ascii_literal)]
+#![allow(
+    clippy::assertions_on_result_states,
+    clippy::items_after_statements,
+    clippy::non_ascii_literal
+)]
 
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::panic;
