@@ -98,6 +98,7 @@
     clippy::cast_possible_truncation,
     clippy::doc_markdown,
     clippy::items_after_statements,
+    clippy::let_underscore_untyped,
     clippy::manual_assert,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
