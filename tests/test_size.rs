@@ -24,7 +24,10 @@ fn test_proc_macro2_fallback_span_size_with_locations() {
 }
 
 #[rustversion::attr(before(1.32), ignore)]
-#[rustversion::attr(since(1.32), cfg_attr(not(all(wrap_proc_macro, not(span_locations))), ignore))]
+#[rustversion::attr(
+    since(1.32),
+    cfg_attr(not(all(wrap_proc_macro, not(span_locations))), ignore)
+)]
 #[test]
 fn test_proc_macro2_wrapper_span_size_without_locations() {
     assert_eq!(mem::size_of::<proc_macro2::Span>(), 4);
