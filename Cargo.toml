@@ -25,6 +25,7 @@ unicode-ident = "1.0"
 
 [dev-dependencies]
 quote = { version = "1.0", default_features = false }
+rustversion = "1"
 
 [features]
 proc-macro = []
