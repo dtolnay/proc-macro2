@@ -56,7 +56,7 @@ jobs:
         run: echo RUSTFLAGS=${RUSTFLAGS}\ -Zrandomize-layout >> $GITHUB_ENV
       - run: cargo test
       - run: cargo test --no-default-features
-      - run: cargo test --no-default-features -- --ignored # run the ignored test to make sure the `proc-macro` feature is disabled
+      - run: cargo test --no-default-features --test features -- --ignored make_sure_no_proc_macro # run the ignored test to make sure the `proc-macro` feature is disabled
       - run: cargo test --features span-locations
       - run: cargo test --manifest-path tests/ui/Cargo.toml
       - name: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo test
