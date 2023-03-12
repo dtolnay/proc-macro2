@@ -134,6 +134,8 @@ mod detection;
 #[doc(hidden)]
 pub mod fallback;
 
+pub mod extra;
+
 #[cfg(not(wrap_proc_macro))]
 use crate::fallback as imp;
 #[path = "wrapper.rs"]
@@ -143,6 +145,7 @@ mod imp;
 #[cfg(span_locations)]
 mod location;
 
+use crate::extra::DelimSpan;
 use crate::marker::Marker;
 use core::cmp::Ordering;
 use core::fmt::{self, Debug, Display};
@@ -725,6 +728,13 @@ impl Group {
     /// ```
     pub fn span_close(&self) -> Span {
         Span::_new(self.inner.span_close())
+    }
+
+    /// Returns an object that holds this group's `span_open()` and
+    /// `span_close()` together (in a more compact representation than holding
+    /// those 2 spans individually).
+    pub fn delim_span(&self) -> DelimSpan {
+        DelimSpan::new(&self.inner)
     }
 
     /// Configures the span for this `Group`'s delimiters, but not its internal
