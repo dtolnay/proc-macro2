@@ -682,7 +682,8 @@ impl Group {
         }
     }
 
-    /// Returns the delimiter of this `Group`
+    /// Returns the punctuation used as the delimiter for this group: a set of
+    /// parentheses, square brackets, or curly braces.
     pub fn delimiter(&self) -> Delimiter {
         self.inner.delimiter()
     }
