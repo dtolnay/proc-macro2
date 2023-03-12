@@ -94,7 +94,7 @@ fn push_token_from_proc_macro(mut vec: RcVecMut<TokenTree>, token: TokenTree) {
             if literal.repr.starts_with('-') {
                 push_negative_literal(vec, literal);
             } else {
-                vec.push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
+                vec.push(TokenTree::Literal(crate::Literal::_new_fallback(literal)));
             }
         }
         _ => vec.push(token),
@@ -104,9 +104,9 @@ fn push_token_from_proc_macro(mut vec: RcVecMut<TokenTree>, token: TokenTree) {
     fn push_negative_literal(mut vec: RcVecMut<TokenTree>, mut literal: Literal) {
         literal.repr.remove(0);
         let mut punct = crate::Punct::new('-', Spacing::Alone);
-        punct.set_span(crate::Span::_new_stable(literal.span));
+        punct.set_span(crate::Span::_new_fallback(literal.span));
         vec.push(TokenTree::Punct(punct));
-        vec.push(TokenTree::Literal(crate::Literal::_new_stable(literal)));
+        vec.push(TokenTree::Literal(crate::Literal::_new_fallback(literal)));
     }
 }
 

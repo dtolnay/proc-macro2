@@ -40,7 +40,7 @@ impl LexError {
 }
 
 fn mismatch() -> ! {
-    panic!("stable/nightly mismatch")
+    panic!("compiler/fallback mismatch")
 }
 
 impl DeferredTokenStream {
