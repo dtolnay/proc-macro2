@@ -58,7 +58,7 @@ impl DelimSpan {
         match &self.inner {
             #[cfg(wrap_proc_macro)]
             DelimSpanEnum::Compiler { join, .. } => Span::_new(imp::Span::Compiler(*join)),
-            DelimSpanEnum::Fallback(span) => Span::_new_stable(*span),
+            DelimSpanEnum::Fallback(span) => Span::_new_fallback(*span),
         }
     }
 
@@ -73,7 +73,7 @@ impl DelimSpan {
                     join: open,
                 ..
             } => Span::_new(imp::Span::Compiler(*open)),
-            DelimSpanEnum::Fallback(span) => Span::_new_stable(span.first_byte()),
+            DelimSpanEnum::Fallback(span) => Span::_new_fallback(span.first_byte()),
         }
     }
 
@@ -88,7 +88,7 @@ impl DelimSpan {
                     join: close,
                 ..
             } => Span::_new(imp::Span::Compiler(*close)),
-            DelimSpanEnum::Fallback(span) => Span::_new_stable(span.last_byte()),
+            DelimSpanEnum::Fallback(span) => Span::_new_fallback(span.last_byte()),
         }
     }
 }

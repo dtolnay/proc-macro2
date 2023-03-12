@@ -217,13 +217,13 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
                 hi: input.off,
             });
             trees = outer;
-            trees.push_token_from_parser(TokenTree::Group(crate::Group::_new_stable(g)));
+            trees.push_token_from_parser(TokenTree::Group(crate::Group::_new_fallback(g)));
         } else {
             let (rest, mut tt) = match leaf_token(input) {
                 Ok((rest, tt)) => (rest, tt),
                 Err(Reject) => return Err(lex_error(input)),
             };
-            tt.set_span(crate::Span::_new_stable(Span {
+            tt.set_span(crate::Span::_new_fallback(Span {
                 #[cfg(span_locations)]
                 lo,
                 #[cfg(span_locations)]
@@ -251,7 +251,7 @@ fn lex_error(cursor: Cursor) -> LexError {
 fn leaf_token(input: Cursor) -> PResult<TokenTree> {
     if let Ok((input, l)) = literal(input) {
         // must be parsed before ident
-        Ok((input, TokenTree::Literal(crate::Literal::_new_stable(l))))
+        Ok((input, TokenTree::Literal(crate::Literal::_new_fallback(l))))
     } else if let Ok((input, p)) = punct(input) {
         Ok((input, TokenTree::Punct(p)))
     } else if let Ok((input, i)) = ident(input) {
@@ -795,7 +795,7 @@ fn doc_comment<'a>(input: Cursor<'a>, trees: &mut TokenStreamBuilder) -> PResult
     #[cfg(span_locations)]
     let lo = input.off;
     let (rest, (comment, inner)) = doc_comment_contents(input)?;
-    let span = crate::Span::_new_stable(Span {
+    let span = crate::Span::_new_fallback(Span {
         #[cfg(span_locations)]
         lo,
         #[cfg(span_locations)]
@@ -831,7 +831,7 @@ fn doc_comment<'a>(input: Cursor<'a>, trees: &mut TokenStreamBuilder) -> PResult
     bracketed.push_token_from_parser(TokenTree::Punct(equal));
     bracketed.push_token_from_parser(TokenTree::Literal(literal));
     let group = Group::new(Delimiter::Bracket, bracketed.build());
-    let mut group = crate::Group::_new_stable(group);
+    let mut group = crate::Group::_new_fallback(group);
     group.set_span(span);
     trees.push_token_from_parser(TokenTree::Group(group));
 

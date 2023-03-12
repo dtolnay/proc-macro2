@@ -187,7 +187,7 @@ impl TokenStream {
         }
     }
 
-    fn _new_stable(inner: fallback::TokenStream) -> Self {
+    fn _new_fallback(inner: fallback::TokenStream) -> Self {
         TokenStream {
             inner: inner.into(),
             _marker: Marker,
@@ -381,7 +381,7 @@ impl Span {
         }
     }
 
-    fn _new_stable(inner: fallback::Span) -> Self {
+    fn _new_fallback(inner: fallback::Span) -> Self {
         Span {
             inner: inner.into(),
             _marker: Marker,
@@ -668,7 +668,7 @@ impl Group {
         Group { inner }
     }
 
-    fn _new_stable(inner: fallback::Group) -> Self {
+    fn _new_fallback(inner: fallback::Group) -> Self {
         Group {
             inner: inner.into(),
         }
@@ -1093,7 +1093,7 @@ impl Literal {
         }
     }
 
-    fn _new_stable(inner: fallback::Literal) -> Self {
+    fn _new_fallback(inner: fallback::Literal) -> Self {
         Literal {
             inner: inner.into(),
             _marker: Marker,
