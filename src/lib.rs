@@ -528,6 +528,17 @@ impl Span {
     pub fn eq(&self, other: &Span) -> bool {
         self.inner.eq(&other.inner)
     }
+
+    /// Returns the source text behind a span. This preserves the original
+    /// source code, including spaces and comments. It only returns a result if
+    /// the span corresponds to real source code.
+    ///
+    /// Note: The observable result of a macro should only rely on the tokens
+    /// and not on this source text. The result of this function is a best
+    /// effort to be used for diagnostics only.
+    pub fn source_text(&self) -> Option<String> {
+        self.inner.source_text()
+    }
 }
 
 /// Prints a span in a form convenient for debugging.

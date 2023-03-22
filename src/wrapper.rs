@@ -530,6 +530,16 @@ impl Span {
         }
     }
 
+    pub fn source_text(&self) -> Option<String> {
+        match self {
+            #[cfg(not(no_source_text))]
+            Span::Compiler(s) => s.source_text(),
+            #[cfg(no_source_text)]
+            Span::Compiler(_) => None,
+            Span::Fallback(s) => s.source_text(),
+        }
+    }
+
     fn unwrap_nightly(self) -> proc_macro::Span {
         match self {
             Span::Compiler(s) => s,

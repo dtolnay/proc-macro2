@@ -100,6 +100,10 @@ fn main() {
         println!("cargo:rustc-cfg=no_is_available");
     }
 
+    if version.minor < 66 {
+        println!("cargo:rustc-cfg=no_source_text");
+    }
+
     let target = env::var("TARGET").unwrap();
     if !enable_use_proc_macro(&target) {
         return;
