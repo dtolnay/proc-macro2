@@ -570,7 +570,11 @@ impl Span {
 
     #[cfg(span_locations)]
     pub fn source_text(&self) -> Option<String> {
-        SOURCE_MAP.with(|cm| Some(cm.borrow().fileinfo(*self).source_text(*self)))
+        if self.is_call_site() {
+            None
+        } else {
+            Some(SOURCE_MAP.with(|cm| cm.borrow().fileinfo(*self).source_text(*self)))
+        }
     }
 
     #[cfg(not(span_locations))]
@@ -598,6 +602,11 @@ impl Span {
             hi: self.hi,
         }
     }
+
+    #[cfg(span_locations)]
+    fn is_call_site(&self) -> bool {
+        self.lo == 0 && self.hi == 0
+    }
 }
 
 impl Debug for Span {
@@ -613,7 +622,7 @@ impl Debug for Span {
 pub(crate) fn debug_span_field_if_nontrivial(debug: &mut fmt::DebugStruct, span: Span) {
     #[cfg(span_locations)]
     {
-        if span.lo == 0 && span.hi == 0 {
+        if span.is_call_site() {
             return;
         }
     }
