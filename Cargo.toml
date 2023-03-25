@@ -42,7 +42,7 @@ nightly = []
 doc-scrape-examples = false
 
 [workspace]
-members = ["benches/bench-libproc-macro", "tests/ui"]
+members = ["benches/bench-libproc-macro", "tests/span", "tests/ui"]
 
 [patch.crates-io]
 # Our doc tests depend on quote which depends on proc-macro2. Without this line,

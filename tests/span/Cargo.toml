@@ -1,0 +1,21 @@
+[package]
+name = "proc-macro2-span-test"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+[[test]]
+name = "span-test"
+path = "span.rs"
+
+[dependencies]
+proc-macro2 = { path = "../..", features = ["span-locations"] }
+
+[dev-dependencies]
+rustversion = "1.0"
+proc-macro2-span-test = { path = "." }
+
+[lib]
+proc_macro = true
+path = "span.rs"
+
