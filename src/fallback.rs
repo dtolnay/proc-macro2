@@ -13,8 +13,6 @@ use core::mem::ManuallyDrop;
 use core::ops::RangeBounds;
 use core::ptr;
 use core::str::FromStr;
-#[cfg(procmacro2_semver_exempt)]
-use std::path::Path;
 use std::path::PathBuf;
 
 /// Force use of proc-macro2's fallback implementation of the API for now, even
@@ -165,8 +163,7 @@ fn get_cursor(src: &str) -> Cursor {
     // Create a dummy file & add it to the source map
     SOURCE_MAP.with(|cm| {
         let mut cm = cm.borrow_mut();
-        let name = format!("<parsed string {}>", cm.files.len());
-        let span = cm.add_file(&name, src);
+        let span = cm.add_file(src);
         Cursor {
             rest: src,
             off: span.lo,
@@ -340,8 +337,6 @@ thread_local! {
         // NOTE: We start with a single dummy file which all call_site() and
         // def_site() spans reference.
         files: vec![FileInfo {
-            #[cfg(procmacro2_semver_exempt)]
-            name: "<unspecified>".to_owned(),
             source_text: String::new(),
             span: Span { lo: 0, hi: 0 },
             lines: vec![0],
@@ -351,8 +346,6 @@ thread_local! {
 
 #[cfg(span_locations)]
 struct FileInfo {
-    #[cfg(procmacro2_semver_exempt)]
-    name: String,
     source_text: String,
     span: Span,
     lines: Vec<usize>,
@@ -421,7 +414,7 @@ impl SourceMap {
         self.files.last().unwrap().span.hi + 1
     }
 
-    fn add_file(&mut self, name: &str, src: &str) -> Span {
+    fn add_file(&mut self, src: &str) -> Span {
         let (len, lines) = lines_offsets(src);
         let lo = self.next_start_pos();
         // XXX(nika): Should we bother doing a checked cast or checked add here?
@@ -431,17 +424,26 @@ impl SourceMap {
         };
 
         self.files.push(FileInfo {
-            #[cfg(procmacro2_semver_exempt)]
-            name: name.to_owned(),
             source_text: src.to_owned(),
             span,
             lines,
         });
 
-        #[cfg(not(procmacro2_semver_exempt))]
-        let _ = name;
-
         span
+    }
+
+    #[cfg(procmacro2_semver_exempt)]
+    fn filepath(&self, span: Span) -> PathBuf {
+        for (i, file) in self.files.iter().enumerate() {
+            if file.span_within(span) {
+                return PathBuf::from(if i == 0 {
+                    "<unspecified>".to_owned()
+                } else {
+                    format!("<parsed string {}>", i)
+                });
+            }
+        }
+        unreachable!("Invalid span with no related FileInfo!");
     }
 
     fn fileinfo(&self, span: Span) -> &FileInfo {
@@ -450,7 +452,7 @@ impl SourceMap {
                 return file;
             }
         }
-        panic!("Invalid span with no related FileInfo!");
+        unreachable!("Invalid span with no related FileInfo!");
     }
 }
 
@@ -498,10 +500,8 @@ impl Span {
     pub fn source_file(&self) -> SourceFile {
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
-            let fi = cm.fileinfo(*self);
-            SourceFile {
-                path: Path::new(&fi.name).to_owned(),
-            }
+            let path = cm.filepath(*self);
+            SourceFile { path }
         })
     }
 
