@@ -10,7 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-proc-macro2 = { path = ".." }
+proc-macro2 = { path = "..", default-features = false }
 
 [[bin]]
 name = "parse_token_stream"
