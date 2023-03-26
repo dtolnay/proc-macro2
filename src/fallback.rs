@@ -3,7 +3,7 @@ use crate::location::LineColumn;
 use crate::parse::{self, Cursor};
 use crate::rcvec::{RcVec, RcVecBuilder, RcVecIntoIter, RcVecMut};
 use crate::{Delimiter, Spacing, TokenTree};
-#[cfg(span_locations)]
+#[cfg(all(span_locations, not(fuzzing)))]
 use core::cell::RefCell;
 #[cfg(span_locations)]
 use core::cmp;
@@ -160,7 +160,11 @@ impl TokenStreamBuilder {
 
 #[cfg(span_locations)]
 fn get_cursor(src: &str) -> Cursor {
+    #[cfg(fuzzing)]
+    return Cursor { rest: src, off: 1 };
+
     // Create a dummy file & add it to the source map
+    #[cfg(not(fuzzing))]
     SOURCE_MAP.with(|cm| {
         let mut cm = cm.borrow_mut();
         let span = cm.add_file(src);
@@ -331,7 +335,7 @@ impl Debug for SourceFile {
     }
 }
 
-#[cfg(span_locations)]
+#[cfg(all(span_locations, not(fuzzing)))]
 thread_local! {
     static SOURCE_MAP: RefCell<SourceMap> = RefCell::new(SourceMap {
         // NOTE: We start with a single dummy file which all call_site() and
@@ -344,14 +348,14 @@ thread_local! {
     });
 }
 
-#[cfg(span_locations)]
+#[cfg(all(span_locations, not(fuzzing)))]
 struct FileInfo {
     source_text: String,
     span: Span,
     lines: Vec<usize>,
 }
 
-#[cfg(span_locations)]
+#[cfg(all(span_locations, not(fuzzing)))]
 impl FileInfo {
     fn offset_line_column(&self, offset: usize) -> LineColumn {
         assert!(self.span_within(Span {
@@ -384,7 +388,7 @@ impl FileInfo {
 
 /// Computes the offsets of each line in the given source string
 /// and the total number of characters
-#[cfg(span_locations)]
+#[cfg(all(span_locations, not(fuzzing)))]
 fn lines_offsets(s: &str) -> (usize, Vec<usize>) {
     let mut lines = vec![0];
     let mut total = 0;
@@ -399,12 +403,12 @@ fn lines_offsets(s: &str) -> (usize, Vec<usize>) {
     (total, lines)
 }
 
-#[cfg(span_locations)]
+#[cfg(all(span_locations, not(fuzzing)))]
 struct SourceMap {
     files: Vec<FileInfo>,
 }
 
-#[cfg(span_locations)]
+#[cfg(all(span_locations, not(fuzzing)))]
 impl SourceMap {
     fn next_start_pos(&self) -> u32 {
         // Add 1 so there's always space between files.
@@ -498,6 +502,12 @@ impl Span {
 
     #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
+        #[cfg(fuzzing)]
+        return SourceFile {
+            path: PathBuf::from("<unspecified>"),
+        };
+
+        #[cfg(not(fuzzing))]
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let path = cm.filepath(*self);
@@ -507,6 +517,10 @@ impl Span {
 
     #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
+        #[cfg(fuzzing)]
+        return LineColumn { line: 0, column: 0 };
+
+        #[cfg(not(fuzzing))]
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
@@ -516,6 +530,10 @@ impl Span {
 
     #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
+        #[cfg(fuzzing)]
+        return LineColumn { line: 0, column: 0 };
+
+        #[cfg(not(fuzzing))]
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
@@ -550,6 +568,13 @@ impl Span {
 
     #[cfg(span_locations)]
     pub fn join(&self, other: Span) -> Option<Span> {
+        #[cfg(fuzzing)]
+        return {
+            let _ = other;
+            None
+        };
+
+        #[cfg(not(fuzzing))]
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             // If `other` is not within the same FileInfo as us, return None.
@@ -570,10 +595,16 @@ impl Span {
 
     #[cfg(span_locations)]
     pub fn source_text(&self) -> Option<String> {
-        if self.is_call_site() {
-            None
-        } else {
-            Some(SOURCE_MAP.with(|cm| cm.borrow().fileinfo(*self).source_text(*self)))
+        #[cfg(fuzzing)]
+        return None;
+
+        #[cfg(not(fuzzing))]
+        {
+            if self.is_call_site() {
+                None
+            } else {
+                Some(SOURCE_MAP.with(|cm| cm.borrow().fileinfo(*self).source_text(*self)))
+            }
         }
     }
 
