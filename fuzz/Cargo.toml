@@ -12,6 +12,9 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 proc-macro2 = { path = "..", default-features = false }
 
+[features]
+span-locations = ["proc-macro2/span-locations"]
+
 [[bin]]
 name = "parse_token_stream"
 path = "fuzz_targets/parse_token_stream.rs"
