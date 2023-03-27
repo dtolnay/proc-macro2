@@ -17,44 +17,28 @@
 
 #![cfg_attr(feature = "libfuzzer", no_main)]
 
+use cfg_if::cfg_if;
 use std::str;
 
-#[cfg(not(any(
-    all(
-        feature = "libfuzzer",
-        not(feature = "afl"),
-        not(feature = "honggfuzz")
-    ),
-    all(
-        not(feature = "libfuzzer"),
-        feature = "afl",
-        not(feature = "honggfuzz")
-    ),
-    all(
-        not(feature = "libfuzzer"),
-        not(feature = "afl"),
-        feature = "honggfuzz"
-    ),
-)))]
-fn main() {
-    compile_error! {
-        r#"exactly one of feature="libfuzzer" or feature="afl" or feature="honggfuzz" must be enabled"#
-    }
-}
-
-#[cfg(feature = "libfuzzer")]
-libfuzzer_sys::fuzz_target!(|bytes: &[u8]| { do_fuzz(bytes) });
-
-#[cfg(feature = "afl")]
-fn main() {
-    let hook = true; // turn panic into crashes
-    afl::fuzz(hook, do_fuzz);
-}
-
-#[cfg(feature = "honggfuzz")]
-fn main() {
-    loop {
-        honggfuzz::fuzz(do_fuzz);
+cfg_if! {
+    if #[cfg(all(feature = "libfuzzer", not(feature = "afl"), not(feature = "honggfuzz")))] {
+        libfuzzer_sys::fuzz_target!(|bytes: &[u8]| { do_fuzz(bytes) });
+    } else if #[cfg(all(feature = "afl", not(feature = "libfuzzer"), not(feature = "honggfuzz")))] {
+        fn main() {
+            let hook = true; // turn panic into crashes
+            afl::fuzz(hook, do_fuzz);
+        }
+    } else if #[cfg(all(feature = "honggfuzz", not(feature = "libfuzzer"), not(feature = "afl")))] {
+        fn main() {
+            loop {
+                honggfuzz::fuzz(do_fuzz);
+            }
+        }
+    } else {
+        compile_error! {
+            r#"exactly one of feature="libfuzzer" or feature="afl" or feature="honggfuzz" must be enabled"#
+        }
+        fn main() {}
     }
 }
 
