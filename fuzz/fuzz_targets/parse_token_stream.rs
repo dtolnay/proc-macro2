@@ -59,9 +59,7 @@ fn main() {
 }
 
 fn do_fuzz(bytes: &[u8]) {
-    if bytes.len() < 200 {
-        if let Ok(string) = str::from_utf8(bytes) {
-            _ = string.parse::<proc_macro2::TokenStream>();
-        }
-    }
+    let ..=199 = bytes.len() else { return };
+    let Ok(string) = str::from_utf8(bytes) else { return };
+    let _ = string.parse::<proc_macro2::TokenStream>();
 }
