@@ -1,3 +1,14 @@
+// libfuzzer:
+//
+//     cargo install cargo-fuzz
+//     cargo fuzz run parse_token_stream -j $(nproc) -- -max_len=200 -timeout=1
+//
+// afl++:
+//
+//     cargo install afl
+//     cargo afl build --no-default-features --features afl --release
+//     cargo afl fuzz -i in -o out target/release/parse_token_stream
+
 #![cfg_attr(feature = "libfuzzer", no_main)]
 
 use std::str;
