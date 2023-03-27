@@ -9,10 +9,14 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
+afl = { version = "0.12", optional = true }
+libfuzzer-sys = { version = "0.4", optional = true }
 proc-macro2 = { path = "..", default-features = false }
 
 [features]
+default = ["libfuzzer"]
+afl = ["dep:afl"]
+libfuzzer = ["dep:libfuzzer-sys"]
 span-locations = ["proc-macro2/span-locations"]
 
 [[bin]]

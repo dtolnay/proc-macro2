@@ -97,6 +97,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: dtolnay/install@cargo-fuzz
       - run: cargo fuzz check
+      - run: cargo check --no-default-features --features afl
+        working-directory: fuzz
+
 
   clippy:
     name: Clippy

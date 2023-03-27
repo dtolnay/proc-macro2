@@ -1,4 +1,6 @@
 artifacts/
 corpus/
 coverage/
+in/
+out/
 target/
