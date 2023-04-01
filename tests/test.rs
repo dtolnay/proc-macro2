@@ -265,6 +265,26 @@ fn literal_parse() {
 }
 
 #[test]
+fn literal_span() {
+    let positive = "0.1".parse::<Literal>().unwrap();
+    let negative = "-0.1".parse::<Literal>().unwrap();
+
+    #[cfg(not(span_locations))]
+    {
+        let _ = positive;
+        let _ = negative;
+    }
+
+    #[cfg(span_locations)]
+    {
+        assert_eq!(positive.span().start().column, 0);
+        assert_eq!(positive.span().end().column, 3);
+        assert_eq!(negative.span().start().column, 0);
+        assert_eq!(negative.span().end().column, 4);
+    }
+}
+
+#[test]
 fn roundtrip() {
     fn roundtrip(p: &str) {
         println!("parse: {}", p);

@@ -1020,20 +1020,30 @@ impl Literal {
 impl FromStr for Literal {
     type Err = LexError;
 
-    fn from_str(mut repr: &str) -> Result<Self, Self::Err> {
-        let negative = repr.starts_with('-');
+    fn from_str(repr: &str) -> Result<Self, Self::Err> {
+        let mut cursor = get_cursor(repr);
+        #[cfg(span_locations)]
+        let lo = cursor.off;
+
+        let negative = cursor.starts_with_char('-');
         if negative {
-            repr = &repr[1..];
-            if !repr.starts_with(|ch: char| ch.is_ascii_digit()) {
+            cursor = cursor.advance(1);
+            if !cursor.starts_with_fn(|ch| ch.is_ascii_digit()) {
                 return Err(LexError::call_site());
             }
         }
-        let cursor = get_cursor(repr);
-        if let Ok((_rest, mut literal)) = parse::literal(cursor) {
-            if literal.repr.len() == repr.len() {
+
+        if let Ok((rest, mut literal)) = parse::literal(cursor) {
+            if rest.is_empty() {
                 if negative {
                     literal.repr.insert(0, '-');
                 }
+                literal.span = Span {
+                    #[cfg(span_locations)]
+                    lo,
+                    #[cfg(span_locations)]
+                    hi: rest.off,
+                };
                 return Ok(literal);
             }
         }
