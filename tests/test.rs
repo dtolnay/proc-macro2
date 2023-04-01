@@ -268,11 +268,12 @@ fn literal_parse() {
 fn literal_span() {
     let positive = "0.1".parse::<Literal>().unwrap();
     let negative = "-0.1".parse::<Literal>().unwrap();
+    let subspan = positive.subspan(1..2);
 
     #[cfg(not(span_locations))]
     {
-        let _ = positive;
         let _ = negative;
+        assert!(subspan.is_none());
     }
 
     #[cfg(span_locations)]
@@ -281,7 +282,10 @@ fn literal_span() {
         assert_eq!(positive.span().end().column, 3);
         assert_eq!(negative.span().start().column, 0);
         assert_eq!(negative.span().end().column, 4);
+        assert_eq!(subspan.unwrap().source_text().unwrap(), ".");
     }
+
+    assert!(positive.subspan(1..4).is_none());
 }
 
 #[test]

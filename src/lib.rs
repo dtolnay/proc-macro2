@@ -143,6 +143,8 @@ use crate::fallback as imp;
 mod imp;
 
 #[cfg(span_locations)]
+mod convert;
+#[cfg(span_locations)]
 mod location;
 
 use crate::extra::DelimSpan;
