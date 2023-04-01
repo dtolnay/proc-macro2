@@ -27,11 +27,18 @@ impl<'a> Cursor<'a> {
         self.rest.starts_with(s)
     }
 
-    fn starts_with_char(&self, ch: char) -> bool {
+    pub fn starts_with_char(&self, ch: char) -> bool {
         self.rest.starts_with(ch)
     }
 
-    fn is_empty(&self) -> bool {
+    pub fn starts_with_fn<Pattern>(&self, f: Pattern) -> bool
+    where
+        Pattern: FnMut(char) -> bool,
+    {
+        self.rest.starts_with(f)
+    }
+
+    pub fn is_empty(&self) -> bool {
         self.rest.is_empty()
     }
 
