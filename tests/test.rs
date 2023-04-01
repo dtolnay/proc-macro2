@@ -282,7 +282,7 @@ fn literal_span() {
         assert_eq!(positive.span().end().column, 3);
         assert_eq!(negative.span().start().column, 0);
         assert_eq!(negative.span().end().column, 4);
-        assert_eq!(subspan.unwrap().source_text().unwrap(), "."); // FIXME
+        assert_eq!(subspan.unwrap().source_text().unwrap(), ".");
     }
 
     assert!(positive.subspan(1..4).is_none());
