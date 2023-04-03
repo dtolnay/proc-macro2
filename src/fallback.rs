@@ -960,13 +960,18 @@ impl Literal {
         repr.push('"');
         let mut chars = t.chars();
         while let Some(ch) = chars.next() {
-            if ch == '\0'
-                && chars
-                    .as_str()
-                    .starts_with(|next| '0' <= next && next <= '7')
-            {
-                // circumvent clippy::octal_escapes lint
-                repr.push_str("\\x00");
+            if ch == '\0' {
+                repr.push_str(
+                    if chars
+                        .as_str()
+                        .starts_with(|next| '0' <= next && next <= '7')
+                    {
+                        // circumvent clippy::octal_escapes lint
+                        "\\x00"
+                    } else {
+                        "\\0"
+                    },
+                );
             } else if ch == '\'' {
                 // escape_debug turns this into "\'" which is unnecessary.
                 repr.push(ch);
