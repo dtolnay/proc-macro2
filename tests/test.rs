@@ -1,7 +1,8 @@
 #![allow(
     clippy::assertions_on_result_states,
     clippy::items_after_statements,
-    clippy::non_ascii_literal
+    clippy::non_ascii_literal,
+    clippy::octal_escapes
 )]
 
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
