@@ -958,12 +958,20 @@ impl Literal {
     pub fn string(t: &str) -> Literal {
         let mut repr = String::with_capacity(t.len() + 2);
         repr.push('"');
-        for c in t.chars() {
-            if c == '\'' {
+        let mut chars = t.chars();
+        while let Some(ch) = chars.next() {
+            if ch == '\0'
+                && chars
+                    .as_str()
+                    .starts_with(|next| '0' <= next && next <= '7')
+            {
+                // circumvent clippy::octal_escapes lint
+                repr.push_str("\\x00");
+            } else if ch == '\'' {
                 // escape_debug turns this into "\'" which is unnecessary.
-                repr.push(c);
+                repr.push(ch);
             } else {
-                repr.extend(c.escape_debug());
+                repr.extend(ch.escape_debug());
             }
         }
         repr.push('"');
@@ -985,16 +993,21 @@ impl Literal {
 
     pub fn byte_string(bytes: &[u8]) -> Literal {
         let mut escaped = "b\"".to_string();
-        for b in bytes {
+        let mut bytes = bytes.iter();
+        while let Some(&b) = bytes.next() {
             #[allow(clippy::match_overlapping_arm)]
-            match *b {
-                b'\0' => escaped.push_str(r"\0"),
+            match b {
+                b'\0' => escaped.push_str(match bytes.as_slice().first() {
+                    // circumvent clippy::octal_escapes lint
+                    Some(b'0'..=b'7') => r"\x00",
+                    _ => r"\0",
+                }),
                 b'\t' => escaped.push_str(r"\t"),
                 b'\n' => escaped.push_str(r"\n"),
                 b'\r' => escaped.push_str(r"\r"),
                 b'"' => escaped.push_str("\\\""),
                 b'\\' => escaped.push_str("\\\\"),
-                b'\x20'..=b'\x7E' => escaped.push(*b as char),
+                b'\x20'..=b'\x7E' => escaped.push(b as char),
                 _ => {
                     let _ = write!(escaped, "\\x{:02X}", b);
                 }
