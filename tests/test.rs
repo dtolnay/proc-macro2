@@ -116,7 +116,7 @@ fn literal_string() {
     assert_eq!(Literal::string("didn't").to_string(), "\"didn't\"");
     assert_eq!(
         Literal::string("a\00b\07c\08d\0e\0").to_string(),
-        "\"a\\00b\\07c\\08d\\0e\\0\"",
+        "\"a\\x000b\\x007c\\08d\\0e\\0\"",
     );
 }
 
@@ -153,7 +153,7 @@ fn literal_byte_string() {
     );
     assert_eq!(
         Literal::byte_string(b"a\00b\07c\08d\0e\0").to_string(),
-        "b\"a\\00b\\07c\\08d\\0e\\0\"",
+        "b\"a\\x000b\\x007c\\08d\\0e\\0\"",
     );
 }
 
