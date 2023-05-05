@@ -5,8 +5,16 @@ error[E0277]: `proc_macro::Span` cannot be sent between threads safely
   |                     ^^^^ `proc_macro::Span` cannot be sent between threads safely
   |
   = help: within `Span`, the trait `Send` is not implemented for `proc_macro::Span`
-  = note: required because it appears within the type `Span`
-  = note: required because it appears within the type `Span`
+note: required because it appears within the type `Span`
+ --> $WORKSPACE/src/wrapper.rs
+  |
+  | pub(crate) enum Span {
+  |                 ^^^^
+note: required because it appears within the type `Span`
+ --> $WORKSPACE/src/lib.rs
+  |
+  | pub struct Span {
+  |            ^^^^
 note: required by a bound in `requires_send`
  --> test-not-send.rs:4:25
   |
@@ -20,9 +28,21 @@ error[E0277]: `Rc<()>` cannot be sent between threads safely
   |                     ^^^^ `Rc<()>` cannot be sent between threads safely
   |
   = help: within `Span`, the trait `Send` is not implemented for `Rc<()>`
-  = note: required because it appears within the type `ProcMacroAutoTraits`
-  = note: required because it appears within the type `PhantomData<ProcMacroAutoTraits>`
-  = note: required because it appears within the type `Span`
+note: required because it appears within the type `ProcMacroAutoTraits`
+ --> $WORKSPACE/src/marker.rs
+  |
+  | pub(crate) struct ProcMacroAutoTraits(Rc<()>);
+  |                   ^^^^^^^^^^^^^^^^^^^
+note: required because it appears within the type `PhantomData<ProcMacroAutoTraits>`
+ --> $RUST/core/src/marker.rs
+  |
+  | pub struct PhantomData<T: ?Sized>;
+  |            ^^^^^^^^^^^
+note: required because it appears within the type `Span`
+ --> $WORKSPACE/src/lib.rs
+  |
+  | pub struct Span {
+  |            ^^^^
 note: required by a bound in `requires_send`
  --> test-not-send.rs:4:25
   |
