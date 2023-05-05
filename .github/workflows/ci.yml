@@ -31,6 +31,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
+          components: rust-src
       - run: cargo test
       - run: cargo test --no-default-features
       - run: cargo test --features span-locations
@@ -86,6 +87,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           target: wasm32-unknown-unknown
+          components: rust-src
       - run: cargo test --target wasm32-unknown-unknown --no-run
 
   fuzz:
@@ -97,6 +99,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
       - uses: dtolnay/install@cargo-fuzz
       - run: cargo fuzz check
       - run: cargo check --no-default-features --features afl
@@ -113,7 +117,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@clippy
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy, rust-src
       - run: cargo clippy --tests -- -Dclippy::all -Dclippy::pedantic
       - run: cargo clippy --tests --all-features -- -Dclippy::all -Dclippy::pedantic
 
