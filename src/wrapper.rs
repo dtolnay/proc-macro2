@@ -470,12 +470,6 @@ impl Span {
     #[cfg(span_locations)]
     pub fn start(&self) -> LineColumn {
         match self {
-            #[cfg(proc_macro_span)]
-            Span::Compiler(s) => {
-                let proc_macro::LineColumn { line, column } = s.start();
-                LineColumn { line, column }
-            }
-            #[cfg(not(proc_macro_span))]
             Span::Compiler(_) => LineColumn { line: 0, column: 0 },
             Span::Fallback(s) => s.start(),
         }
@@ -484,12 +478,6 @@ impl Span {
     #[cfg(span_locations)]
     pub fn end(&self) -> LineColumn {
         match self {
-            #[cfg(proc_macro_span)]
-            Span::Compiler(s) => {
-                let proc_macro::LineColumn { line, column } = s.end();
-                LineColumn { line, column }
-            }
-            #[cfg(not(proc_macro_span))]
             Span::Compiler(_) => LineColumn { line: 0, column: 0 },
             Span::Fallback(s) => s.end(),
         }
