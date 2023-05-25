@@ -120,7 +120,7 @@ compile_error! {"\
     build script as well.
 "}
 
-#[cfg(use_proc_macro)]
+#[cfg(feature = "proc-macro")]
 extern crate proc_macro;
 
 mod marker;
@@ -236,14 +236,14 @@ impl FromStr for TokenStream {
     }
 }
 
-#[cfg(use_proc_macro)]
+#[cfg(feature = "proc-macro")]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> Self {
         TokenStream::_new(inner.into())
     }
 }
 
-#[cfg(use_proc_macro)]
+#[cfg(feature = "proc-macro")]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
         inner.inner.into()

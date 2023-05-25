@@ -1,9 +1,5 @@
 // rustc-cfg emitted by the build script:
 //
-// "use_proc_macro"
-//     Link to extern crate proc_macro. Requires "proc-macro" Cargo cfg to be
-//     enabled (default is enabled).
-//
 // "wrap_proc_macro"
 //     Wrap types from libproc_macro rather than polyfilling the whole API.
 //     Enabled on rustc 1.29+ as long as procmacro2_semver_exempt is not set,
@@ -110,8 +106,6 @@ fn main() {
     if !cfg!(feature = "proc-macro") {
         return;
     }
-
-    println!("cargo:rustc-cfg=use_proc_macro");
 
     if version.nightly || !semver_exempt {
         println!("cargo:rustc-cfg=wrap_proc_macro");
