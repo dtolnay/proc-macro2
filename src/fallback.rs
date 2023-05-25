@@ -233,7 +233,7 @@ impl Debug for TokenStream {
     }
 }
 
-#[cfg(use_proc_macro)]
+#[cfg(feature = "proc-macro")]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> Self {
         inner
@@ -243,7 +243,7 @@ impl From<proc_macro::TokenStream> for TokenStream {
     }
 }
 
-#[cfg(use_proc_macro)]
+#[cfg(feature = "proc-macro")]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
         inner
