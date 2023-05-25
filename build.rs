@@ -134,7 +134,7 @@ fn main() {
 
 fn enable_use_proc_macro(target: &str) -> bool {
     // wasm targets don't have the `proc_macro` crate, disable this feature.
-    if target.contains("wasm32") {
+    if target.contains("wasm32") && target != "wasm32-unknown-emscripten" {
         return false;
     }
 
