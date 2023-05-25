@@ -237,6 +237,7 @@ impl FromStr for TokenStream {
 }
 
 #[cfg(feature = "proc-macro")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "proc-macro")))]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> Self {
         TokenStream::_new(inner.into())
@@ -244,6 +245,7 @@ impl From<proc_macro::TokenStream> for TokenStream {
 }
 
 #[cfg(feature = "proc-macro")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "proc-macro")))]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
         inner.inner.into()
