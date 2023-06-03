@@ -850,6 +850,7 @@ impl Display for Ident {
     }
 }
 
+#[allow(clippy::missing_fields_in_debug)]
 impl Debug for Ident {
     // Ident(proc_macro), Ident(r#union)
     #[cfg(not(span_locations))]
