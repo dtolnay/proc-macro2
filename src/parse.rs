@@ -396,7 +396,8 @@ fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
                             return Err(Reject);
                         }
                         match chars.peek() {
-                            Some((_, ch)) if ch.is_whitespace() => {
+                            Some((_, ch @ ' ')) | Some((_, ch @ '\t')) | Some((_, ch @ '\n'))
+                            | Some((_, ch @ '\r')) => {
                                 last = *ch;
                                 chars.next();
                             }
@@ -451,7 +452,10 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
                             return Err(Reject);
                         }
                         match chars.next() {
-                            Some((_, ch)) if ch.is_whitespace() => last = ch,
+                            Some((_, ch @ ' ')) | Some((_, ch @ '\t')) | Some((_, ch @ '\n'))
+                            | Some((_, ch @ '\r')) => {
+                                last = ch;
+                            }
                             Some((offset, _)) => {
                                 input = rest.advance(offset);
                                 bytes = input.bytes().enumerate();

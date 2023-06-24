@@ -119,6 +119,9 @@ fn literal_string() {
         Literal::string("a\00b\07c\08d\0e\0").to_string(),
         "\"a\\x000b\\x007c\\08d\\0e\\0\"",
     );
+
+    "\"\\\r\n    x\"".parse::<TokenStream>().unwrap();
+    "\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
 }
 
 #[test]
@@ -156,6 +159,10 @@ fn literal_byte_string() {
         Literal::byte_string(b"a\00b\07c\08d\0e\0").to_string(),
         "b\"a\\x000b\\x007c\\08d\\0e\\0\"",
     );
+
+    "b\"\\\r\n    x\"".parse::<TokenStream>().unwrap();
+    "b\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
+    "b\"\\\r\n  \u{a0}x\"".parse::<TokenStream>().unwrap_err();
 }
 
 #[test]
@@ -657,7 +664,6 @@ fn non_ascii_tokens() {
     check_spans("ábc// foo", &[(1, 0, 1, 3)]);
     check_spans("ábć// foo", &[(1, 0, 1, 3)]);
     check_spans("b\"a\\\n c\"", &[(1, 0, 2, 3)]);
-    check_spans("b\"a\\\n\u{00a0}c\"", &[(1, 0, 2, 3)]);
 }
 
 #[cfg(span_locations)]
