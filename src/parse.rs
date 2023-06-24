@@ -478,10 +478,9 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
     Err(Reject)
 }
 
-fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
-    let mut chars = input.char_indices();
+fn delimiter_of_raw_string(input: Cursor) -> PResult<&str> {
     let mut n = 0;
-    for (i, ch) in &mut chars {
+    for (i, ch) in input.char_indices() {
         match ch {
             '"' => {
                 n = i;
@@ -495,10 +494,16 @@ fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
         // https://github.com/rust-lang/rust/pull/95251
         return Err(Reject);
     }
+    Ok((input.advance(n + 1), &input.rest[..n]))
+}
+
+fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
+    let (input, delimiter) = delimiter_of_raw_string(input)?;
+    let mut chars = input.char_indices();
     while let Some((i, ch)) = chars.next() {
         match ch {
-            '"' if input.rest[i + 1..].starts_with(&input.rest[..n]) => {
-                let rest = input.advance(i + 1 + n);
+            '"' if input.rest[i + 1..].starts_with(delimiter) => {
+                let rest = input.advance(i + 1 + delimiter.len());
                 return Ok(literal_suffix(rest));
             }
             '\r' => match chars.next() {
