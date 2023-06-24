@@ -417,11 +417,30 @@ fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
     Err(Reject)
 }
 
+fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
+    let (input, delimiter) = delimiter_of_raw_string(input)?;
+    let mut chars = input.char_indices();
+    while let Some((i, ch)) = chars.next() {
+        match ch {
+            '"' if input.rest[i + 1..].starts_with(delimiter) => {
+                let rest = input.advance(i + 1 + delimiter.len());
+                return Ok(literal_suffix(rest));
+            }
+            '\r' => match chars.next() {
+                Some((_, '\n')) => {}
+                _ => break,
+            },
+            _ => {}
+        }
+    }
+    Err(Reject)
+}
+
 fn byte_string(input: Cursor) -> Result<Cursor, Reject> {
     if let Ok(input) = input.parse("b\"") {
         cooked_byte_string(input)
     } else if let Ok(input) = input.parse("br") {
-        raw_string(input)
+        raw_byte_string(input)
     } else {
         Err(Reject)
     }
@@ -497,7 +516,7 @@ fn delimiter_of_raw_string(input: Cursor) -> PResult<&str> {
     Ok((input.advance(n + 1), &input.rest[..n]))
 }
 
-fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
+fn raw_byte_string(input: Cursor) -> Result<Cursor, Reject> {
     let (input, delimiter) = delimiter_of_raw_string(input)?;
     let mut chars = input.char_indices();
     while let Some((i, ch)) = chars.next() {
@@ -510,7 +529,11 @@ fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
                 Some((_, '\n')) => {}
                 _ => break,
             },
-            _ => {}
+            other => {
+                if !other.is_ascii() {
+                    break;
+                }
+            }
         }
     }
     Err(Reject)

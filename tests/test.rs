@@ -163,6 +163,7 @@ fn literal_byte_string() {
     "b\"\\\r\n    x\"".parse::<TokenStream>().unwrap();
     "b\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
     "b\"\\\r\n  \u{a0}x\"".parse::<TokenStream>().unwrap_err();
+    "br\"\u{a0}\"".parse::<TokenStream>().unwrap_err();
 }
 
 #[test]
