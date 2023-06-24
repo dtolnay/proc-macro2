@@ -371,8 +371,8 @@ fn string(input: Cursor) -> Result<Cursor, Reject> {
     }
 }
 
-fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
-    let mut chars = input.char_indices().peekable();
+fn cooked_string(mut input: Cursor) -> Result<Cursor, Reject> {
+    let mut chars = input.char_indices();
 
     while let Some((i, ch)) = chars.next() {
         match ch {
@@ -393,21 +393,10 @@ fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
                 Some((_, 'u')) => {
                     backslash_u(&mut chars)?;
                 }
-                Some((_, ch @ '\n')) | Some((_, ch @ '\r')) => {
-                    let mut last = ch;
-                    loop {
-                        if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
-                            return Err(Reject);
-                        }
-                        match chars.peek() {
-                            Some((_, ch @ ' ')) | Some((_, ch @ '\t')) | Some((_, ch @ '\n'))
-                            | Some((_, ch @ '\r')) => {
-                                last = *ch;
-                                chars.next();
-                            }
-                            _ => break,
-                        }
-                    }
+                Some((newline, ch @ '\n')) | Some((newline, ch @ '\r')) => {
+                    input = input.advance(newline + 1);
+                    trailing_backslash(&mut input, ch as u8)?;
+                    chars = input.char_indices();
                 }
                 _ => break,
             },
@@ -465,26 +454,9 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
                 Some((_, b'n')) | Some((_, b'r')) | Some((_, b't')) | Some((_, b'\\'))
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
                 Some((newline, b @ b'\n')) | Some((newline, b @ b'\r')) => {
-                    let mut last = b;
-                    let rest = input.advance(newline + 1);
-                    let mut whitespace = rest.bytes().enumerate();
-                    loop {
-                        if last == b'\r' && whitespace.next().map_or(true, |(_, b)| b != b'\n') {
-                            return Err(Reject);
-                        }
-                        match whitespace.next() {
-                            Some((_, b @ b' ')) | Some((_, b @ b'\t')) | Some((_, b @ b'\n'))
-                            | Some((_, b @ b'\r')) => {
-                                last = b;
-                            }
-                            Some((offset, _)) => {
-                                input = rest.advance(offset);
-                                bytes = input.bytes().enumerate();
-                                break;
-                            }
-                            None => return Err(Reject),
-                        }
-                    }
+                    input = input.advance(newline + 1);
+                    trailing_backslash(&mut input, b)?;
+                    bytes = input.bytes().enumerate();
                 }
                 _ => break,
             },
@@ -567,8 +539,8 @@ fn raw_c_string(input: Cursor) -> Result<Cursor, Reject> {
     Err(Reject)
 }
 
-fn cooked_c_string(input: Cursor) -> Result<Cursor, Reject> {
-    let mut chars = input.char_indices().peekable();
+fn cooked_c_string(mut input: Cursor) -> Result<Cursor, Reject> {
+    let mut chars = input.char_indices();
 
     while let Some((i, ch)) = chars.next() {
         match ch {
@@ -591,21 +563,10 @@ fn cooked_c_string(input: Cursor) -> Result<Cursor, Reject> {
                         break;
                     }
                 }
-                Some((_, ch @ '\n')) | Some((_, ch @ '\r')) => {
-                    let mut last = ch;
-                    loop {
-                        if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
-                            return Err(Reject);
-                        }
-                        match chars.peek() {
-                            Some((_, ch @ ' ')) | Some((_, ch @ '\t')) | Some((_, ch @ '\n'))
-                            | Some((_, ch @ '\r')) => {
-                                last = *ch;
-                                chars.next();
-                            }
-                            _ => break,
-                        }
-                    }
+                Some((newline, ch @ '\n')) | Some((newline, ch @ '\r')) => {
+                    input = input.advance(newline + 1);
+                    trailing_backslash(&mut input, ch as u8)?;
+                    chars = input.char_indices();
                 }
                 _ => break,
             },
@@ -728,6 +689,26 @@ where
         len += 1;
     }
     Err(Reject)
+}
+
+fn trailing_backslash(input: &mut Cursor, mut last: u8) -> Result<(), Reject> {
+    let mut whitespace = input.bytes().enumerate();
+    loop {
+        if last == b'\r' && whitespace.next().map_or(true, |(_, b)| b != b'\n') {
+            return Err(Reject);
+        }
+        match whitespace.next() {
+            Some((_, b @ b' ')) | Some((_, b @ b'\t')) | Some((_, b @ b'\n'))
+            | Some((_, b @ b'\r')) => {
+                last = b;
+            }
+            Some((offset, _)) => {
+                *input = input.advance(offset);
+                return Ok(());
+            }
+            None => return Err(Reject),
+        }
+    }
 }
 
 fn float(input: Cursor) -> Result<Cursor, Reject> {
