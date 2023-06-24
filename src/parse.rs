@@ -372,7 +372,7 @@ fn string(input: Cursor) -> Result<Cursor, Reject> {
 }
 
 fn cooked_string(mut input: Cursor) -> Result<Cursor, Reject> {
-    let mut chars = input.char_indices().peekable();
+    let mut chars = input.char_indices();
 
     while let Some((i, ch)) = chars.next() {
         match ch {
@@ -396,7 +396,7 @@ fn cooked_string(mut input: Cursor) -> Result<Cursor, Reject> {
                 Some((newline, ch @ '\n')) | Some((newline, ch @ '\r')) => {
                     input = input.advance(newline + 1);
                     trailing_backslash(&mut input, ch as u8)?;
-                    chars = input.char_indices().peekable();
+                    chars = input.char_indices();
                 }
                 _ => break,
             },
@@ -540,7 +540,7 @@ fn raw_c_string(input: Cursor) -> Result<Cursor, Reject> {
 }
 
 fn cooked_c_string(mut input: Cursor) -> Result<Cursor, Reject> {
-    let mut chars = input.char_indices().peekable();
+    let mut chars = input.char_indices();
 
     while let Some((i, ch)) = chars.next() {
         match ch {
@@ -566,7 +566,7 @@ fn cooked_c_string(mut input: Cursor) -> Result<Cursor, Reject> {
                 Some((newline, ch @ '\n')) | Some((newline, ch @ '\r')) => {
                     input = input.advance(newline + 1);
                     trailing_backslash(&mut input, ch as u8)?;
-                    chars = input.char_indices().peekable();
+                    chars = input.char_indices();
                 }
                 _ => break,
             },
