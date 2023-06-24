@@ -703,7 +703,7 @@ fn whitespace() {
     assert_eq!(tokens.into_iter().count(), 0);
 
     let lone_carriage_return = " \r ";
-    lone_carriage_return.parse::<TokenStream>().unwrap(); // FIXME
+    lone_carriage_return.parse::<TokenStream>().unwrap_err();
 }
 
 #[test]
