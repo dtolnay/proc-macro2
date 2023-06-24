@@ -695,6 +695,15 @@ fn check_spans_internal(ts: TokenStream, lines: &mut &[(usize, usize, usize, usi
 }
 
 #[test]
+fn whitespace() {
+    // space, horizontal tab, vertical tab, form feed, carriage return, line
+    // feed, non-breaking space, left-to-right mark, right-to-left mark
+    let various_spaces = " \t\u{b}\u{c}\r\n\u{a0}\u{200e}\u{200f}";
+    let tokens = various_spaces.parse::<TokenStream>().unwrap();
+    assert_eq!(tokens.into_iter().count(), 0);
+}
+
+#[test]
 fn byte_order_mark() {
     let string = "\u{feff}foo";
     let tokens = string.parse::<TokenStream>().unwrap();
