@@ -386,9 +386,7 @@ fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
             },
             '\\' => match chars.next() {
                 Some((_, 'x')) => {
-                    if !backslash_x_char(&mut chars) {
-                        break;
-                    }
+                    backslash_x_char(&mut chars)?;
                 }
                 Some((_, 'n')) | Some((_, 'r')) | Some((_, 't')) | Some((_, '\\'))
                 | Some((_, '\'')) | Some((_, '"')) | Some((_, '0')) => {}
@@ -462,9 +460,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
             },
             b'\\' => match bytes.next() {
                 Some((_, b'x')) => {
-                    if !backslash_x_byte(&mut bytes) {
-                        break;
-                    }
+                    backslash_x_byte(&mut bytes)?;
                 }
                 Some((_, b'n')) | Some((_, b'r')) | Some((_, b't')) | Some((_, b'\\'))
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
@@ -586,9 +582,7 @@ fn cooked_c_string(input: Cursor) -> Result<Cursor, Reject> {
             },
             '\\' => match chars.next() {
                 Some((_, 'x')) => {
-                    if !backslash_x_nonzero(&mut chars) {
-                        break;
-                    }
+                    backslash_x_nonzero(&mut chars)?;
                 }
                 Some((_, 'n')) | Some((_, 'r')) | Some((_, 't')) | Some((_, '\\'))
                 | Some((_, '\'')) | Some((_, '"')) => {}
@@ -627,7 +621,7 @@ fn byte(input: Cursor) -> Result<Cursor, Reject> {
     let mut bytes = input.bytes().enumerate();
     let ok = match bytes.next().map(|(_, b)| b) {
         Some(b'\\') => match bytes.next().map(|(_, b)| b) {
-            Some(b'x') => backslash_x_byte(&mut bytes),
+            Some(b'x') => backslash_x_byte(&mut bytes).is_ok(),
             Some(b'n') | Some(b'r') | Some(b't') | Some(b'\\') | Some(b'0') | Some(b'\'')
             | Some(b'"') => true,
             _ => false,
@@ -650,7 +644,7 @@ fn character(input: Cursor) -> Result<Cursor, Reject> {
     let mut chars = input.char_indices();
     let ok = match chars.next().map(|(_, ch)| ch) {
         Some('\\') => match chars.next().map(|(_, ch)| ch) {
-            Some('x') => backslash_x_char(&mut chars),
+            Some('x') => backslash_x_char(&mut chars).is_ok(),
             Some('u') => backslash_u(&mut chars).is_ok(),
             Some('n') | Some('r') | Some('t') | Some('\\') | Some('0') | Some('\'') | Some('"') => {
                 true
@@ -672,48 +666,49 @@ macro_rules! next_ch {
         match $chars.next() {
             Some((_, ch)) => match ch {
                 $pat $(| $rest)* => ch,
-                _ => return false,
+                _ => return Err(Reject),
             },
-            None => return false,
+            None => return Err(Reject),
         }
     };
 }
 
-fn backslash_x_char<I>(chars: &mut I) -> bool
+fn backslash_x_char<I>(chars: &mut I) -> Result<(), Reject>
 where
     I: Iterator<Item = (usize, char)>,
 {
     next_ch!(chars @ '0'..='7');
     next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
-    true
+    Ok(())
 }
 
-fn backslash_x_byte<I>(chars: &mut I) -> bool
+fn backslash_x_byte<I>(chars: &mut I) -> Result<(), Reject>
 where
     I: Iterator<Item = (usize, u8)>,
 {
     next_ch!(chars @ b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F');
     next_ch!(chars @ b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F');
-    true
+    Ok(())
 }
 
-fn backslash_x_nonzero<I>(chars: &mut I) -> bool
+fn backslash_x_nonzero<I>(chars: &mut I) -> Result<(), Reject>
 where
     I: Iterator<Item = (usize, char)>,
 {
     let first = next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
     let second = next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
-    !(first == '0' && second == '0')
+    if first == '0' && second == '0' {
+        Err(Reject)
+    } else {
+        Ok(())
+    }
 }
 
 fn backslash_u<I>(chars: &mut I) -> Result<char, Reject>
 where
     I: Iterator<Item = (usize, char)>,
 {
-    match chars.next() {
-        Some((_, '{')) => {}
-        _ => return Err(Reject),
-    }
+    next_ch!(chars @ '{');
     let mut value = 0;
     let mut len = 0;
     for (_, ch) in chars {
