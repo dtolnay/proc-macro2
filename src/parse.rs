@@ -529,7 +529,11 @@ fn raw_byte_string(input: Cursor) -> Result<Cursor, Reject> {
                 Some((_, '\n')) => {}
                 _ => break,
             },
-            _ => {}
+            other => {
+                if !other.is_ascii() {
+                    break;
+                }
+            }
         }
     }
     Err(Reject)
