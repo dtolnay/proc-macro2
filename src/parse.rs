@@ -480,13 +480,13 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
 
 fn delimiter_of_raw_string(input: Cursor) -> PResult<&str> {
     let mut n = 0;
-    for (i, ch) in input.char_indices() {
-        match ch {
-            '"' => {
+    for (i, byte) in input.bytes().enumerate() {
+        match byte {
+            b'"' => {
                 n = i;
                 break;
             }
-            '#' => {}
+            b'#' => {}
             _ => return Err(Reject),
         }
     }
