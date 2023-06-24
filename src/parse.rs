@@ -419,15 +419,15 @@ fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
 
 fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
     let (input, delimiter) = delimiter_of_raw_string(input)?;
-    let mut chars = input.char_indices();
-    while let Some((i, ch)) = chars.next() {
-        match ch {
-            '"' if input.rest[i + 1..].starts_with(delimiter) => {
+    let mut bytes = input.bytes().enumerate();
+    while let Some((i, byte)) = bytes.next() {
+        match byte {
+            b'"' if input.rest[i + 1..].starts_with(delimiter) => {
                 let rest = input.advance(i + 1 + delimiter.len());
                 return Ok(literal_suffix(rest));
             }
-            '\r' => match chars.next() {
-                Some((_, '\n')) => {}
+            b'\r' => match bytes.next() {
+                Some((_, b'\n')) => {}
                 _ => break,
             },
             _ => {}
@@ -518,15 +518,15 @@ fn delimiter_of_raw_string(input: Cursor) -> PResult<&str> {
 
 fn raw_byte_string(input: Cursor) -> Result<Cursor, Reject> {
     let (input, delimiter) = delimiter_of_raw_string(input)?;
-    let mut chars = input.char_indices();
-    while let Some((i, ch)) = chars.next() {
-        match ch {
-            '"' if input.rest[i + 1..].starts_with(delimiter) => {
+    let mut bytes = input.bytes().enumerate();
+    while let Some((i, byte)) = bytes.next() {
+        match byte {
+            b'"' if input.rest[i + 1..].starts_with(delimiter) => {
                 let rest = input.advance(i + 1 + delimiter.len());
                 return Ok(literal_suffix(rest));
             }
-            '\r' => match chars.next() {
-                Some((_, '\n')) => {}
+            b'\r' => match bytes.next() {
+                Some((_, b'\n')) => {}
                 _ => break,
             },
             other => {
