@@ -277,9 +277,11 @@ fn leaf_token(input: Cursor) -> PResult<TokenTree> {
 }
 
 fn ident(input: Cursor) -> PResult<crate::Ident> {
-    if ["r\"", "r#\"", "r##", "b\"", "b\'", "br\"", "br#"]
-        .iter()
-        .any(|prefix| input.starts_with(prefix))
+    if [
+        "r\"", "r#\"", "r##", "b\"", "b\'", "br\"", "br#", "c\"", "cr\"", "cr#",
+    ]
+    .iter()
+    .any(|prefix| input.starts_with(prefix))
     {
         Err(Reject)
     } else {
@@ -337,6 +339,8 @@ fn literal_nocapture(input: Cursor) -> Result<Cursor, Reject> {
         Ok(ok)
     } else if let Ok(ok) = byte_string(input) {
         Ok(ok)
+    } else if let Ok(ok) = c_string(input) {
+        Ok(ok)
     } else if let Ok(ok) = byte(input) {
         Ok(ok)
     } else if let Ok(ok) = character(input) {
@@ -389,9 +393,7 @@ fn cooked_string(input: Cursor) -> Result<Cursor, Reject> {
                 Some((_, 'n')) | Some((_, 'r')) | Some((_, 't')) | Some((_, '\\'))
                 | Some((_, '\'')) | Some((_, '"')) | Some((_, '0')) => {}
                 Some((_, 'u')) => {
-                    if !backslash_u(&mut chars) {
-                        break;
-                    }
+                    backslash_u(&mut chars)?;
                 }
                 Some((_, ch @ '\n')) | Some((_, ch @ '\r')) => {
                     let mut last = ch;
@@ -539,6 +541,87 @@ fn raw_byte_string(input: Cursor) -> Result<Cursor, Reject> {
     Err(Reject)
 }
 
+fn c_string(input: Cursor) -> Result<Cursor, Reject> {
+    if let Ok(input) = input.parse("c\"") {
+        cooked_c_string(input)
+    } else if let Ok(input) = input.parse("cr") {
+        raw_c_string(input)
+    } else {
+        Err(Reject)
+    }
+}
+
+fn raw_c_string(input: Cursor) -> Result<Cursor, Reject> {
+    let (input, delimiter) = delimiter_of_raw_string(input)?;
+    let mut bytes = input.bytes().enumerate();
+    while let Some((i, byte)) = bytes.next() {
+        match byte {
+            b'"' if input.rest[i + 1..].starts_with(delimiter) => {
+                let rest = input.advance(i + 1 + delimiter.len());
+                return Ok(literal_suffix(rest));
+            }
+            b'\r' => match bytes.next() {
+                Some((_, b'\n')) => {}
+                _ => break,
+            },
+            b'\0' => break,
+            _ => {}
+        }
+    }
+    Err(Reject)
+}
+
+fn cooked_c_string(input: Cursor) -> Result<Cursor, Reject> {
+    let mut chars = input.char_indices().peekable();
+
+    while let Some((i, ch)) = chars.next() {
+        match ch {
+            '"' => {
+                let input = input.advance(i + 1);
+                return Ok(literal_suffix(input));
+            }
+            '\r' => match chars.next() {
+                Some((_, '\n')) => {}
+                _ => break,
+            },
+            '\\' => match chars.next() {
+                Some((_, 'x')) => {
+                    if !backslash_x_nonzero(&mut chars) {
+                        break;
+                    }
+                }
+                Some((_, 'n')) | Some((_, 'r')) | Some((_, 't')) | Some((_, '\\'))
+                | Some((_, '\'')) | Some((_, '"')) => {}
+                Some((_, 'u')) => {
+                    if backslash_u(&mut chars)? == '\0' {
+                        break;
+                    }
+                }
+                Some((_, ch @ '\n')) | Some((_, ch @ '\r')) => {
+                    let mut last = ch;
+                    loop {
+                        if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
+                            return Err(Reject);
+                        }
+                        match chars.peek() {
+                            Some((_, ch @ ' ')) | Some((_, ch @ '\t')) | Some((_, ch @ '\n'))
+                            | Some((_, ch @ '\r')) => {
+                                last = *ch;
+                                chars.next();
+                            }
+                            _ => break,
+                        }
+                    }
+                }
+                _ => break,
+            },
+            '\0' => break,
+            _ch => {}
+        }
+    }
+    Err(Reject)
+}
+
 fn byte(input: Cursor) -> Result<Cursor, Reject> {
     let input = input.parse("b'")?;
     let mut bytes = input.bytes().enumerate();
@@ -568,7 +651,7 @@ fn character(input: Cursor) -> Result<Cursor, Reject> {
     let ok = match chars.next().map(|(_, ch)| ch) {
         Some('\\') => match chars.next().map(|(_, ch)| ch) {
             Some('x') => backslash_x_char(&mut chars),
-            Some('u') => backslash_u(&mut chars),
+            Some('u') => backslash_u(&mut chars).is_ok(),
             Some('n') | Some('r') | Some('t') | Some('\\') | Some('0') | Some('\'') | Some('"') => {
                 true
             }
@@ -614,11 +697,23 @@ where
     true
 }
 
-fn backslash_u<I>(chars: &mut I) -> bool
+fn backslash_x_nonzero<I>(chars: &mut I) -> bool
 where
     I: Iterator<Item = (usize, char)>,
 {
-    next_ch!(chars @ '{');
+    let first = next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
+    let second = next_ch!(chars @ '0'..='9' | 'a'..='f' | 'A'..='F');
+    !(first == '0' && second == '0')
+}
+
+fn backslash_u<I>(chars: &mut I) -> Result<char, Reject>
+where
+    I: Iterator<Item = (usize, char)>,
+{
+    match chars.next() {
+        Some((_, '{')) => {}
+        _ => return Err(Reject),
+    }
     let mut value = 0;
     let mut len = 0;
     for (_, ch) in chars {
@@ -627,17 +722,17 @@ where
             'a'..='f' => 10 + ch as u8 - b'a',
             'A'..='F' => 10 + ch as u8 - b'A',
             '_' if len > 0 => continue,
-            '}' if len > 0 => return char::from_u32(value).is_some(),
-            _ => return false,
+            '}' if len > 0 => return char::from_u32(value).ok_or(Reject),
+            _ => break,
         };
         if len == 6 {
-            return false;
+            break;
         }
         value *= 0x10;
         value += u32::from(digit);
         len += 1;
     }
-    false
+    Err(Reject)
 }
 
 fn float(input: Cursor) -> Result<Cursor, Reject> {
