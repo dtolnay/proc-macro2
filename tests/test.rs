@@ -167,6 +167,42 @@ fn literal_byte_string() {
 }
 
 #[test]
+fn literal_c_string() {
+    let strings = r###"
+        c"hello\x80我叫\u{1F980}"  // from the RFC
+        cr"\"
+        cr##"Hello "world"!"##
+        c"\t\n\r\"\\"
+    "###;
+
+    let mut tokens = strings.parse::<TokenStream>().unwrap().into_iter();
+
+    for expected in &[
+        r#"c"hello\x80我叫\u{1F980}""#,
+        r#"cr"\""#,
+        r###"cr##"Hello "world"!"##"###,
+        r#"c"\t\n\r\"\\""#,
+    ] {
+        match tokens.next().unwrap() {
+            TokenTree::Literal(literal) => {
+                assert_eq!(literal.to_string(), *expected);
+            }
+            unexpected => panic!("unexpected token: {:?}", unexpected),
+        }
+    }
+
+    if let Some(unexpected) = tokens.next() {
+        panic!("unexpected token: {:?}", unexpected);
+    }
+
+    for invalid in &[r#"c"\0""#, r#"c"\x00""#, r#"c"\u{0}""#, "c\"\0\""] {
+        if let Ok(unexpected) = invalid.parse::<TokenStream>() {
+            panic!("unexpected token: {:?}", unexpected);
+        }
+    }
+}
+
+#[test]
 fn literal_character() {
     assert_eq!(Literal::character('x').to_string(), "'x'");
     assert_eq!(Literal::character('\'').to_string(), "'\\''");
