@@ -465,17 +465,17 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
                 Some((_, b'n')) | Some((_, b'r')) | Some((_, b't')) | Some((_, b'\\'))
                 | Some((_, b'0')) | Some((_, b'\'')) | Some((_, b'"')) => {}
                 Some((newline, b @ b'\n')) | Some((newline, b @ b'\r')) => {
-                    let mut last = b as char;
+                    let mut last = b;
                     let rest = input.advance(newline + 1);
-                    let mut chars = rest.char_indices();
+                    let mut whitespace = rest.bytes().enumerate();
                     loop {
-                        if last == '\r' && chars.next().map_or(true, |(_, ch)| ch != '\n') {
+                        if last == b'\r' && whitespace.next().map_or(true, |(_, b)| b != b'\n') {
                             return Err(Reject);
                         }
-                        match chars.next() {
-                            Some((_, ch @ ' ')) | Some((_, ch @ '\t')) | Some((_, ch @ '\n'))
-                            | Some((_, ch @ '\r')) => {
-                                last = ch;
+                        match whitespace.next() {
+                            Some((_, b @ b' ')) | Some((_, b @ b'\t')) | Some((_, b @ b'\n'))
+                            | Some((_, b @ b'\r')) => {
+                                last = b;
                             }
                             Some((offset, _)) => {
                                 input = rest.advance(offset);
