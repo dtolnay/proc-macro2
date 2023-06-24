@@ -701,6 +701,9 @@ fn whitespace() {
     let various_spaces = " \t\u{b}\u{c}\r\n\u{a0}\u{200e}\u{200f}";
     let tokens = various_spaces.parse::<TokenStream>().unwrap();
     assert_eq!(tokens.into_iter().count(), 0);
+
+    let lone_carriage_return = " \r ";
+    lone_carriage_return.parse::<TokenStream>().unwrap(); // FIXME
 }
 
 #[test]
