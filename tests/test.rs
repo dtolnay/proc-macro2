@@ -119,6 +119,9 @@ fn literal_string() {
         Literal::string("a\00b\07c\08d\0e\0").to_string(),
         "\"a\\x000b\\x007c\\08d\\0e\\0\"",
     );
+
+    "\"\\\r\n    x\"".parse::<TokenStream>().unwrap();
+    "\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
 }
 
 #[test]
@@ -156,6 +159,9 @@ fn literal_byte_string() {
         Literal::byte_string(b"a\00b\07c\08d\0e\0").to_string(),
         "b\"a\\x000b\\x007c\\08d\\0e\\0\"",
     );
+
+    "b\"\\\r\n    x\"".parse::<TokenStream>().unwrap();
+    "b\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
 }
 
 #[test]
