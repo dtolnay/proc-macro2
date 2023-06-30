@@ -315,10 +315,10 @@ fn literal_span() {
 
     #[cfg(span_locations)]
     {
-        assert_eq!(positive.span().start().column, 0);
-        assert_eq!(positive.span().end().column, 3);
-        assert_eq!(negative.span().start().column, 0);
-        assert_eq!(negative.span().end().column, 4);
+        assert_eq!(positive.span().start().column(), 0);
+        assert_eq!(positive.span().end().column(), 3);
+        assert_eq!(negative.span().start().column(), 0);
+        assert_eq!(negative.span().end().column(), 4);
         assert_eq!(subspan.unwrap().source_text().unwrap(), ".");
     }
 
@@ -434,11 +434,11 @@ testing 123
 #[test]
 fn default_span() {
     let start = Span::call_site().start();
-    assert_eq!(start.line, 1);
-    assert_eq!(start.column, 0);
+    assert_eq!(start.line(), 1);
+    assert_eq!(start.column(), 0);
     let end = Span::call_site().end();
-    assert_eq!(end.line, 1);
-    assert_eq!(end.column, 0);
+    assert_eq!(end.line(), 1);
+    assert_eq!(end.column(), 0);
     let source_file = Span::call_site().source_file();
     assert_eq!(source_file.path().to_string_lossy(), "<unspecified>");
     assert!(!source_file.is_real());
@@ -471,10 +471,10 @@ fn span_join() {
 
     let start = joined1.unwrap().start();
     let end = joined1.unwrap().end();
-    assert_eq!(start.line, 1);
-    assert_eq!(start.column, 0);
-    assert_eq!(end.line, 2);
-    assert_eq!(end.column, 3);
+    assert_eq!(start.line(), 1);
+    assert_eq!(start.column(), 0);
+    assert_eq!(end.line(), 2);
+    assert_eq!(end.column(), 3);
 
     assert_eq!(
         joined1.unwrap().source_file(),
@@ -719,12 +719,12 @@ fn check_spans_internal(ts: TokenStream, lines: &mut &[(usize, usize, usize, usi
             *lines = rest;
 
             let start = i.span().start();
-            assert_eq!(start.line, sline, "sline did not match for {}", i);
-            assert_eq!(start.column, scol, "scol did not match for {}", i);
+            assert_eq!(start.line(), sline, "sline did not match for {}", i);
+            assert_eq!(start.column(), scol, "scol did not match for {}", i);
 
             let end = i.span().end();
-            assert_eq!(end.line, eline, "eline did not match for {}", i);
-            assert_eq!(end.column, ecol, "ecol did not match for {}", i);
+            assert_eq!(end.line(), eline, "eline did not match for {}", i);
+            assert_eq!(end.column(), ecol, "ecol did not match for {}", i);
 
             if let TokenTree::Group(g) = i {
                 check_spans_internal(g.stream().clone(), lines);

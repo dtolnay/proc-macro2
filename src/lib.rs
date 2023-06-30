@@ -157,9 +157,6 @@ use crate::fallback as imp;
 #[cfg(wrap_proc_macro)]
 mod imp;
 
-#[cfg(span_locations)]
-mod location;
-
 use crate::extra::DelimSpan;
 use crate::marker::{ProcMacroAutoTraits, MARKER};
 use core::cmp::Ordering;
@@ -172,10 +169,6 @@ use core::str::FromStr;
 use std::error::Error;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
-
-#[cfg(span_locations)]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
-pub use crate::location::LineColumn;
 
 /// An abstract stream of tokens, or more concretely a sequence of token trees.
 ///
@@ -490,22 +483,27 @@ impl Span {
         self.inner.byte_range()
     }
 
-    /// Get the starting line/column in the source file for this span.
+    /// Creates an empty span pointing to directly before this span.
     ///
     /// This method requires the `"span-locations"` feature to be enabled.
-    ///
-    /// When executing in a procedural macro context, the returned line/column
-    /// are only meaningful if compiled with a nightly toolchain. The stable
-    /// toolchain does not have this information available. When executing
-    /// outside of a procedural macro, such as main.rs or build.rs, the
-    /// line/column are always meaningful regardless of toolchain.
     #[cfg(span_locations)]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
-    pub fn start(&self) -> LineColumn {
-        self.inner.start()
+    pub fn start(&self) -> Self {
+        Self::_new(self.inner.start())
     }
 
-    /// Get the ending line/column in the source file for this span.
+    /// Creates an empty span pointing to directly after this span.
+    ///
+    /// This method requires the `"span-locations"` feature to be enabled.
+    #[cfg(span_locations)]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
+    pub fn end(&self) -> Self {
+        Self::_new(self.inner.end())
+    }
+
+    /// The one-indexed line of the source file where the span starts.
+    ///
+    /// To obtain the line of the span's end, use `span.end().line()`.
     ///
     /// This method requires the `"span-locations"` feature to be enabled.
     ///
@@ -516,8 +514,25 @@ impl Span {
     /// line/column are always meaningful regardless of toolchain.
     #[cfg(span_locations)]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
-    pub fn end(&self) -> LineColumn {
-        self.inner.end()
+    pub fn line(&self) -> usize {
+        self.inner.line()
+    }
+
+    /// The one-indexed column of the source file where the span starts.
+    ///
+    /// To obtain the column of the span's end, use `span.end().column()`.
+    ///
+    /// This method requires the `"span-locations"` feature to be enabled.
+    ///
+    /// When executing in a procedural macro context, the returned line/column
+    /// are only meaningful if compiled with a nightly toolchain. The stable
+    /// toolchain does not have this information available. When executing
+    /// outside of a procedural macro, such as main.rs or build.rs, the
+    /// line/column are always meaningful regardless of toolchain.
+    #[cfg(span_locations)]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
+    pub fn column(&self) -> usize {
+        self.inner.column()
     }
 
     /// Create a new span encompassing `self` and `other`.

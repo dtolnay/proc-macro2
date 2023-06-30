@@ -1,6 +1,4 @@
 use crate::detection::inside_proc_macro;
-#[cfg(span_locations)]
-use crate::location::LineColumn;
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 use core::fmt::{self, Debug, Display};
 #[cfg(span_locations)]
@@ -474,22 +472,38 @@ impl Span {
     }
 
     #[cfg(span_locations)]
-    pub fn start(&self) -> LineColumn {
+    pub fn start(&self) -> Self {
         match self {
-            Span::Compiler(_) => LineColumn { line: 0, column: 0 },
-            Span::Fallback(s) => s.start(),
+            Self::Compiler(s) => Self::Compiler(s.start()),
+            Self::Fallback(s) => Self::Fallback(s.start()),
         }
     }
 
     #[cfg(span_locations)]
-    pub fn end(&self) -> LineColumn {
+    pub fn end(&self) -> Self {
         match self {
-            Span::Compiler(_) => LineColumn { line: 0, column: 0 },
-            Span::Fallback(s) => s.end(),
+            Self::Compiler(s) => Self::Compiler(s.end()),
+            Self::Fallback(s) => Self::Fallback(s.end()),
         }
     }
 
-    pub fn join(&self, other: Span) -> Option<Span> {
+    #[cfg(span_locations)]
+    pub fn line(&self) -> usize {
+        match self {
+            Self::Compiler(s) => s.line(),
+            Self::Fallback(s) => s.line(),
+        }
+    }
+
+    #[cfg(span_locations)]
+    pub fn column(&self) -> usize {
+        match self {
+            Self::Compiler(s) => s.column(),
+            Self::Fallback(s) => s.column(),
+        }
+    }
+
+    pub fn join(&self, other: Self) -> Option<Span> {
         let ret = match (self, other) {
             #[cfg(proc_macro_span)]
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.join(b)?),
