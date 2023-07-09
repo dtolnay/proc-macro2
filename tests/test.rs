@@ -739,8 +739,8 @@ fn whitespace() {
     let tokens = various_spaces.parse::<TokenStream>().unwrap();
     assert_eq!(tokens.into_iter().count(), 0);
 
-    let lone_carriage_return = " \r ";
-    lone_carriage_return.parse::<TokenStream>().unwrap(); // FIXME
+    let lone_carriage_returns = " \r \r\r\n ";
+    lone_carriage_returns.parse::<TokenStream>().unwrap();
 }
 
 #[test]
