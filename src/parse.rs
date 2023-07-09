@@ -104,12 +104,8 @@ fn skip_whitespace(input: Cursor) -> Cursor {
             }
         }
         match byte {
-            b' ' | 0x09..=0x0c => {
+            b' ' | 0x09..=0x0d => {
                 s = s.advance(1);
-                continue;
-            }
-            b'\r' if s.as_bytes().get(1) == Some(&b'\n') => {
-                s = s.advance(2);
                 continue;
             }
             b if b <= 0x7f => {}
