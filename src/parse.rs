@@ -108,7 +108,7 @@ fn skip_whitespace(input: Cursor) -> Cursor {
                 s = s.advance(1);
                 continue;
             }
-            b if b <= 0x7f => {}
+            b if b.is_ascii() => {}
             _ => {
                 let ch = s.chars().next().unwrap();
                 if is_whitespace(ch) {
@@ -456,7 +456,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
                 }
                 _ => break,
             },
-            b if b < 0x80 => {}
+            b if b.is_ascii() => {}
             _ => break,
         }
     }
