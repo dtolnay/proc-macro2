@@ -35,7 +35,7 @@
 //     1.57+.
 
 use std::env;
-use std::process::{self, Command};
+use std::process::Command;
 use std::str;
 use std::u32;
 
@@ -46,11 +46,6 @@ fn main() {
         minor: u32::MAX,
         nightly: false,
     });
-
-    if version.minor < 31 {
-        eprintln!("Minimum supported rustc version is 1.31");
-        process::exit(1);
-    }
 
     let docs_rs = env::var_os("DOCS_RS").is_some();
     let semver_exempt = cfg!(procmacro2_semver_exempt) || docs_rs;
