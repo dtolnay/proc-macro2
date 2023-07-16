@@ -53,7 +53,7 @@ impl<T> RcVec<T> {
         T: Clone,
     {
         let vec = if let Some(owned) = Rc::get_mut(&mut self.inner) {
-            mem::replace(owned, Vec::new())
+            mem::take(owned)
         } else {
             Vec::clone(&self.inner)
         };
