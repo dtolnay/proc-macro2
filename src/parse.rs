@@ -711,7 +711,7 @@ fn float(input: Cursor) -> Result<Cursor, Reject> {
 fn float_digits(input: Cursor) -> Result<Cursor, Reject> {
     let mut chars = input.chars().peekable();
     match chars.next() {
-        Some(ch) if ch >= '0' && ch <= '9' => {}
+        Some(ch) if '0' <= ch && ch <= '9' => {}
         _ => return Err(Reject),
     }
 
