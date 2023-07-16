@@ -58,10 +58,6 @@ fn main() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
-    if version.minor < 39 {
-        println!("cargo:rustc-cfg=no_bind_by_move_pattern_guard");
-    }
-
     if version.minor < 44 {
         println!("cargo:rustc-cfg=no_lexerror_display");
     }

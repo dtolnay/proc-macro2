@@ -70,7 +70,6 @@ impl TokenStream {
 fn push_token_from_proc_macro(mut vec: RcVecMut<TokenTree>, token: TokenTree) {
     // https://github.com/dtolnay/proc-macro2/issues/235
     match token {
-        #[cfg(not(no_bind_by_move_pattern_guard))]
         TokenTree::Literal(crate::Literal {
             #[cfg(wrap_proc_macro)]
                 inner: crate::imp::Literal::Fallback(literal),
@@ -79,20 +78,6 @@ fn push_token_from_proc_macro(mut vec: RcVecMut<TokenTree>, token: TokenTree) {
             ..
         }) if literal.repr.starts_with('-') => {
             push_negative_literal(vec, literal);
-        }
-        #[cfg(no_bind_by_move_pattern_guard)]
-        TokenTree::Literal(crate::Literal {
-            #[cfg(wrap_proc_macro)]
-                inner: crate::imp::Literal::Fallback(literal),
-            #[cfg(not(wrap_proc_macro))]
-                inner: literal,
-            ..
-        }) => {
-            if literal.repr.starts_with('-') {
-                push_negative_literal(vec, literal);
-            } else {
-                vec.push(TokenTree::Literal(crate::Literal::_new_fallback(literal)));
-            }
         }
         _ => vec.push(token),
     }
