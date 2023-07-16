@@ -58,10 +58,6 @@ fn main() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
-    if version.minor < 44 {
-        println!("cargo:rustc-cfg=no_lexerror_display");
-    }
-
     if version.minor < 45 {
         println!("cargo:rustc-cfg=no_hygiene");
     }
