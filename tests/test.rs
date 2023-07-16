@@ -7,7 +7,6 @@
 
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::iter;
-use std::panic;
 use std::str::{self, FromStr};
 
 #[test]
@@ -90,24 +89,9 @@ fn lifetime_number() {
 }
 
 #[test]
+#[should_panic(expected = r#""'a#" is not a valid Ident"#)]
 fn lifetime_invalid() {
-    let result = panic::catch_unwind(|| Ident::new("'a#", Span::call_site()));
-    match result {
-        Err(box_any) => {
-            let message = box_any.downcast_ref::<String>().unwrap();
-            let expected1 = r#""\'a#" is not a valid Ident"#; // 1.31.0 .. 1.53.0
-            let expected2 = r#""'a#" is not a valid Ident"#; // 1.53.0 ..
-            assert!(
-                message == expected1 || message == expected2,
-                "panic message does not match expected string\n\
-                 \x20   panic message: `{:?}`\n\
-                 \x20expected message: `{:?}`",
-                message,
-                expected2,
-            );
-        }
-        Ok(_) => panic!("test did not panic as expected"),
-    }
+    Ident::new("'a#", Span::call_site());
 }
 
 #[test]
