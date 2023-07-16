@@ -888,21 +888,7 @@ impl FromStr for Literal {
 }
 
 fn compiler_literal_from_str(repr: &str) -> Result<proc_macro::Literal, LexError> {
-    #[cfg(not(no_literal_from_str))]
-    {
-        proc_macro::Literal::from_str(repr).map_err(LexError::Compiler)
-    }
-    #[cfg(no_literal_from_str)]
-    {
-        let tokens = proc_macro_parse(repr)?;
-        let mut iter = tokens.into_iter();
-        if let (Some(proc_macro::TokenTree::Literal(literal)), None) = (iter.next(), iter.next()) {
-            if literal.to_string().len() == repr.len() {
-                return Ok(literal);
-            }
-        }
-        Err(LexError::call_site())
-    }
+    proc_macro::Literal::from_str(repr).map_err(LexError::Compiler)
 }
 
 impl Display for Literal {
