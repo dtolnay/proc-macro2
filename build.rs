@@ -58,10 +58,6 @@ fn main() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
-    if version.minor < 55 {
-        println!("cargo:rustc-cfg=no_group_open_close");
-    }
-
     if version.minor < 57 {
         println!("cargo:rustc-cfg=no_is_available");
     }
