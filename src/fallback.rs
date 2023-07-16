@@ -1019,27 +1019,26 @@ impl Literal {
 
         #[cfg(span_locations)]
         {
-            use crate::convert::usize_to_u32;
             use core::ops::Bound;
 
             let lo = match range.start_bound() {
                 Bound::Included(start) => {
-                    let start = usize_to_u32(*start)?;
+                    let start = u32::try_from(*start).ok()?;
                     self.span.lo.checked_add(start)?
                 }
                 Bound::Excluded(start) => {
-                    let start = usize_to_u32(*start)?;
+                    let start = u32::try_from(*start).ok()?;
                     self.span.lo.checked_add(start)?.checked_add(1)?
                 }
                 Bound::Unbounded => self.span.lo,
             };
             let hi = match range.end_bound() {
                 Bound::Included(end) => {
-                    let end = usize_to_u32(*end)?;
+                    let end = u32::try_from(*end).ok()?;
                     self.span.lo.checked_add(end)?.checked_add(1)?
                 }
                 Bound::Excluded(end) => {
-                    let end = usize_to_u32(*end)?;
+                    let end = u32::try_from(*end).ok()?;
                     self.span.lo.checked_add(end)?
                 }
                 Bound::Unbounded => self.span.hi,
