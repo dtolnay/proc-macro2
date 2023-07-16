@@ -58,10 +58,6 @@ fn main() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
-    if version.minor < 32 {
-        println!("cargo:rustc-cfg=no_libprocmacro_unwind_safe");
-    }
-
     if version.minor < 34 {
         println!("cargo:rustc-cfg=no_try_from");
     }
