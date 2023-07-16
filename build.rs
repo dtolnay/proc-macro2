@@ -58,10 +58,6 @@ fn main() {
         println!("cargo:rustc-cfg=span_locations");
     }
 
-    if version.minor < 47 {
-        println!("cargo:rustc-cfg=no_ident_new_raw");
-    }
-
     if version.minor < 54 {
         println!("cargo:rustc-cfg=no_literal_from_str");
     }

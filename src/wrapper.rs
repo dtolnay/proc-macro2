@@ -654,27 +654,7 @@ impl Ident {
 
     pub fn new_raw(string: &str, span: Span) -> Self {
         match span {
-            #[cfg(not(no_ident_new_raw))]
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new_raw(string, s)),
-            #[cfg(no_ident_new_raw)]
-            Span::Compiler(s) => {
-                let _ = proc_macro::Ident::new(string, s);
-                // At this point the un-r#-prefixed string is known to be a
-                // valid identifier. Try to produce a valid raw identifier by
-                // running the `TokenStream` parser, and unwrapping the first
-                // token as an `Ident`.
-                let raw_prefixed = format!("r#{}", string);
-                if let Ok(ts) = raw_prefixed.parse::<proc_macro::TokenStream>() {
-                    let mut iter = ts.into_iter();
-                    if let (Some(proc_macro::TokenTree::Ident(mut id)), None) =
-                        (iter.next(), iter.next())
-                    {
-                        id.set_span(s);
-                        return Ident::Compiler(id);
-                    }
-                }
-                panic!("not allowed as a raw identifier: `{}`", raw_prefixed)
-            }
             Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_raw(string, s)),
         }
     }
