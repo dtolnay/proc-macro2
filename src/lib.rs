@@ -151,7 +151,6 @@ use crate::marker::Marker;
 use core::cmp::Ordering;
 use core::fmt::{self, Debug, Display};
 use core::hash::{Hash, Hasher};
-use core::iter::FromIterator;
 use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::error::Error;

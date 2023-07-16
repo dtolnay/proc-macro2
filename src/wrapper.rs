@@ -3,7 +3,6 @@ use crate::detection::inside_proc_macro;
 use crate::location::LineColumn;
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 use core::fmt::{self, Debug, Display};
-use core::iter::FromIterator;
 use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::panic;

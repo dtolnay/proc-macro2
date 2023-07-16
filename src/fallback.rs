@@ -8,7 +8,6 @@ use core::cell::RefCell;
 #[cfg(span_locations)]
 use core::cmp;
 use core::fmt::{self, Debug, Display, Write};
-use core::iter::FromIterator;
 use core::mem::ManuallyDrop;
 use core::ops::RangeBounds;
 use core::ptr;
