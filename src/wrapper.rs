@@ -756,7 +756,7 @@ macro_rules! unsuffixed_integers {
 impl Literal {
     pub unsafe fn from_str_unchecked(repr: &str) -> Self {
         if inside_proc_macro() {
-            Literal::Compiler(compiler_literal_from_str(repr).expect("invalid literal"))
+            Literal::Compiler(proc_macro::Literal::from_str(repr).expect("invalid literal"))
         } else {
             Literal::Fallback(fallback::Literal::from_str_unchecked(repr))
         }
@@ -879,16 +879,13 @@ impl FromStr for Literal {
 
     fn from_str(repr: &str) -> Result<Self, Self::Err> {
         if inside_proc_macro() {
-            compiler_literal_from_str(repr).map(Literal::Compiler)
+            let literal = proc_macro::Literal::from_str(repr)?;
+            Ok(Literal::Compiler(literal))
         } else {
             let literal = fallback::Literal::from_str(repr)?;
             Ok(Literal::Fallback(literal))
         }
     }
-}
-
-fn compiler_literal_from_str(repr: &str) -> Result<proc_macro::Literal, LexError> {
-    proc_macro::Literal::from_str(repr).map_err(LexError::Compiler)
 }
 
 impl Display for Literal {
