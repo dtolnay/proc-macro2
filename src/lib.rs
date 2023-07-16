@@ -400,9 +400,6 @@ impl Span {
     /// The span located at the invocation of the procedural macro, but with
     /// local variables, labels, and `$crate` resolved at the definition site
     /// of the macro. This is the same hygiene behavior as `macro_rules`.
-    ///
-    /// This function requires Rust 1.45 or later.
-    #[cfg(not(no_hygiene))]
     pub fn mixed_site() -> Self {
         Span::_new(imp::Span::mixed_site())
     }
