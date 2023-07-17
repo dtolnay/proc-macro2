@@ -2,6 +2,7 @@
 name = "proc-macro2-fallback"
 version = "1.0.66"
 authors = ["David Tolnay <dtolnay@gmail.com>"]
+description = "Only the non-libproc_macro-based codepath of the proc-macro2 crate"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/dtolnay/proc-macro2"
