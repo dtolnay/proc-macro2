@@ -6,10 +6,6 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/dtolnay/proc-macro2"
 
-[lib]
-path = "../src/lib.rs"
-doc-scrape-examples = false
-
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -20,3 +16,6 @@ unicode-ident = "1"
 [dev-dependencies]
 proc-macro2 = { version = "1", path = "..", default_features = false }
 quote = { version = "1", default_features = false }
+
+[lib]
+doc-scrape-examples = false
