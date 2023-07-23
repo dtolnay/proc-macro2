@@ -57,7 +57,6 @@ jobs:
           components: rust-src
       - name: Enable type layout randomization
         run: echo RUSTFLAGS=${RUSTFLAGS}\ -Zrandomize-layout >> $GITHUB_ENV
-        if: false # FIXME https://github.com/rust-lang/rust/issues/113941
       - run: cargo test
       - run: cargo test --no-default-features
       - run: cargo test --no-default-features --test features -- --ignored make_sure_no_proc_macro # run the ignored test to make sure the `proc-macro` feature is disabled
