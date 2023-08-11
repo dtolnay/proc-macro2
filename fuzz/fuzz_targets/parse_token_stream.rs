@@ -43,7 +43,7 @@ fn main() {
 }
 
 #[cfg(feature = "libfuzzer")]
-libfuzzer_sys::fuzz_target!(|bytes: &[u8]| { do_fuzz(bytes) });
+libfuzzer_sys::fuzz_target!(|bytes: &[u8]| do_fuzz(bytes));
 
 #[cfg(feature = "afl")]
 fn main() {
