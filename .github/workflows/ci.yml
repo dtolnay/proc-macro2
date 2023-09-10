@@ -118,10 +118,8 @@ jobs:
         working-directory: fuzz
       - uses: dtolnay/install@honggfuzz
       - run: sudo apt-get install binutils-dev libunwind-dev
-        continue-on-error: true # https://github.com/dtolnay/proc-macro2/issues/387
       - run: cargo hfuzz build --no-default-features --features honggfuzz
         working-directory: fuzz
-        continue-on-error: true # https://github.com/dtolnay/proc-macro2/issues/387
 
   clippy:
     name: Clippy
