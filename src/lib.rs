@@ -98,6 +98,7 @@
     clippy::let_underscore_untyped,
     clippy::manual_assert,
     clippy::manual_range_contains,
+    clippy::missing_safety_doc,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
     clippy::new_without_default,
