@@ -305,7 +305,6 @@ impl SourceFile {
     }
 
     pub fn is_real(&self) -> bool {
-        // XXX(nika): Support real files in the future?
         false
     }
 }
@@ -405,7 +404,6 @@ impl SourceMap {
     fn add_file(&mut self, src: &str) -> Span {
         let (len, lines) = lines_offsets(src);
         let lo = self.next_start_pos();
-        // XXX(nika): Should we bother doing a checked cast or checked add here?
         let span = Span {
             lo,
             hi: lo + (len as u32),
