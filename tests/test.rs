@@ -331,7 +331,7 @@ fn source_text() {
     let input = "    𓀕    ";
     let tokens = input.parse::<proc_macro2::TokenStream>().unwrap();
     let ident = tokens.into_iter().next().unwrap();
-    assert_eq!("𓀕", ident.span().source_text().unwrap()); // FIXME
+    assert_eq!("𓀕", ident.span().source_text().unwrap());
 }
 
 #[test]
