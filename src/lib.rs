@@ -95,6 +95,7 @@
     clippy::cast_possible_truncation,
     clippy::doc_markdown,
     clippy::items_after_statements,
+    clippy::iter_without_into_iter,
     clippy::let_underscore_untyped,
     clippy::manual_assert,
     clippy::manual_range_contains,
