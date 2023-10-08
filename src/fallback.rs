@@ -321,8 +321,8 @@ impl Debug for SourceFile {
 #[cfg(all(span_locations, not(fuzzing)))]
 thread_local! {
     static SOURCE_MAP: RefCell<SourceMap> = RefCell::new(SourceMap {
-        // NOTE: We start with a single dummy file which all call_site() and
-        // def_site() spans reference.
+        // Start with a single dummy file which all call_site() and def_site()
+        // spans reference.
         files: vec![FileInfo {
             source_text: String::new(),
             span: Span { lo: 0, hi: 0 },
