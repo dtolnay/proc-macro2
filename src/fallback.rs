@@ -4,6 +4,8 @@ use crate::parse::{self, Cursor};
 use crate::rcvec::{RcVec, RcVecBuilder, RcVecIntoIter, RcVecMut};
 use crate::{Delimiter, Spacing, TokenTree};
 #[cfg(all(span_locations, not(fuzzing)))]
+use alloc::collections::BTreeMap;
+#[cfg(all(span_locations, not(fuzzing)))]
 use core::cell::RefCell;
 #[cfg(span_locations)]
 use core::cmp;
@@ -327,6 +329,7 @@ thread_local! {
             source_text: String::new(),
             span: Span { lo: 0, hi: 0 },
             lines: vec![0],
+            char_index_to_byte_offset: BTreeMap::new(),
         }],
     });
 }
@@ -336,6 +339,7 @@ struct FileInfo {
     source_text: String,
     span: Span,
     lines: Vec<usize>,
+    char_index_to_byte_offset: BTreeMap<usize, usize>,
 }
 
 #[cfg(all(span_locations, not(fuzzing)))]
@@ -363,11 +367,27 @@ impl FileInfo {
     }
 
     fn source_text(&mut self, span: Span) -> String {
-        let lo = (span.lo - self.span.lo) as usize;
-        let trunc_lo = match self.source_text.char_indices().nth(lo) {
-            Some((offset, _ch)) => &self.source_text[offset..],
-            None => return String::new(),
+        let lo_char = (span.lo - self.span.lo) as usize;
+        let (&last_char_index, &last_byte_offset) = self
+            .char_index_to_byte_offset
+            .range(..=lo_char)
+            .next_back()
+            .unwrap_or((&0, &0));
+        let lo_byte = if last_char_index == lo_char {
+            last_byte_offset
+        } else {
+            let total_byte_offset = match self.source_text[last_byte_offset..]
+                .char_indices()
+                .nth(lo_char - last_char_index)
+            {
+                Some((additional_offset, _ch)) => last_byte_offset + additional_offset,
+                None => self.source_text.len(),
+            };
+            self.char_index_to_byte_offset
+                .insert(lo_char, total_byte_offset);
+            total_byte_offset
         };
+        let trunc_lo = &self.source_text[lo_byte..];
         let char_len = (span.hi - span.lo) as usize;
         let source_text = match trunc_lo.char_indices().nth(char_len) {
             Some((offset, _ch)) => &trunc_lo[..offset],
@@ -421,6 +441,7 @@ impl SourceMap {
             source_text: src.to_owned(),
             span,
             lines,
+            char_index_to_byte_offset: BTreeMap::new(),
         });
 
         span
