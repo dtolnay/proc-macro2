@@ -362,7 +362,7 @@ impl FileInfo {
         span.lo >= self.span.lo && span.hi <= self.span.hi
     }
 
-    fn source_text(&self, span: Span) -> String {
+    fn source_text(&mut self, span: Span) -> String {
         let lo = (span.lo - self.span.lo) as usize;
         let trunc_lo = match self.source_text.char_indices().nth(lo) {
             Some((offset, _ch)) => &self.source_text[offset..],
@@ -442,6 +442,15 @@ impl SourceMap {
 
     fn fileinfo(&self, span: Span) -> &FileInfo {
         for file in &self.files {
+            if file.span_within(span) {
+                return file;
+            }
+        }
+        unreachable!("Invalid span with no related FileInfo!");
+    }
+
+    fn fileinfo_mut(&mut self, span: Span) -> &mut FileInfo {
+        for file in &mut self.files {
             if file.span_within(span) {
                 return file;
             }
@@ -572,7 +581,7 @@ impl Span {
             if self.is_call_site() {
                 None
             } else {
-                Some(SOURCE_MAP.with(|cm| cm.borrow().fileinfo(*self).source_text(*self)))
+                Some(SOURCE_MAP.with(|cm| cm.borrow_mut().fileinfo_mut(*self).source_text(*self)))
             }
         }
     }
