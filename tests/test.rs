@@ -338,7 +338,7 @@ fn source_text() {
     assert_eq!("𓀕", ident.span().source_text().unwrap());
 
     let ident = tokens.next().unwrap();
-    assert_eq!("c", ident.span().source_text().unwrap()); // FIXME
+    assert_eq!("c", ident.span().source_text().unwrap());
 }
 
 #[test]
