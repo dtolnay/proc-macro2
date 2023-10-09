@@ -368,11 +368,16 @@ impl FileInfo {
 
     fn source_text(&mut self, span: Span) -> String {
         let lo_char = (span.lo - self.span.lo) as usize;
+
+        // Look up offset of the largest already-computed char index that is
+        // less than or equal to the current requested one. We resume counting
+        // chars from that point.
         let (&last_char_index, &last_byte_offset) = self
             .char_index_to_byte_offset
             .range(..=lo_char)
             .next_back()
             .unwrap_or((&0, &0));
+
         let lo_byte = if last_char_index == lo_char {
             last_byte_offset
         } else {
@@ -387,6 +392,7 @@ impl FileInfo {
                 .insert(lo_char, total_byte_offset);
             total_byte_offset
         };
+
         let trunc_lo = &self.source_text[lo_byte..];
         let char_len = (span.hi - span.lo) as usize;
         let source_text = match trunc_lo.char_indices().nth(char_len) {
@@ -441,6 +447,7 @@ impl SourceMap {
             source_text: src.to_owned(),
             span,
             lines,
+            // Populated lazily by source_text().
             char_index_to_byte_offset: BTreeMap::new(),
         });
 
