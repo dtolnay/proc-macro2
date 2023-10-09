@@ -328,10 +328,17 @@ fn literal_span() {
 #[cfg(span_locations)]
 #[test]
 fn source_text() {
-    let input = "    𓀕    ";
-    let tokens = input.parse::<proc_macro2::TokenStream>().unwrap();
-    let ident = tokens.into_iter().next().unwrap();
+    let input = "    𓀕 c    ";
+    let mut tokens = input
+        .parse::<proc_macro2::TokenStream>()
+        .unwrap()
+        .into_iter();
+
+    let ident = tokens.next().unwrap();
     assert_eq!("𓀕", ident.span().source_text().unwrap());
+
+    let ident = tokens.next().unwrap();
+    assert_eq!("c", ident.span().source_text().unwrap());
 }
 
 #[test]

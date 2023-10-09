@@ -364,7 +364,10 @@ impl FileInfo {
 
     fn source_text(&self, span: Span) -> String {
         let lo = (span.lo - self.span.lo) as usize;
-        let trunc_lo = &self.source_text[lo..];
+        let trunc_lo = match self.source_text.char_indices().nth(lo) {
+            Some((offset, _ch)) => &self.source_text[offset..],
+            None => return String::new(),
+        };
         let char_len = (span.hi - span.lo) as usize;
         let source_text = match trunc_lo.char_indices().nth(char_len) {
             Some((offset, _ch)) => &trunc_lo[..offset],
