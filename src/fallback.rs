@@ -338,18 +338,18 @@ thread_local! {
 struct FileInfo {
     source_text: String,
     span: Span,
-    lines: Vec<usize>,
-    char_index_to_byte_offset: BTreeMap<usize, usize>,
+    lines: Vec<u32>,
+    char_index_to_byte_offset: BTreeMap<u32, u32>,
 }
 
 #[cfg(all(span_locations, not(fuzzing)))]
 impl FileInfo {
-    fn offset_line_column(&self, offset: usize) -> LineColumn {
+    fn offset_line_column(&self, offset: u32) -> LineColumn {
         assert!(self.span_within(Span {
-            lo: offset as u32,
-            hi: offset as u32,
+            lo: offset,
+            hi: offset,
         }));
-        let offset = offset - self.span.lo as usize;
+        let offset = offset - self.span.lo;
         match self.lines.binary_search(&offset) {
             Ok(found) => LineColumn {
                 line: found + 1,
@@ -357,7 +357,7 @@ impl FileInfo {
             },
             Err(idx) => LineColumn {
                 line: idx,
-                column: offset - self.lines[idx - 1],
+                column: (offset - self.lines[idx - 1]) as usize,
             },
         }
     }
@@ -367,7 +367,7 @@ impl FileInfo {
     }
 
     fn source_text(&mut self, span: Span) -> String {
-        let lo_char = (span.lo - self.span.lo) as usize;
+        let lo_char = span.lo - self.span.lo;
 
         // Look up offset of the largest already-computed char index that is
         // less than or equal to the current requested one. We resume counting
@@ -381,21 +381,21 @@ impl FileInfo {
         let lo_byte = if last_char_index == lo_char {
             last_byte_offset
         } else {
-            let total_byte_offset = match self.source_text[last_byte_offset..]
+            let total_byte_offset = match self.source_text[last_byte_offset as usize..]
                 .char_indices()
-                .nth(lo_char - last_char_index)
+                .nth((lo_char - last_char_index) as usize)
             {
-                Some((additional_offset, _ch)) => last_byte_offset + additional_offset,
-                None => self.source_text.len(),
+                Some((additional_offset, _ch)) => last_byte_offset + additional_offset as u32,
+                None => self.source_text.len() as u32,
             };
             self.char_index_to_byte_offset
                 .insert(lo_char, total_byte_offset);
             total_byte_offset
         };
 
-        let trunc_lo = &self.source_text[lo_byte..];
-        let char_len = (span.hi - span.lo) as usize;
-        let source_text = match trunc_lo.char_indices().nth(char_len) {
+        let trunc_lo = &self.source_text[lo_byte as usize..];
+        let char_len = span.hi - span.lo;
+        let source_text = match trunc_lo.char_indices().nth(char_len as usize) {
             Some((offset, _ch)) => &trunc_lo[..offset],
             None => trunc_lo,
         };
@@ -406,7 +406,9 @@ impl FileInfo {
 /// Computes the offsets of each line in the given source string
 /// and the total number of characters
 #[cfg(all(span_locations, not(fuzzing)))]
-fn lines_offsets(s: &str) -> (usize, Vec<usize>) {
+fn lines_offsets(s: &str) -> (u32, Vec<u32>) {
+    assert!(s.len() <= u32::MAX as usize);
+
     let mut lines = vec![0];
     let mut total = 0;
 
@@ -438,10 +440,7 @@ impl SourceMap {
     fn add_file(&mut self, src: &str) -> Span {
         let (len, lines) = lines_offsets(src);
         let lo = self.next_start_pos();
-        let span = Span {
-            lo,
-            hi: lo + (len as u32),
-        };
+        let span = Span { lo, hi: lo + len };
 
         self.files.push(FileInfo {
             source_text: src.to_owned(),
@@ -550,7 +549,7 @@ impl Span {
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
-            fi.offset_line_column(self.lo as usize)
+            fi.offset_line_column(self.lo)
         })
     }
 
@@ -563,7 +562,7 @@ impl Span {
         SOURCE_MAP.with(|cm| {
             let cm = cm.borrow();
             let fi = cm.fileinfo(*self);
-            fi.offset_line_column(self.hi as usize)
+            fi.offset_line_column(self.hi)
         })
     }
 
