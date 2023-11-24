@@ -5,7 +5,7 @@
 //
 // afl++:
 //
-//     cargo install afl
+//     cargo install cargo-afl
 //     cargo afl build --no-default-features --features afl --release
 //     cargo afl fuzz -i in -o out target/release/parse_token_stream
 //
