@@ -755,22 +755,30 @@ pub(crate) struct Ident {
 }
 
 impl Ident {
-    fn _new(string: &str, raw: bool, span: Span) -> Self {
-        validate_ident(string, raw);
+    pub fn new(string: &str, span: Span) -> Self {
+        validate_ident(string);
+        Ident::new_unchecked(string, span)
+    }
 
+    pub fn new_unchecked(string: &str, span: Span) -> Self {
         Ident {
             sym: string.to_owned(),
             span,
-            raw,
+            raw: false,
         }
     }
 
-    pub fn new(string: &str, span: Span) -> Self {
-        Ident::_new(string, false, span)
+    pub fn new_raw(string: &str, span: Span) -> Self {
+        validate_ident_raw(string);
+        Ident::new_raw_unchecked(string, span)
     }
 
-    pub fn new_raw(string: &str, span: Span) -> Self {
-        Ident::_new(string, true, span)
+    pub fn new_raw_unchecked(string: &str, span: Span) -> Self {
+        Ident {
+            sym: string.to_owned(),
+            span,
+            raw: true,
+        }
     }
 
     pub fn span(&self) -> Span {
@@ -790,7 +798,7 @@ pub(crate) fn is_ident_continue(c: char) -> bool {
     unicode_ident::is_xid_continue(c)
 }
 
-fn validate_ident(string: &str, raw: bool) {
+fn validate_ident(string: &str) {
     if string.is_empty() {
         panic!("Ident is not allowed to be empty; use Option<Ident>");
     }
@@ -816,14 +824,16 @@ fn validate_ident(string: &str, raw: bool) {
     if !ident_ok(string) {
         panic!("{:?} is not a valid Ident", string);
     }
+}
 
-    if raw {
-        match string {
-            "_" | "super" | "self" | "Self" | "crate" => {
-                panic!("`r#{}` cannot be a raw identifier", string);
-            }
-            _ => {}
+fn validate_ident_raw(string: &str) {
+    validate_ident(string);
+
+    match string {
+        "_" | "super" | "self" | "Self" | "crate" => {
+            panic!("`r#{}` cannot be a raw identifier", string);
         }
+        _ => {}
     }
 }
 

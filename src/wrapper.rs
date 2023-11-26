@@ -646,11 +646,19 @@ impl Ident {
         }
     }
 
+    pub fn new_unchecked(string: &str, span: fallback::Span) -> Self {
+        Ident::Fallback(fallback::Ident::new_unchecked(string, span))
+    }
+
     pub fn new_raw(string: &str, span: Span) -> Self {
         match span {
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new_raw(string, s)),
             Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_raw(string, s)),
         }
+    }
+
+    pub fn new_raw_unchecked(string: &str, span: fallback::Span) -> Self {
+        Ident::Fallback(fallback::Ident::new_raw_unchecked(string, span))
     }
 
     pub fn span(&self) -> Span {
