@@ -951,7 +951,7 @@ impl Ident {
     ///   style="padding-left:0;">::&lt;Ident&gt;</code>
     /// rather than `Ident::new`.
     pub fn new(string: &str, span: Span) -> Self {
-        Ident::_new(imp::Ident::new(string, span.inner))
+        Ident::_new(imp::Ident::new_checked(string, span.inner))
     }
 
     /// Same as `Ident::new`, but creates a raw identifier (`r#ident`). The
@@ -960,7 +960,7 @@ impl Ident {
     /// segments (e.g. `self`, `super`) are not supported, and will cause a
     /// panic.
     pub fn new_raw(string: &str, span: Span) -> Self {
-        Ident::_new(imp::Ident::new_raw(string, span.inner))
+        Ident::_new(imp::Ident::new_raw_checked(string, span.inner))
     }
 
     /// Returns the span of this `Ident`.
