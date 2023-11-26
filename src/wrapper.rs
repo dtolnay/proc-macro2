@@ -639,6 +639,7 @@ pub(crate) enum Ident {
 }
 
 impl Ident {
+    #[track_caller]
     pub fn new_checked(string: &str, span: Span) -> Self {
         match span {
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new(string, s)),
@@ -650,6 +651,7 @@ impl Ident {
         Ident::Fallback(fallback::Ident::new_unchecked(string, span))
     }
 
+    #[track_caller]
     pub fn new_raw_checked(string: &str, span: Span) -> Self {
         match span {
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new_raw(string, s)),

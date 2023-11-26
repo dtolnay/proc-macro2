@@ -950,6 +950,7 @@ impl Ident {
     ///   style="padding-right:0;">syn::parse_str</code></a><code
     ///   style="padding-left:0;">::&lt;Ident&gt;</code>
     /// rather than `Ident::new`.
+    #[track_caller]
     pub fn new(string: &str, span: Span) -> Self {
         Ident::_new(imp::Ident::new_checked(string, span.inner))
     }
@@ -959,6 +960,7 @@ impl Ident {
     /// (including keywords, e.g. `fn`). Keywords which are usable in path
     /// segments (e.g. `self`, `super`) are not supported, and will cause a
     /// panic.
+    #[track_caller]
     pub fn new_raw(string: &str, span: Span) -> Self {
         Ident::_new(imp::Ident::new_raw_checked(string, span.inner))
     }

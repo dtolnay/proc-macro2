@@ -755,6 +755,7 @@ pub(crate) struct Ident {
 }
 
 impl Ident {
+    #[track_caller]
     pub fn new_checked(string: &str, span: Span) -> Self {
         validate_ident(string);
         Ident::new_unchecked(string, span)
@@ -768,6 +769,7 @@ impl Ident {
         }
     }
 
+    #[track_caller]
     pub fn new_raw_checked(string: &str, span: Span) -> Self {
         validate_ident_raw(string);
         Ident::new_raw_unchecked(string, span)
@@ -798,6 +800,7 @@ pub(crate) fn is_ident_continue(c: char) -> bool {
     unicode_ident::is_xid_continue(c)
 }
 
+#[track_caller]
 fn validate_ident(string: &str) {
     if string.is_empty() {
         panic!("Ident is not allowed to be empty; use Option<Ident>");
@@ -826,6 +829,7 @@ fn validate_ident(string: &str) {
     }
 }
 
+#[track_caller]
 fn validate_ident_raw(string: &str) {
     validate_ident(string);
 
