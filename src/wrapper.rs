@@ -639,10 +639,10 @@ pub(crate) enum Ident {
 }
 
 impl Ident {
-    pub fn new(string: &str, span: Span) -> Self {
+    pub fn new_checked(string: &str, span: Span) -> Self {
         match span {
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new(string, s)),
-            Span::Fallback(s) => Ident::Fallback(fallback::Ident::new(string, s)),
+            Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_checked(string, s)),
         }
     }
 
@@ -650,10 +650,10 @@ impl Ident {
         Ident::Fallback(fallback::Ident::new_unchecked(string, span))
     }
 
-    pub fn new_raw(string: &str, span: Span) -> Self {
+    pub fn new_raw_checked(string: &str, span: Span) -> Self {
         match span {
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new_raw(string, s)),
-            Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_raw(string, s)),
+            Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_raw_checked(string, s)),
         }
     }
 

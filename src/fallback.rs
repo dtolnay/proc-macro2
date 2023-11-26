@@ -755,7 +755,7 @@ pub(crate) struct Ident {
 }
 
 impl Ident {
-    pub fn new(string: &str, span: Span) -> Self {
+    pub fn new_checked(string: &str, span: Span) -> Self {
         validate_ident(string);
         Ident::new_unchecked(string, span)
     }
@@ -768,7 +768,7 @@ impl Ident {
         }
     }
 
-    pub fn new_raw(string: &str, span: Span) -> Self {
+    pub fn new_raw_checked(string: &str, span: Span) -> Self {
         validate_ident_raw(string);
         Ident::new_raw_unchecked(string, span)
     }
