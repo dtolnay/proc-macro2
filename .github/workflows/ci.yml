@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
+    branches:
+      - master
   pull_request:
   workflow_dispatch:
-  schedule: [cron: "40 1 * * *"]
+  schedule:
+    - cron: "40 1 * * *"
 
 permissions:
   contents: read
@@ -13,18 +16,13 @@ env:
   RUSTFLAGS: -Dwarnings
 
 jobs:
-  pre_ci:
-    uses: dtolnay/.github/.github/workflows/pre_ci.yml@master
-
   test:
     name: Rust ${{matrix.rust}}
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        rust: [1.56.0, stable, beta]
+        rust: ["1.56.0", stable, beta]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -46,8 +44,6 @@ jobs:
 
   nightly:
     name: Rust nightly
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -77,8 +73,6 @@ jobs:
 
   minimal:
     name: Minimal versions
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -89,8 +83,6 @@ jobs:
 
   webassembly:
     name: WebAssembly
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -103,8 +95,6 @@ jobs:
 
   fuzz:
     name: Fuzz
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -123,8 +113,6 @@ jobs:
 
   doc:
     name: Documentation
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -152,8 +140,6 @@ jobs:
 
   miri:
     name: Miri
-    needs: pre_ci
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
