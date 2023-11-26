@@ -960,10 +960,6 @@ impl Ident {
     /// segments (e.g. `self`, `super`) are not supported, and will cause a
     /// panic.
     pub fn new_raw(string: &str, span: Span) -> Self {
-        Ident::_new_raw(string, span)
-    }
-
-    fn _new_raw(string: &str, span: Span) -> Self {
         Ident::_new(imp::Ident::new_raw(string, span.inner))
     }
 
