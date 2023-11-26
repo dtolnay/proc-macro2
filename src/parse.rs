@@ -309,7 +309,7 @@ fn ident_any(input: Cursor) -> PResult<crate::Ident> {
         _ => {}
     }
 
-    let ident = crate::Ident::_new_raw(sym, crate::Span::call_site());
+    let ident = crate::Ident::new_raw(sym, crate::Span::call_site());
     Ok((rest, ident))
 }
 
