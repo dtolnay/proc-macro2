@@ -5,7 +5,7 @@ error[E0277]: `proc_macro::Span` cannot be sent between threads safely
   |                     ^^^^ `proc_macro::Span` cannot be sent between threads safely
   |
   = help: within `Span`, the trait `Send` is not implemented for `proc_macro::Span`
-note: required because it appears within the type `Span`
+note: required because it appears within the type `proc_macro2::imp::Span`
  --> $WORKSPACE/src/wrapper.rs
   |
   | pub(crate) enum Span {
@@ -28,12 +28,12 @@ error[E0277]: `Rc<()>` cannot be sent between threads safely
   |                     ^^^^ `Rc<()>` cannot be sent between threads safely
   |
   = help: within `Span`, the trait `Send` is not implemented for `Rc<()>`
-note: required because it appears within the type `ProcMacroAutoTraits`
+note: required because it appears within the type `proc_macro2::marker::ProcMacroAutoTraits`
  --> $WORKSPACE/src/marker.rs
   |
   | pub(crate) struct ProcMacroAutoTraits(Rc<()>);
   |                   ^^^^^^^^^^^^^^^^^^^
-note: required because it appears within the type `PhantomData<ProcMacroAutoTraits>`
+note: required because it appears within the type `PhantomData<proc_macro2::marker::ProcMacroAutoTraits>`
  --> $RUST/core/src/marker.rs
   |
   | pub struct PhantomData<T: ?Sized>;
