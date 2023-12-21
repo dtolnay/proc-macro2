@@ -90,6 +90,7 @@
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![deny(unsafe_op_in_unsafe_fn)]
 #![allow(
     clippy::cast_lossless,
     clippy::cast_possible_truncation,
@@ -1239,7 +1240,7 @@ impl Literal {
     // representation. This is not public API other than for quote.
     #[doc(hidden)]
     pub unsafe fn from_str_unchecked(repr: &str) -> Self {
-        Literal::_new(imp::Literal::from_str_unchecked(repr))
+        Literal::_new(unsafe { imp::Literal::from_str_unchecked(repr) })
     }
 }
 

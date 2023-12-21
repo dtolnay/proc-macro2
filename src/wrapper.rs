@@ -762,7 +762,7 @@ impl Literal {
         if inside_proc_macro() {
             Literal::Compiler(proc_macro::Literal::from_str(repr).expect("invalid literal"))
         } else {
-            Literal::Fallback(fallback::Literal::from_str_unchecked(repr))
+            Literal::Fallback(unsafe { fallback::Literal::from_str_unchecked(repr) })
         }
     }
 
