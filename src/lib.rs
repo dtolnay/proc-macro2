@@ -1240,7 +1240,7 @@ impl Literal {
     // representation. This is not public API other than for quote.
     #[doc(hidden)]
     pub unsafe fn from_str_unchecked(repr: &str) -> Self {
-        Literal::_new(imp::Literal::from_str_unchecked(repr))
+        Literal::_new(unsafe { imp::Literal::from_str_unchecked(repr) })
     }
 }
 
