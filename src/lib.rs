@@ -122,6 +122,15 @@ compile_error! {"\
     build script as well.
 "}
 
+#[cfg(all(
+    procmacro2_nightly_testing,
+    feature = "proc-macro",
+    not(proc_macro_span)
+))]
+compile_error! {"\
+    Build script probe failed to compile.
+"}
+
 extern crate alloc;
 
 #[cfg(feature = "proc-macro")]
