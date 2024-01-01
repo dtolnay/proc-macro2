@@ -171,6 +171,7 @@ use std::error::Error;
 use std::path::PathBuf;
 
 #[cfg(span_locations)]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
 pub use crate::location::LineColumn;
 
 /// An abstract stream of tokens, or more concretely a sequence of token trees.
