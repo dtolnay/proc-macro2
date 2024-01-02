@@ -16,3 +16,6 @@ pub fn join(this: &Span, other: Span) -> Option<Span> {
 pub fn subspan<R: RangeBounds<usize>>(this: &Literal, range: R) -> Option<Span> {
     this.subspan(range)
 }
+
+// Include in sccache cache key.
+const _: Option<&str> = option_env!("RUSTC_BOOTSTRAP");
