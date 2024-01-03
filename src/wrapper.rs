@@ -28,14 +28,10 @@ pub(crate) struct DeferredTokenStream {
 pub(crate) enum LexError {
     Compiler(proc_macro::LexError),
     Fallback(fallback::LexError),
-}
 
-impl LexError {
-    fn call_site() -> Self {
-        LexError::Fallback(fallback::LexError {
-            span: fallback::Span::call_site(),
-        })
-    }
+    // Rustc was supposed to return a LexError, but it panicked instead.
+    // https://github.com/rust-lang/rust/issues/58736
+    CompilerPanic,
 }
 
 #[cold]
@@ -126,7 +122,7 @@ impl FromStr for TokenStream {
 // Work around https://github.com/rust-lang/rust/issues/58736.
 fn proc_macro_parse(src: &str) -> Result<proc_macro::TokenStream, LexError> {
     let result = panic::catch_unwind(|| src.parse().map_err(LexError::Compiler));
-    result.unwrap_or_else(|_| Err(LexError::call_site()))
+    result.unwrap_or_else(|_| Err(LexError::CompilerPanic))
 }
 
 impl Display for TokenStream {
@@ -264,7 +260,7 @@ impl Debug for TokenStream {
 impl LexError {
     pub(crate) fn span(&self) -> Span {
         match self {
-            LexError::Compiler(_) => Span::call_site(),
+            LexError::Compiler(_) | LexError::CompilerPanic => Span::call_site(),
             LexError::Fallback(e) => Span::Fallback(e.span()),
         }
     }
@@ -287,6 +283,10 @@ impl Debug for LexError {
         match self {
             LexError::Compiler(e) => Debug::fmt(e, f),
             LexError::Fallback(e) => Debug::fmt(e, f),
+            LexError::CompilerPanic => {
+                let fallback = fallback::LexError::call_site();
+                Debug::fmt(&fallback, f)
+            }
         }
     }
 }
@@ -296,6 +296,10 @@ impl Display for LexError {
         match self {
             LexError::Compiler(e) => Display::fmt(e, f),
             LexError::Fallback(e) => Display::fmt(e, f),
+            LexError::CompilerPanic => {
+                let fallback = fallback::LexError::call_site();
+                Display::fmt(&fallback, f)
+            }
         }
     }
 }
