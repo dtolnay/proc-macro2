@@ -427,7 +427,8 @@ impl Span {
         match (self, other) {
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.resolved_at(b)),
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.resolved_at(b)),
-            _ => mismatch(line!()),
+            (Span::Compiler(_), Span::Fallback(_)) => mismatch(line!()),
+            (Span::Fallback(_), Span::Compiler(_)) => mismatch(line!()),
         }
     }
 
@@ -435,7 +436,8 @@ impl Span {
         match (self, other) {
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.located_at(b)),
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.located_at(b)),
-            _ => mismatch(line!()),
+            (Span::Compiler(_), Span::Fallback(_)) => mismatch(line!()),
+            (Span::Fallback(_), Span::Compiler(_)) => mismatch(line!()),
         }
     }
 
@@ -605,7 +607,8 @@ impl Group {
         match (self, span) {
             (Group::Compiler(g), Span::Compiler(s)) => g.set_span(s),
             (Group::Fallback(g), Span::Fallback(s)) => g.set_span(s),
-            _ => mismatch(line!()),
+            (Group::Compiler(_), Span::Fallback(_)) => mismatch(line!()),
+            (Group::Fallback(_), Span::Compiler(_)) => mismatch(line!()),
         }
     }
 
@@ -683,7 +686,8 @@ impl Ident {
         match (self, span) {
             (Ident::Compiler(t), Span::Compiler(s)) => t.set_span(s),
             (Ident::Fallback(t), Span::Fallback(s)) => t.set_span(s),
-            _ => mismatch(line!()),
+            (Ident::Compiler(_), Span::Fallback(_)) => mismatch(line!()),
+            (Ident::Fallback(_), Span::Compiler(_)) => mismatch(line!()),
         }
     }
 
@@ -700,7 +704,8 @@ impl PartialEq for Ident {
         match (self, other) {
             (Ident::Compiler(t), Ident::Compiler(o)) => t.to_string() == o.to_string(),
             (Ident::Fallback(t), Ident::Fallback(o)) => t == o,
-            _ => mismatch(line!()),
+            (Ident::Compiler(_), Ident::Fallback(_)) => mismatch(line!()),
+            (Ident::Fallback(_), Ident::Compiler(_)) => mismatch(line!()),
         }
     }
 }
@@ -859,7 +864,8 @@ impl Literal {
         match (self, span) {
             (Literal::Compiler(lit), Span::Compiler(s)) => lit.set_span(s),
             (Literal::Fallback(lit), Span::Fallback(s)) => lit.set_span(s),
-            _ => mismatch(line!()),
+            (Literal::Compiler(_), Span::Fallback(_)) => mismatch(line!()),
+            (Literal::Fallback(_), Span::Compiler(_)) => mismatch(line!()),
         }
     }
 
