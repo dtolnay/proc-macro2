@@ -45,7 +45,7 @@ impl LexError {
         self.span
     }
 
-    fn call_site() -> Self {
+    pub(crate) fn call_site() -> Self {
         LexError {
             span: Span::call_site(),
         }
