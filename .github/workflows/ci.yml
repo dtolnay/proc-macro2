@@ -76,7 +76,7 @@ jobs:
       - name: RUSTFLAGS='-Z allow-features=' cargo test
         run: cargo test
         env:
-          RUSTFLAGS: -Z allow-features= ${{env.RUSTFLAGS}}
+          RUSTFLAGS: -Z allow-features= --cfg procmacro2_backtrace ${{env.RUSTFLAGS}}
 
   minimal:
     name: Minimal versions

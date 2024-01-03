@@ -40,7 +40,15 @@ impl LexError {
 
 #[cold]
 fn mismatch(line: u32) -> ! {
-    panic!("compiler/fallback mismatch #{}", line)
+    #[cfg(procmacro2_backtrace)]
+    {
+        let backtrace = std::backtrace::Backtrace::force_capture();
+        panic!("compiler/fallback mismatch #{}\n\n{}", line, backtrace)
+    }
+    #[cfg(not(procmacro2_backtrace))]
+    {
+        panic!("compiler/fallback mismatch #{}", line)
+    }
 }
 
 impl DeferredTokenStream {
