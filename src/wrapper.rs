@@ -39,8 +39,8 @@ impl LexError {
 }
 
 #[cold]
-fn mismatch() -> ! {
-    panic!("compiler/fallback mismatch")
+fn mismatch(line: u32) -> ! {
+    panic!("compiler/fallback mismatch #{}", line)
 }
 
 impl DeferredTokenStream {
@@ -89,13 +89,13 @@ impl TokenStream {
     fn unwrap_nightly(self) -> proc_macro::TokenStream {
         match self {
             TokenStream::Compiler(s) => s.into_token_stream(),
-            TokenStream::Fallback(_) => mismatch(),
+            TokenStream::Fallback(_) => mismatch(line!()),
         }
     }
 
     fn unwrap_stable(self) -> fallback::TokenStream {
         match self {
-            TokenStream::Compiler(_) => mismatch(),
+            TokenStream::Compiler(_) => mismatch(line!()),
             TokenStream::Fallback(s) => s,
         }
     }
@@ -199,14 +199,14 @@ impl FromIterator<TokenStream> for TokenStream {
                 first.evaluate_now();
                 first.stream.extend(streams.map(|s| match s {
                     TokenStream::Compiler(s) => s.into_token_stream(),
-                    TokenStream::Fallback(_) => mismatch(),
+                    TokenStream::Fallback(_) => mismatch(line!()),
                 }));
                 TokenStream::Compiler(first)
             }
             Some(TokenStream::Fallback(mut first)) => {
                 first.extend(streams.map(|s| match s {
                     TokenStream::Fallback(s) => s,
-                    TokenStream::Compiler(_) => mismatch(),
+                    TokenStream::Compiler(_) => mismatch(line!()),
                 }));
                 TokenStream::Fallback(first)
             }
@@ -419,7 +419,7 @@ impl Span {
         match (self, other) {
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.resolved_at(b)),
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.resolved_at(b)),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
@@ -427,7 +427,7 @@ impl Span {
         match (self, other) {
             (Span::Compiler(a), Span::Compiler(b)) => Span::Compiler(a.located_at(b)),
             (Span::Fallback(a), Span::Fallback(b)) => Span::Fallback(a.located_at(b)),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
@@ -494,7 +494,7 @@ impl Span {
     fn unwrap_nightly(self) -> proc_macro::Span {
         match self {
             Span::Compiler(s) => s,
-            Span::Fallback(_) => mismatch(),
+            Span::Fallback(_) => mismatch(line!()),
         }
     }
 }
@@ -597,14 +597,14 @@ impl Group {
         match (self, span) {
             (Group::Compiler(g), Span::Compiler(s)) => g.set_span(s),
             (Group::Fallback(g), Span::Fallback(s)) => g.set_span(s),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
     fn unwrap_nightly(self) -> proc_macro::Group {
         match self {
             Group::Compiler(g) => g,
-            Group::Fallback(_) => mismatch(),
+            Group::Fallback(_) => mismatch(line!()),
         }
     }
 }
@@ -675,14 +675,14 @@ impl Ident {
         match (self, span) {
             (Ident::Compiler(t), Span::Compiler(s)) => t.set_span(s),
             (Ident::Fallback(t), Span::Fallback(s)) => t.set_span(s),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
     fn unwrap_nightly(self) -> proc_macro::Ident {
         match self {
             Ident::Compiler(s) => s,
-            Ident::Fallback(_) => mismatch(),
+            Ident::Fallback(_) => mismatch(line!()),
         }
     }
 }
@@ -692,7 +692,7 @@ impl PartialEq for Ident {
         match (self, other) {
             (Ident::Compiler(t), Ident::Compiler(o)) => t.to_string() == o.to_string(),
             (Ident::Fallback(t), Ident::Fallback(o)) => t == o,
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 }
@@ -851,7 +851,7 @@ impl Literal {
         match (self, span) {
             (Literal::Compiler(lit), Span::Compiler(s)) => lit.set_span(s),
             (Literal::Fallback(lit), Span::Fallback(s)) => lit.set_span(s),
-            _ => mismatch(),
+            _ => mismatch(line!()),
         }
     }
 
@@ -868,7 +868,7 @@ impl Literal {
     fn unwrap_nightly(self) -> proc_macro::Literal {
         match self {
             Literal::Compiler(s) => s,
-            Literal::Fallback(_) => mismatch(),
+            Literal::Fallback(_) => mismatch(line!()),
         }
     }
 }
