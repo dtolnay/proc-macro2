@@ -28,16 +28,16 @@ error[E0277]: `Rc<()>` cannot be sent between threads safely
   |                     ^^^^ `Rc<()>` cannot be sent between threads safely
   |
   = help: within `Span`, the trait `Send` is not implemented for `Rc<()>`
-note: required because it appears within the type `proc_macro2::marker::ProcMacroAutoTraits`
- --> $WORKSPACE/src/marker.rs
-  |
-  | pub(crate) struct ProcMacroAutoTraits(
-  |                   ^^^^^^^^^^^^^^^^^^^
-note: required because it appears within the type `PhantomData<proc_macro2::marker::ProcMacroAutoTraits>`
+note: required because it appears within the type `PhantomData<Rc<()>>`
  --> $RUST/core/src/marker.rs
   |
   | pub struct PhantomData<T: ?Sized>;
   |            ^^^^^^^^^^^
+note: required because it appears within the type `proc_macro2::marker::ProcMacroAutoTraits`
+ --> $WORKSPACE/src/marker.rs
+  |
+  | pub(crate) struct ProcMacroAutoTraits(PhantomData<Rc<()>>);
+  |                   ^^^^^^^^^^^^^^^^^^^
 note: required because it appears within the type `Span`
  --> $WORKSPACE/src/lib.rs
   |

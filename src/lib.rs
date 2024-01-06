@@ -160,7 +160,7 @@ mod imp;
 mod location;
 
 use crate::extra::DelimSpan;
-use crate::marker::Marker;
+use crate::marker::{ProcMacroAutoTraits, MARKER};
 use core::cmp::Ordering;
 use core::fmt::{self, Debug, Display};
 use core::hash::{Hash, Hasher};
@@ -184,27 +184,27 @@ pub use crate::location::LineColumn;
 #[derive(Clone)]
 pub struct TokenStream {
     inner: imp::TokenStream,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 /// Error returned from `TokenStream::from_str`.
 pub struct LexError {
     inner: imp::LexError,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> Self {
         TokenStream {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
     fn _new_fallback(inner: fallback::TokenStream) -> Self {
         TokenStream {
             inner: inner.into(),
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
@@ -241,7 +241,7 @@ impl FromStr for TokenStream {
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         let e = src.parse().map_err(|e| LexError {
             inner: e,
-            _marker: Marker,
+            _marker: MARKER,
         })?;
         Ok(TokenStream::_new(e))
     }
@@ -339,7 +339,7 @@ impl Error for LexError {}
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     inner: imp::SourceFile,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 #[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
@@ -347,7 +347,7 @@ impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
@@ -386,21 +386,21 @@ impl Debug for SourceFile {
 #[derive(Copy, Clone)]
 pub struct Span {
     inner: imp::Span,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 impl Span {
     fn _new(inner: imp::Span) -> Self {
         Span {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
     fn _new_fallback(inner: fallback::Span) -> Self {
         Span {
             inner: inner.into(),
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
@@ -919,14 +919,14 @@ impl Debug for Punct {
 #[derive(Clone)]
 pub struct Ident {
     inner: imp::Ident,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 impl Ident {
     fn _new(inner: imp::Ident) -> Self {
         Ident {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
@@ -1046,7 +1046,7 @@ impl Debug for Ident {
 #[derive(Clone)]
 pub struct Literal {
     inner: imp::Literal,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 macro_rules! suffixed_int_literals {
@@ -1093,14 +1093,14 @@ impl Literal {
     fn _new(inner: imp::Literal) -> Self {
         Literal {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
     fn _new_fallback(inner: fallback::Literal) -> Self {
         Literal {
             inner: inner.into(),
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
@@ -1260,7 +1260,7 @@ impl FromStr for Literal {
     fn from_str(repr: &str) -> Result<Self, LexError> {
         repr.parse().map(Literal::_new).map_err(|inner| LexError {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         })
     }
 }
@@ -1279,7 +1279,7 @@ impl Display for Literal {
 
 /// Public implementation details for the `TokenStream` type, such as iterators.
 pub mod token_stream {
-    use crate::marker::Marker;
+    use crate::marker::{ProcMacroAutoTraits, MARKER};
     use crate::{imp, TokenTree};
     use core::fmt::{self, Debug};
 
@@ -1292,7 +1292,7 @@ pub mod token_stream {
     #[derive(Clone)]
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
-        _marker: Marker,
+        _marker: ProcMacroAutoTraits,
     }
 
     impl Iterator for IntoIter {
@@ -1321,7 +1321,7 @@ pub mod token_stream {
         fn into_iter(self) -> IntoIter {
             IntoIter {
                 inner: self.inner.into_iter(),
-                _marker: Marker,
+                _marker: MARKER,
             }
         }
     }
