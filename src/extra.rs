@@ -3,7 +3,7 @@
 
 use crate::fallback;
 use crate::imp;
-use crate::marker::Marker;
+use crate::marker::{ProcMacroAutoTraits, MARKER};
 use crate::Span;
 use core::fmt::{self, Debug};
 
@@ -14,7 +14,7 @@ use core::fmt::{self, Debug};
 #[derive(Copy, Clone)]
 pub struct DelimSpan {
     inner: DelimSpanEnum,
-    _marker: Marker,
+    _marker: ProcMacroAutoTraits,
 }
 
 #[derive(Copy, Clone)]
@@ -45,7 +45,7 @@ impl DelimSpan {
 
         DelimSpan {
             inner,
-            _marker: Marker,
+            _marker: MARKER,
         }
     }
 
