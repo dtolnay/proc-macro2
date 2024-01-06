@@ -12,7 +12,10 @@ mod value {
     pub(crate) use core::marker::PhantomData as Marker;
 }
 
-pub(crate) struct ProcMacroAutoTraits(#[allow(dead_code)] Rc<()>);
+pub(crate) struct ProcMacroAutoTraits(
+    #[allow(dead_code)] // https://github.com/rust-lang/rust/issues/119645
+    Rc<()>,
+);
 
 impl UnwindSafe for ProcMacroAutoTraits {}
 impl RefUnwindSafe for ProcMacroAutoTraits {}

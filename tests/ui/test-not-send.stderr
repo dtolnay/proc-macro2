@@ -31,7 +31,7 @@ error[E0277]: `Rc<()>` cannot be sent between threads safely
 note: required because it appears within the type `proc_macro2::marker::ProcMacroAutoTraits`
  --> $WORKSPACE/src/marker.rs
   |
-  | pub(crate) struct ProcMacroAutoTraits(#[allow(dead_code)] Rc<()>);
+  | pub(crate) struct ProcMacroAutoTraits(
   |                   ^^^^^^^^^^^^^^^^^^^
 note: required because it appears within the type `PhantomData<proc_macro2::marker::ProcMacroAutoTraits>`
  --> $RUST/core/src/marker.rs
