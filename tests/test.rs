@@ -757,3 +757,40 @@ fn byte_order_mark() {
     let string = "foo\u{feff}";
     string.parse::<TokenStream>().unwrap_err();
 }
+
+// Creates a new Span from a TokenStream
+#[cfg(all(test, span_locations))]
+fn create_span() -> proc_macro2::Span {
+    let tts: TokenStream = "1".parse().unwrap();
+    match tts.into_iter().next().unwrap() {
+        TokenTree::Literal(literal) => literal.span(),
+        _ => unreachable!(),
+    }
+}
+
+#[cfg(span_locations)]
+#[test]
+fn test_invalidate_current_thread_spans() {
+    let actual = format!("{:#?}", create_span());
+    assert_eq!(actual, "bytes(1..2)");
+    let actual = format!("{:#?}", create_span());
+    assert_eq!(actual, "bytes(3..4)");
+
+    proc_macro2::invalidate_current_thread_spans();
+
+    let actual = format!("{:#?}", create_span());
+    // Test that span offsets have been reset after the call
+    // to invalidate_current_thread_spans()
+    assert_eq!(actual, "bytes(1..2)");
+}
+
+#[cfg(span_locations)]
+#[test]
+#[should_panic]
+fn test_use_span_after_invalidation() {
+    let span = create_span();
+
+    proc_macro2::invalidate_current_thread_spans();
+
+    span.source_text();
+}
