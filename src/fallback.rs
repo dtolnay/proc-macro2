@@ -321,30 +321,22 @@ impl Debug for SourceFile {
 }
 
 #[cfg(all(span_locations, not(fuzzing)))]
-fn dummy_file() -> FileInfo {
-    FileInfo {
-        source_text: String::new(),
-        span: Span { lo: 0, hi: 0 },
-        lines: vec![0],
-        char_index_to_byte_offset: BTreeMap::new(),
-    }
-}
-
-#[cfg(all(span_locations, not(fuzzing)))]
 thread_local! {
     static SOURCE_MAP: RefCell<SourceMap> = RefCell::new(SourceMap {
         // Start with a single dummy file which all call_site() and def_site()
         // spans reference.
-        files: vec![dummy_file()],
+        files: vec![FileInfo {
+            source_text: String::new(),
+            span: Span { lo: 0, hi: 0 },
+            lines: vec![0],
+            char_index_to_byte_offset: BTreeMap::new(),
+        }],
     });
 }
 
 #[cfg(all(span_locations, not(fuzzing)))]
 pub fn invalidate_current_thread_spans() {
-    SOURCE_MAP.with(|sm| {
-        let mut sm = sm.borrow_mut();
-        sm.files = vec![dummy_file()];
-    });
+    SOURCE_MAP.with(|sm| sm.borrow_mut().files.truncate(1));
 }
 
 #[cfg(all(span_locations, not(fuzzing)))]
