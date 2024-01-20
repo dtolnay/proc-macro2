@@ -952,6 +952,6 @@ pub fn invalidate_current_thread_spans() {
             "proc_macro2::invalidate_current_thread_spans is not available in procedural macros"
         );
     } else {
-        crate::fallback::invalidate_current_thread_spans()
+        crate::fallback::invalidate_current_thread_spans();
     }
 }
