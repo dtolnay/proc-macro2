@@ -786,7 +786,7 @@ fn test_invalidate_current_thread_spans() {
 
 #[cfg(span_locations)]
 #[test]
-#[should_panic]
+#[should_panic(expected = "Invalid span with no related FileInfo!")]
 fn test_use_span_after_invalidation() {
     let span = create_span();
 
