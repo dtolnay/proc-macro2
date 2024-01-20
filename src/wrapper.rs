@@ -928,3 +928,30 @@ impl Debug for Literal {
         }
     }
 }
+
+/// Invalidates any `proc_macro2::Span` on the current thread
+///
+/// The implementation of the `proc_macro2::Span` type relies on thread-local
+/// memory and this function clears it. Calling any method on a
+/// `proc_macro2::Span` on the current thread and that was created before this
+/// function was called will either lead to incorrect results or abort your
+/// program.
+///
+/// This function is useful for programs that process more than 2^32 bytes of
+/// text on a single thread. The internal representation of `proc_macro2::Span`
+/// uses 32-bit integers to represent offsets and those will overflow when
+/// processing more than 2^32 bytes. This function resets all offsets
+/// and thereby also invalidates any previously created `proc_macro2::Span`.
+/// 
+/// This function requires the `span-locations` feature to be enabled. This
+/// function is not applicable to and will panic if called from a procedural macro.
+#[cfg(span_locations)]
+pub fn invalidate_current_thread_spans() {
+    if inside_proc_macro() {
+        panic!(
+            "proc_macro2::invalidate_current_thread_spans is not available in procedural macros"
+        );
+    } else {
+        crate::fallback::invalidate_current_thread_spans()
+    }
+}
