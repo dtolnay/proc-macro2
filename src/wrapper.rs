@@ -942,7 +942,7 @@ impl Debug for Literal {
 /// uses 32-bit integers to represent offsets and those will overflow when
 /// processing more than 2^32 bytes. This function resets all offsets
 /// and thereby also invalidates any previously created `proc_macro2::Span`.
-/// 
+///
 /// This function requires the `span-locations` feature to be enabled. This
 /// function is not applicable to and will panic if called from a procedural macro.
 #[cfg(span_locations)]
