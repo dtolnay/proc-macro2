@@ -8,7 +8,7 @@ use crate::Span;
 use core::fmt::{self, Debug};
 
 /// An object that holds a [`Group`]'s `span_open()` and `span_close()` together
-/// (in a more compact representation than holding those 2 spans individually.
+/// in a more compact representation than holding those 2 spans individually.
 ///
 /// [`Group`]: crate::Group
 #[derive(Copy, Clone)]
