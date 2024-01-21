@@ -164,6 +164,8 @@ use crate::marker::{ProcMacroAutoTraits, MARKER};
 use core::cmp::Ordering;
 use core::fmt::{self, Debug, Display};
 use core::hash::{Hash, Hasher};
+#[cfg(span_locations)]
+use core::ops::Range;
 use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::error::Error;
@@ -470,6 +472,21 @@ impl Span {
     #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn source_file(&self) -> SourceFile {
         SourceFile::_new(self.inner.source_file())
+    }
+
+    /// Returns the span's byte position range in the source file.
+    ///
+    /// This method requires the `"span-locations"` feature to be enabled.
+    ///
+    /// When executing in a procedural macro context, the returned range is only
+    /// accurate if compiled with a nightly toolchain. The stable toolchain does
+    /// not have this information available. When executing outside of a
+    /// procedural macro, such as main.rs or build.rs, the byte range is always
+    /// accurate regardless of toolchain.
+    #[cfg(span_locations)]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
+    pub fn byte_range(&self) -> Range<usize> {
+        self.inner.byte_range()
     }
 
     /// Get the starting line/column in the source file for this span.
