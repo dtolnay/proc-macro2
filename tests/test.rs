@@ -758,8 +758,7 @@ fn byte_order_mark() {
     string.parse::<TokenStream>().unwrap_err();
 }
 
-// Creates a new Span from a TokenStream
-#[cfg(all(test, span_locations))]
+#[cfg(span_locations)]
 fn create_span() -> proc_macro2::Span {
     let tts: TokenStream = "1".parse().unwrap();
     match tts.into_iter().next().unwrap() {
