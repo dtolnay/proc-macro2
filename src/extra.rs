@@ -7,6 +7,10 @@ use crate::marker::{ProcMacroAutoTraits, MARKER};
 use crate::Span;
 use core::fmt::{self, Debug};
 
+#[cfg(span_locations)]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
+pub use crate::imp::invalidate_current_thread_spans;
+
 /// An object that holds a [`Group`]'s `span_open()` and `span_close()` together
 /// in a more compact representation than holding those 2 spans individually.
 ///

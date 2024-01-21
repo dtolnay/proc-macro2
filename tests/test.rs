@@ -775,7 +775,7 @@ fn test_invalidate_current_thread_spans() {
     let actual = format!("{:#?}", create_span());
     assert_eq!(actual, "bytes(3..4)");
 
-    proc_macro2::invalidate_current_thread_spans();
+    proc_macro2::extra::invalidate_current_thread_spans();
 
     let actual = format!("{:#?}", create_span());
     // Test that span offsets have been reset after the call
@@ -789,7 +789,7 @@ fn test_invalidate_current_thread_spans() {
 fn test_use_span_after_invalidation() {
     let span = create_span();
 
-    proc_macro2::invalidate_current_thread_spans();
+    proc_macro2::extra::invalidate_current_thread_spans();
 
     span.source_text();
 }

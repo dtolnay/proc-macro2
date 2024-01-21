@@ -950,7 +950,7 @@ impl Debug for Literal {
 pub fn invalidate_current_thread_spans() {
     if inside_proc_macro() {
         panic!(
-            "proc_macro2::invalidate_current_thread_spans is not available in procedural macros"
+            "proc_macro2::extra::invalidate_current_thread_spans is not available in procedural macros"
         );
     } else {
         crate::fallback::invalidate_current_thread_spans();
