@@ -151,9 +151,9 @@ fn get_cursor(src: &str) -> Cursor {
 
     // Create a dummy file & add it to the source map
     #[cfg(not(fuzzing))]
-    SOURCE_MAP.with(|cm| {
-        let mut cm = cm.borrow_mut();
-        let span = cm.add_file(src);
+    SOURCE_MAP.with(|sm| {
+        let mut sm = sm.borrow_mut();
+        let span = sm.add_file(src);
         Cursor {
             rest: src,
             off: span.lo,
@@ -540,9 +540,9 @@ impl Span {
         };
 
         #[cfg(not(fuzzing))]
-        SOURCE_MAP.with(|cm| {
-            let cm = cm.borrow();
-            let path = cm.filepath(*self);
+        SOURCE_MAP.with(|sm| {
+            let sm = sm.borrow();
+            let path = sm.filepath(*self);
             SourceFile { path }
         })
     }
@@ -553,9 +553,9 @@ impl Span {
         return LineColumn { line: 0, column: 0 };
 
         #[cfg(not(fuzzing))]
-        SOURCE_MAP.with(|cm| {
-            let cm = cm.borrow();
-            let fi = cm.fileinfo(*self);
+        SOURCE_MAP.with(|sm| {
+            let sm = sm.borrow();
+            let fi = sm.fileinfo(*self);
             fi.offset_line_column(self.lo as usize)
         })
     }
@@ -566,9 +566,9 @@ impl Span {
         return LineColumn { line: 0, column: 0 };
 
         #[cfg(not(fuzzing))]
-        SOURCE_MAP.with(|cm| {
-            let cm = cm.borrow();
-            let fi = cm.fileinfo(*self);
+        SOURCE_MAP.with(|sm| {
+            let sm = sm.borrow();
+            let fi = sm.fileinfo(*self);
             fi.offset_line_column(self.hi as usize)
         })
     }
@@ -587,10 +587,10 @@ impl Span {
         };
 
         #[cfg(not(fuzzing))]
-        SOURCE_MAP.with(|cm| {
-            let cm = cm.borrow();
+        SOURCE_MAP.with(|sm| {
+            let sm = sm.borrow();
             // If `other` is not within the same FileInfo as us, return None.
-            if !cm.fileinfo(*self).span_within(other) {
+            if !sm.fileinfo(*self).span_within(other) {
                 return None;
             }
             Some(Span {
@@ -615,7 +615,7 @@ impl Span {
             if self.is_call_site() {
                 None
             } else {
-                Some(SOURCE_MAP.with(|cm| cm.borrow_mut().fileinfo_mut(*self).source_text(*self)))
+                Some(SOURCE_MAP.with(|sm| sm.borrow_mut().fileinfo_mut(*self).source_text(*self)))
             }
         }
     }
