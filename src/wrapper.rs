@@ -929,23 +929,23 @@ impl Debug for Literal {
     }
 }
 
-/// Invalidates any `proc_macro2::Span` on the current thread
+/// Invalidate any `proc_macro2::Span` that exist on the current thread.
 ///
-/// The implementation of the `proc_macro2::Span` type relies on thread-local
-/// memory and this function clears it. Calling any method on a
-/// `proc_macro2::Span` on the current thread and that was created before this
-/// function was called will either lead to incorrect results or abort your
-/// program.
+/// The implementation of `Span` uses thread-local data structures and this
+/// function clears them. Calling any method on a `Span` on the current thread
+/// created prior to the invalidation will return incorrect values or crash.
 ///
-/// This function is useful for programs that process more than 2^32 bytes of
-/// text on a single thread. The internal representation of `proc_macro2::Span`
-/// uses 32-bit integers to represent offsets and those will overflow when
-/// processing more than 2^32 bytes. This function resets all offsets and
-/// thereby also invalidates any previously created `proc_macro2::Span`.
+/// This function is useful for programs that process more than 2<sup>32</sup>
+/// bytes of Rust source code on the same thread. Just like rustc, proc-macro2
+/// uses 32-bit source locations, and these wrap around when the total source
+/// code processed by the same thread exceeds 2<sup>32</sup> bytes (4
+/// gigabytes). After a wraparound, `Span` methods such as `source_text()` can
+/// return wrong data.
 ///
-/// This function requires the `span-locations` feature to be enabled. This
-/// function is not applicable to and will panic if called from a procedural
-/// macro.
+/// # Panics
+///
+/// This function is not applicable to and will panic if called from a
+/// procedural macro.
 #[cfg(span_locations)]
 pub fn invalidate_current_thread_spans() {
     if inside_proc_macro() {
