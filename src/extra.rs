@@ -20,6 +20,50 @@ use core::fmt::{self, Debug};
 /// gigabytes). After a wraparound, `Span` methods such as `source_text()` can
 /// return wrong data.
 ///
+/// # Example
+///
+/// As of late 2023, there is 200 GB of Rust code published on crates.io.
+/// Looking at just the newest version of every crate, it is 16 GB of code. So a
+/// workload that involves parsing it all would overflow a 32-bit source
+/// location unless spans are being invalidated.
+///
+/// ```
+/// use flate2::read::GzDecoder;
+/// use std::ffi::OsStr;
+/// use std::io::{BufReader, Read};
+/// use std::str::FromStr;
+/// use tar::Archive;
+///
+/// rayon::scope(|s| {
+///     for krate in every_version_of_every_crate() {
+///         s.spawn(move |_| {
+///             proc_macro2::extra::invalidate_current_thread_spans();
+///
+///             let reader = BufReader::new(krate);
+///             let tar = GzDecoder::new(reader);
+///             let mut archive = Archive::new(tar);
+///             for entry in archive.entries().unwrap() {
+///                 let mut entry = entry.unwrap();
+///                 let path = entry.path().unwrap();
+///                 if path.extension() != Some(OsStr::new("rs")) {
+///                     continue;
+///                 }
+///                 let mut content = String::new();
+///                 entry.read_to_string(&mut content).unwrap();
+///                 match proc_macro2::TokenStream::from_str(&content) {
+///                     Ok(tokens) => {/* ... */},
+///                     Err(_) => continue,
+///                 }
+///             }
+///         });
+///     }
+/// });
+/// #
+/// # fn every_version_of_every_crate() -> Vec<std::fs::File> {
+/// #     Vec::new()
+/// # }
+/// ```
+///
 /// # Panics
 ///
 /// This function is not applicable to and will panic if called from a

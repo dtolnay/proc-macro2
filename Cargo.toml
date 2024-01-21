@@ -24,8 +24,11 @@ features = ["span-locations"]
 unicode-ident = "1.0"
 
 [dev-dependencies]
+flate2 = "1.0"
 quote = { version = "1.0", default_features = false }
+rayon = "1.0"
 rustversion = "1"
+tar = "0.4"
 
 [features]
 proc-macro = []
