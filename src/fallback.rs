@@ -334,8 +334,9 @@ thread_local! {
     });
 }
 
-#[cfg(all(span_locations, not(fuzzing)))]
+#[cfg(span_locations)]
 pub fn invalidate_current_thread_spans() {
+    #[cfg(not(fuzzing))]
     SOURCE_MAP.with(|sm| sm.borrow_mut().files.truncate(1));
 }
 
