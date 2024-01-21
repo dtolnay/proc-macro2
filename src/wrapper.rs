@@ -3,6 +3,8 @@ use crate::detection::inside_proc_macro;
 use crate::location::LineColumn;
 use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
 use core::fmt::{self, Debug, Display};
+#[cfg(span_locations)]
+use core::ops::Range;
 use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::panic;
@@ -457,6 +459,17 @@ impl Span {
         match self {
             Span::Compiler(s) => SourceFile::nightly(s.source_file()),
             Span::Fallback(s) => SourceFile::Fallback(s.source_file()),
+        }
+    }
+
+    #[cfg(span_locations)]
+    pub fn byte_range(&self) -> Range<usize> {
+        match self {
+            #[cfg(proc_macro_span)]
+            Span::Compiler(s) => s.byte_range(),
+            #[cfg(not(proc_macro_span))]
+            Span::Compiler(_) => 0..0,
+            Span::Fallback(s) => s.byte_range(),
         }
     }
 

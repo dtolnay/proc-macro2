@@ -11,6 +11,8 @@ use core::cell::RefCell;
 use core::cmp;
 use core::fmt::{self, Debug, Display, Write};
 use core::mem::ManuallyDrop;
+#[cfg(span_locations)]
+use core::ops::Range;
 use core::ops::RangeBounds;
 use core::ptr;
 use core::str::FromStr;
@@ -372,7 +374,7 @@ impl FileInfo {
         span.lo >= self.span.lo && span.hi <= self.span.hi
     }
 
-    fn source_text(&mut self, span: Span) -> String {
+    fn byte_range(&mut self, span: Span) -> Range<usize> {
         let lo_char = (span.lo - self.span.lo) as usize;
 
         // Look up offset of the largest already-computed char index that is
@@ -401,11 +403,15 @@ impl FileInfo {
 
         let trunc_lo = &self.source_text[lo_byte..];
         let char_len = (span.hi - span.lo) as usize;
-        let source_text = match trunc_lo.char_indices().nth(char_len) {
-            Some((offset, _ch)) => &trunc_lo[..offset],
-            None => trunc_lo,
-        };
-        source_text.to_owned()
+        lo_byte..match trunc_lo.char_indices().nth(char_len) {
+            Some((offset, _ch)) => lo_byte + offset,
+            None => self.source_text.len(),
+        }
+    }
+
+    fn source_text(&mut self, span: Span) -> String {
+        let byte_range = self.byte_range(span);
+        self.source_text[byte_range].to_owned()
     }
 }
 
@@ -545,6 +551,21 @@ impl Span {
             let path = sm.filepath(*self);
             SourceFile { path }
         })
+    }
+
+    #[cfg(span_locations)]
+    pub fn byte_range(&self) -> Range<usize> {
+        #[cfg(fuzzing)]
+        return 0..0;
+
+        #[cfg(not(fuzzing))]
+        {
+            if self.is_call_site() {
+                0..0
+            } else {
+                SOURCE_MAP.with(|sm| sm.borrow_mut().fileinfo_mut(*self).byte_range(*self))
+            }
+        }
     }
 
     #[cfg(span_locations)]
