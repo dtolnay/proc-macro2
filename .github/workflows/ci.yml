@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [1.56.0, stable, beta]
+        rust: [1.63.0, stable, beta]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -77,6 +77,29 @@ jobs:
         run: cargo test
         env:
           RUSTFLAGS: -Z allow-features= --cfg procmacro2_backtrace ${{env.RUSTFLAGS}}
+
+  msrv:
+    name: Rust 1.56.0
+    needs: pre_ci
+    if: needs.pre_ci.outputs.continue
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.56.0
+        with:
+          components: rust-src
+      - run: cargo check
+      - run: cargo check --no-default-features
+      - run: cargo check --features span-locations
+      - name: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo check
+        run: cargo check
+        env:
+          RUSTFLAGS: --cfg procmacro2_semver_exempt ${{env.RUSTFLAGS}}
+      - name: RUSTFLAGS='--cfg procmacro2_semver_exempt' cargo check --no-default-features
+        run: cargo check --no-default-features
+        env:
+          RUSTFLAGS: --cfg procmacro2_semver_exempt ${{env.RUSTFLAGS}}
 
   minimal:
     name: Minimal versions
