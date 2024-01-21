@@ -18,6 +18,7 @@ use std::path::PathBuf;
 
 /// Force use of proc-macro2's fallback implementation of the API for now, even
 /// if the compiler's implementation is available.
+#[cfg_attr(not(no_is_available), deprecated = "obsolete since Rust 1.57.0")]
 pub fn force() {
     #[cfg(wrap_proc_macro)]
     crate::detection::force_fallback();
@@ -25,6 +26,7 @@ pub fn force() {
 
 /// Resume using the compiler's implementation of the proc macro API if it is
 /// available.
+#[cfg_attr(not(no_is_available), deprecated = "obsolete since Rust 1.57.0")]
 pub fn unforce() {
     #[cfg(wrap_proc_macro)]
     crate::detection::unforce_fallback();
