@@ -7,9 +7,28 @@ use crate::marker::{ProcMacroAutoTraits, MARKER};
 use crate::Span;
 use core::fmt::{self, Debug};
 
+/// Invalidate any `proc_macro2::Span` that exist on the current thread.
+///
+/// The implementation of `Span` uses thread-local data structures and this
+/// function clears them. Calling any method on a `Span` on the current thread
+/// created prior to the invalidation will return incorrect values or crash.
+///
+/// This function is useful for programs that process more than 2<sup>32</sup>
+/// bytes of Rust source code on the same thread. Just like rustc, proc-macro2
+/// uses 32-bit source locations, and these wrap around when the total source
+/// code processed by the same thread exceeds 2<sup>32</sup> bytes (4
+/// gigabytes). After a wraparound, `Span` methods such as `source_text()` can
+/// return wrong data.
+///
+/// # Panics
+///
+/// This function is not applicable to and will panic if called from a
+/// procedural macro.
 #[cfg(span_locations)]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
-pub use crate::imp::invalidate_current_thread_spans;
+pub fn invalidate_current_thread_spans() {
+    crate::imp::invalidate_current_thread_spans();
+}
 
 /// An object that holds a [`Group`]'s `span_open()` and `span_close()` together
 /// in a more compact representation than holding those 2 spans individually.

@@ -335,7 +335,7 @@ thread_local! {
 }
 
 #[cfg(span_locations)]
-pub fn invalidate_current_thread_spans() {
+pub(crate) fn invalidate_current_thread_spans() {
     #[cfg(not(fuzzing))]
     SOURCE_MAP.with(|sm| sm.borrow_mut().files.truncate(1));
 }
