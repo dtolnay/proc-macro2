@@ -1,5 +1,3 @@
-#[cfg(span_locations)]
-use crate::location::LineColumn;
 use crate::parse::{self, Cursor};
 use crate::rcvec::{RcVec, RcVecBuilder, RcVecIntoIter, RcVecMut};
 use crate::{Delimiter, Spacing, TokenTree};
@@ -356,21 +354,16 @@ struct FileInfo {
 
 #[cfg(all(span_locations, not(fuzzing)))]
 impl FileInfo {
-    fn offset_line_column(&self, offset: usize) -> LineColumn {
+    /// Returns `(line, column)`.
+    fn offset_line_column(&self, offset: usize) -> (usize, usize) {
         assert!(self.span_within(Span {
             lo: offset as u32,
             hi: offset as u32,
         }));
         let offset = offset - self.span.lo as usize;
         match self.lines.binary_search(&offset) {
-            Ok(found) => LineColumn {
-                line: found + 1,
-                column: 0,
-            },
-            Err(idx) => LineColumn {
-                line: idx,
-                column: offset - self.lines[idx - 1],
-            },
+            Ok(found) => (found + 1, 0),
+            Err(idx) => (idx, offset - self.lines[idx - 1]),
         }
     }
 
@@ -573,29 +566,43 @@ impl Span {
     }
 
     #[cfg(span_locations)]
-    pub fn start(&self) -> LineColumn {
+    pub fn start(&self) -> Self {
+        Self {
+            lo: self.lo,
+            hi: self.lo,
+        }
+    }
+
+    #[cfg(span_locations)]
+    pub fn end(&self) -> Self {
+        Self {
+            lo: self.hi,
+            hi: self.hi,
+        }
+    }
+
+    /// Helper: returns `(line, column)`.
+    #[cfg(span_locations)]
+    fn line_column(&self) -> (usize, usize) {
         #[cfg(fuzzing)]
-        return LineColumn { line: 0, column: 0 };
+        return (0, 0);
 
         #[cfg(not(fuzzing))]
-        SOURCE_MAP.with(|sm| {
-            let sm = sm.borrow();
-            let fi = sm.fileinfo(*self);
+        SOURCE_MAP.with(|cm| {
+            let cm = cm.borrow();
+            let fi = cm.fileinfo(*self);
             fi.offset_line_column(self.lo as usize)
         })
     }
 
     #[cfg(span_locations)]
-    pub fn end(&self) -> LineColumn {
-        #[cfg(fuzzing)]
-        return LineColumn { line: 0, column: 0 };
+    pub fn line(&self) -> usize {
+        self.line_column().0
+    }
 
-        #[cfg(not(fuzzing))]
-        SOURCE_MAP.with(|sm| {
-            let sm = sm.borrow();
-            let fi = sm.fileinfo(*self);
-            fi.offset_line_column(self.hi as usize)
-        })
+    #[cfg(span_locations)]
+    pub fn column(&self) -> usize {
+        self.line_column().1
     }
 
     #[cfg(not(span_locations))]
