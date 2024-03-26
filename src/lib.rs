@@ -386,6 +386,9 @@ impl Debug for SourceFile {
 }
 
 /// A region of source code, along with macro expansion information.
+///
+/// A Span is semi-open: the start location is included in the span and
+/// the end is excluded.
 #[derive(Copy, Clone)]
 pub struct Span {
     inner: imp::Span,
@@ -506,6 +509,9 @@ impl Span {
     }
 
     /// Get the ending line/column in the source file for this span.
+    ///
+    /// The ending line/column is exclusive, pointing to the first character
+    /// after the span.
     ///
     /// This method requires the `"span-locations"` feature to be enabled.
     ///
