@@ -40,7 +40,6 @@ use std::iter;
 use std::path::Path;
 use std::process::{self, Command, Stdio};
 use std::str;
-use std::u32;
 
 fn main() {
     let rustc = rustc_minor_version().unwrap_or(u32::MAX);
