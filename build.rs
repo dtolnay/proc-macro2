@@ -63,6 +63,10 @@ fn main() {
         println!("cargo:rustc-cfg=no_source_text");
     }
 
+    if rustc < 79 {
+        println!("cargo:rustc-cfg=no_literal_byte_character");
+    }
+
     if !cfg!(feature = "proc-macro") {
         println!("cargo:rerun-if-changed=build.rs");
         return;

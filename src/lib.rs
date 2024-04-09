@@ -1234,6 +1234,11 @@ impl Literal {
         Literal::_new(imp::Literal::character(ch))
     }
 
+    /// Byte character literal.
+    pub fn byte_character(byte: u8) -> Literal {
+        Literal::_new(imp::Literal::byte_character(byte))
+    }
+
     /// Byte string literal.
     pub fn byte_string(s: &[u8]) -> Literal {
         Literal::_new(imp::Literal::byte_string(s))
