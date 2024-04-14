@@ -862,6 +862,25 @@ impl Literal {
         }
     }
 
+    pub fn byte_character(byte: u8) -> Literal {
+        if inside_proc_macro() {
+            Literal::Compiler({
+                #[cfg(not(no_literal_byte_character))]
+                {
+                    proc_macro::Literal::byte_character(byte)
+                }
+
+                #[cfg(no_literal_byte_character)]
+                {
+                    let fallback = fallback::Literal::byte_character(byte);
+                    fallback.repr.parse::<proc_macro::Literal>().unwrap()
+                }
+            })
+        } else {
+            Literal::Fallback(fallback::Literal::byte_character(byte))
+        }
+    }
+
     pub fn byte_string(bytes: &[u8]) -> Literal {
         if inside_proc_macro() {
             Literal::Compiler(proc_macro::Literal::byte_string(bytes))

@@ -133,6 +133,18 @@ fn literal_raw_string() {
 }
 
 #[test]
+fn literal_byte_character() {
+    assert_eq!(Literal::byte_character(b'\0').to_string(), r"b'\0'");
+    assert_eq!(Literal::byte_character(b'\t').to_string(), r"b'\t'");
+    assert_eq!(Literal::byte_character(b'\n').to_string(), r"b'\n'");
+    assert_eq!(Literal::byte_character(b'\r').to_string(), r"b'\r'");
+    assert_eq!(Literal::byte_character(b'\'').to_string(), r"b'\''");
+    assert_eq!(Literal::byte_character(b'\\').to_string(), r"b'\\'");
+    assert_eq!(Literal::byte_character(b'\x1f').to_string(), r"b'\x1F'");
+    assert_eq!(Literal::byte_character(b'"').to_string(), "b'\"'");
+}
+
+#[test]
 fn literal_byte_string() {
     assert_eq!(Literal::byte_string(b"").to_string(), "b\"\"");
     assert_eq!(
