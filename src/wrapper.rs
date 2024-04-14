@@ -846,19 +846,19 @@ impl Literal {
         }
     }
 
-    pub fn string(t: &str) -> Literal {
+    pub fn string(string: &str) -> Literal {
         if inside_proc_macro() {
-            Literal::Compiler(proc_macro::Literal::string(t))
+            Literal::Compiler(proc_macro::Literal::string(string))
         } else {
-            Literal::Fallback(fallback::Literal::string(t))
+            Literal::Fallback(fallback::Literal::string(string))
         }
     }
 
-    pub fn character(t: char) -> Literal {
+    pub fn character(ch: char) -> Literal {
         if inside_proc_macro() {
-            Literal::Compiler(proc_macro::Literal::character(t))
+            Literal::Compiler(proc_macro::Literal::character(ch))
         } else {
-            Literal::Fallback(fallback::Literal::character(t))
+            Literal::Fallback(fallback::Literal::character(ch))
         }
     }
 

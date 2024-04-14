@@ -1007,10 +1007,10 @@ impl Literal {
         Literal::_new(s)
     }
 
-    pub fn string(t: &str) -> Literal {
-        let mut repr = String::with_capacity(t.len() + 2);
+    pub fn string(string: &str) -> Literal {
+        let mut repr = String::with_capacity(string.len() + 2);
         repr.push('"');
-        let mut chars = t.chars();
+        let mut chars = string.chars();
         while let Some(ch) = chars.next() {
             if ch == '\0' {
                 repr.push_str(
@@ -1035,14 +1035,14 @@ impl Literal {
         Literal::_new(repr)
     }
 
-    pub fn character(t: char) -> Literal {
+    pub fn character(ch: char) -> Literal {
         let mut repr = String::new();
         repr.push('\'');
-        if t == '"' {
+        if ch == '"' {
             // escape_debug turns this into '\"' which is unnecessary.
-            repr.push(t);
+            repr.push(ch);
         } else {
-            repr.extend(t.escape_debug());
+            repr.extend(ch.escape_debug());
         }
         repr.push('\'');
         Literal::_new(repr)
