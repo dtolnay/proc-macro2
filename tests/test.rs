@@ -6,6 +6,7 @@
 )]
 
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
+use std::ffi::CStr;
 use std::iter;
 use std::str::{self, FromStr};
 
@@ -164,6 +165,29 @@ fn literal_byte_string() {
 
 #[test]
 fn literal_c_string() {
+    assert_eq!(Literal::c_string(<&CStr>::default()).to_string(), "c\"\"");
+
+    let cstr = CStr::from_bytes_with_nul(b"aA\0").unwrap();
+    assert_eq!(Literal::c_string(cstr).to_string(), r#"  c"aA"  "#.trim());
+
+    let cstr = CStr::from_bytes_with_nul(b"\t\0").unwrap();
+    assert_eq!(Literal::c_string(cstr).to_string(), r#"  c"\t"  "#.trim());
+
+    let cstr = CStr::from_bytes_with_nul(b"\xE2\x9D\xA4\0").unwrap();
+    assert_eq!(Literal::c_string(cstr).to_string(), r#"  c"❤"  "#.trim());
+
+    let cstr = CStr::from_bytes_with_nul(b"'\0").unwrap();
+    assert_eq!(Literal::c_string(cstr).to_string(), r#"  c"'"  "#.trim());
+
+    let cstr = CStr::from_bytes_with_nul(b"\"\0").unwrap();
+    assert_eq!(Literal::c_string(cstr).to_string(), r#"  c"\""  "#.trim());
+
+    let cstr = CStr::from_bytes_with_nul(b"\x7F\xFF\xFE\xCC\xB3\0").unwrap();
+    assert_eq!(
+        Literal::c_string(cstr).to_string(),
+        r#"  c"\u{7f}\xFF\xFE\u{333}"  "#.trim(),
+    );
+
     let strings = r###"
         c"hello\x80我叫\u{1F980}"  // from the RFC
         cr"\"
