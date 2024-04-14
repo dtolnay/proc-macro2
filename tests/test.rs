@@ -1,6 +1,7 @@
 #![allow(
     clippy::assertions_on_result_states,
     clippy::items_after_statements,
+    clippy::needless_raw_string_hashes,
     clippy::non_ascii_literal,
     clippy::octal_escapes
 )]
