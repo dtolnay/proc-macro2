@@ -1019,9 +1019,9 @@ impl Literal {
                         .starts_with(|next| '0' <= next && next <= '7')
                     {
                         // circumvent clippy::octal_escapes lint
-                        "\\x00"
+                        r"\x00"
                     } else {
-                        "\\0"
+                        r"\0"
                     },
                 );
             } else if ch == '\'' {
@@ -1063,10 +1063,10 @@ impl Literal {
                 b'\n' => repr.push_str(r"\n"),
                 b'\r' => repr.push_str(r"\r"),
                 b'"' => repr.push_str("\\\""),
-                b'\\' => repr.push_str("\\\\"),
+                b'\\' => repr.push_str(r"\\"),
                 b'\x20'..=b'\x7E' => repr.push(b as char),
                 _ => {
-                    let _ = write!(repr, "\\x{:02X}", b);
+                    let _ = write!(repr, r"\x{:02X}", b);
                 }
             }
         }

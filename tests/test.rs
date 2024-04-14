@@ -189,7 +189,7 @@ fn literal_c_string() {
 #[test]
 fn literal_character() {
     assert_eq!(Literal::character('x').to_string(), "'x'");
-    assert_eq!(Literal::character('\'').to_string(), "'\\''");
+    assert_eq!(Literal::character('\'').to_string(), r"'\''");
     assert_eq!(Literal::character('"').to_string(), "'\"'");
 }
 
@@ -378,7 +378,7 @@ fn roundtrip() {
     roundtrip("'a");
     roundtrip("'_");
     roundtrip("'static");
-    roundtrip("'\\u{10__FFFF}'");
+    roundtrip(r"'\u{10__FFFF}'");
     roundtrip("\"\\u{10_F0FF__}foo\\u{1_0_0_0__}\"");
 }
 
