@@ -7,6 +7,7 @@ use core::fmt::{self, Debug, Display};
 use core::ops::Range;
 use core::ops::RangeBounds;
 use core::str::FromStr;
+use std::ffi::CStr;
 use std::panic;
 #[cfg(super_unstable)]
 use std::path::PathBuf;
@@ -886,6 +887,25 @@ impl Literal {
             Literal::Compiler(proc_macro::Literal::byte_string(bytes))
         } else {
             Literal::Fallback(fallback::Literal::byte_string(bytes))
+        }
+    }
+
+    pub fn c_string(string: &CStr) -> Literal {
+        if inside_proc_macro() {
+            Literal::Compiler({
+                #[cfg(not(no_literal_c_string))]
+                {
+                    proc_macro::Literal::c_string(string)
+                }
+
+                #[cfg(no_literal_c_string)]
+                {
+                    let fallback = fallback::Literal::c_string(string);
+                    fallback.repr.parse::<proc_macro::Literal>().unwrap()
+                }
+            })
+        } else {
+            Literal::Fallback(fallback::Literal::c_string(string))
         }
     }
 

@@ -15,7 +15,8 @@ use core::mem::ManuallyDrop;
 use core::ops::Range;
 use core::ops::RangeBounds;
 use core::ptr;
-use core::str::FromStr;
+use core::str::{self, FromStr};
+use std::ffi::CStr;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
 
@@ -1010,27 +1011,7 @@ impl Literal {
     pub fn string(string: &str) -> Literal {
         let mut repr = String::with_capacity(string.len() + 2);
         repr.push('"');
-        let mut chars = string.chars();
-        while let Some(ch) = chars.next() {
-            if ch == '\0' {
-                repr.push_str(
-                    if chars
-                        .as_str()
-                        .starts_with(|next| '0' <= next && next <= '7')
-                    {
-                        // circumvent clippy::octal_escapes lint
-                        r"\x00"
-                    } else {
-                        r"\0"
-                    },
-                );
-            } else if ch == '\'' {
-                // escape_debug turns this into "\'" which is unnecessary.
-                repr.push(ch);
-            } else {
-                repr.extend(ch.escape_debug());
-            }
-        }
+        escape_utf8(string, &mut repr);
         repr.push('"');
         Literal::_new(repr)
     }
@@ -1087,6 +1068,34 @@ impl Literal {
                 _ => {
                     let _ = write!(repr, r"\x{:02X}", b);
                 }
+            }
+        }
+        repr.push('"');
+        Literal::_new(repr)
+    }
+
+    pub fn c_string(string: &CStr) -> Literal {
+        let mut repr = "c\"".to_string();
+        let mut bytes = string.to_bytes();
+        while !bytes.is_empty() {
+            let (valid, invalid) = match str::from_utf8(bytes) {
+                Ok(all_valid) => {
+                    bytes = b"";
+                    (all_valid, bytes)
+                }
+                Err(utf8_error) => {
+                    let (valid, rest) = bytes.split_at(utf8_error.valid_up_to());
+                    let valid = str::from_utf8(valid).unwrap();
+                    let invalid = utf8_error
+                        .error_len()
+                        .map_or(rest, |error_len| &rest[..error_len]);
+                    bytes = &bytes[valid.len() + invalid.len()..];
+                    (valid, invalid)
+                }
+            };
+            escape_utf8(valid, &mut repr);
+            for &byte in invalid {
+                let _ = write!(repr, r"\x{:02X}", byte);
             }
         }
         repr.push('"');
@@ -1189,5 +1198,29 @@ impl Debug for Literal {
         debug.field("lit", &format_args!("{}", self.repr));
         debug_span_field_if_nontrivial(&mut debug, self.span);
         debug.finish()
+    }
+}
+
+fn escape_utf8(string: &str, repr: &mut String) {
+    let mut chars = string.chars();
+    while let Some(ch) = chars.next() {
+        if ch == '\0' {
+            repr.push_str(
+                if chars
+                    .as_str()
+                    .starts_with(|next| '0' <= next && next <= '7')
+                {
+                    // circumvent clippy::octal_escapes lint
+                    r"\x00"
+                } else {
+                    r"\0"
+                },
+            );
+        } else if ch == '\'' {
+            // escape_debug turns this into "\'" which is unnecessary.
+            repr.push(ch);
+        } else {
+            repr.extend(ch.escape_debug());
+        }
     }
 }

@@ -65,6 +65,7 @@ fn main() {
 
     if rustc < 79 {
         println!("cargo:rustc-cfg=no_literal_byte_character");
+        println!("cargo:rustc-cfg=no_literal_c_string");
     }
 
     if !cfg!(feature = "proc-macro") {

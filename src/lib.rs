@@ -170,6 +170,7 @@ use core::ops::Range;
 use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::error::Error;
+use std::ffi::CStr;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
 
@@ -1242,6 +1243,11 @@ impl Literal {
     /// Byte string literal.
     pub fn byte_string(bytes: &[u8]) -> Literal {
         Literal::_new(imp::Literal::byte_string(bytes))
+    }
+
+    /// C string literal.
+    pub fn c_string(string: &CStr) -> Literal {
+        Literal::_new(imp::Literal::c_string(string))
     }
 
     /// Returns the span encompassing this literal.
