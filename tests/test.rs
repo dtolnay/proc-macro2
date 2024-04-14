@@ -258,15 +258,22 @@ fn literal_integer() {
     assert_eq!(Literal::i64_unsuffixed(10).to_string(), "10");
     assert_eq!(Literal::i128_unsuffixed(10).to_string(), "10");
     assert_eq!(Literal::isize_unsuffixed(10).to_string(), "10");
+
+    assert_eq!(Literal::i32_suffixed(-10).to_string(), "-10i32");
+    assert_eq!(Literal::i32_unsuffixed(-10).to_string(), "-10");
 }
 
 #[test]
 fn literal_float() {
     assert_eq!(Literal::f32_suffixed(10.0).to_string(), "10f32");
+    assert_eq!(Literal::f32_suffixed(-10.0).to_string(), "-10f32");
     assert_eq!(Literal::f64_suffixed(10.0).to_string(), "10f64");
+    assert_eq!(Literal::f64_suffixed(-10.0).to_string(), "-10f64");
 
     assert_eq!(Literal::f32_unsuffixed(10.0).to_string(), "10.0");
+    assert_eq!(Literal::f32_unsuffixed(-10.0).to_string(), "-10.0");
     assert_eq!(Literal::f64_unsuffixed(10.0).to_string(), "10.0");
+    assert_eq!(Literal::f64_unsuffixed(-10.0).to_string(), "-10.0");
 }
 
 #[test]
