@@ -284,9 +284,13 @@ fn literal_suffix() {
     assert_eq!(token_count("1._m"), 3);
     assert_eq!(token_count("\"\"s"), 1);
     assert_eq!(token_count("r\"\"r"), 1);
+    assert_eq!(token_count("r#\"\"#r"), 1);
     assert_eq!(token_count("b\"\"b"), 1);
     assert_eq!(token_count("br\"\"br"), 1);
-    assert_eq!(token_count("r#\"\"#r"), 1);
+    assert_eq!(token_count("br#\"\"#br"), 1);
+    assert_eq!(token_count("c\"\"c"), 1);
+    assert_eq!(token_count("cr\"\"cr"), 1);
+    assert_eq!(token_count("cr#\"\"#cr"), 1);
     assert_eq!(token_count("'c'c"), 1);
     assert_eq!(token_count("b'b'b"), 1);
     assert_eq!(token_count("0E"), 1);
@@ -437,6 +441,7 @@ fn fail() {
     fail("\"\\\r  \""); // backslash carriage return
     fail("'aa'aa");
     fail("br##\"\"#");
+    fail("cr##\"\"#");
     fail("\"\\\n\u{85}\r\"");
 }
 
