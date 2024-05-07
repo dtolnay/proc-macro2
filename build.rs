@@ -50,7 +50,6 @@ fn main() {
     if rustc >= 80 {
         println!("cargo:rustc-check-cfg=cfg(doc_cfg)");
         println!("cargo:rustc-check-cfg=cfg(fuzzing)");
-        println!("cargo:rustc-check-cfg=cfg(nightly)");
         println!("cargo:rustc-check-cfg=cfg(no_is_available)");
         println!("cargo:rustc-check-cfg=cfg(no_literal_byte_character)");
         println!("cargo:rustc-check-cfg=cfg(no_literal_c_string)");
