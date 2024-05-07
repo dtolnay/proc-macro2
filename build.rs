@@ -34,6 +34,7 @@
 //     macro API and catching a panic if it isn't available. Enabled on Rust
 //     1.57+.
 
+#![allow(unknown_lints)]
 #![allow(unexpected_cfgs)]
 
 use std::env;
