@@ -48,7 +48,6 @@ fn main() {
     let rustc = rustc_minor_version().unwrap_or(u32::MAX);
 
     if rustc >= 80 {
-        println!("cargo:rustc-check-cfg=cfg(doc_cfg)");
         println!("cargo:rustc-check-cfg=cfg(fuzzing)");
         println!("cargo:rustc-check-cfg=cfg(no_is_available)");
         println!("cargo:rustc-check-cfg=cfg(no_literal_byte_character)");
