@@ -57,6 +57,7 @@ fn main() {
         println!("cargo:rustc-check-cfg=cfg(procmacro2_backtrace)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_nightly_testing)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_semver_exempt)");
+        println!("cargo:rustc-check-cfg=cfg(randomize_layout)");
         println!("cargo:rustc-check-cfg=cfg(span_locations)");
         println!("cargo:rustc-check-cfg=cfg(super_unstable)");
         println!("cargo:rustc-check-cfg=cfg(wrap_proc_macro)");

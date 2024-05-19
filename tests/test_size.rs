@@ -1,3 +1,5 @@
+#![cfg(not(randomize_layout))]
+
 extern crate proc_macro;
 
 use std::mem;
