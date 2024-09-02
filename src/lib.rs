@@ -315,6 +315,15 @@ impl Debug for TokenStream {
     }
 }
 
+/// Compare two `TokenStreams` for equality.
+impl PartialEq for TokenStream {
+    fn eq(&self, other: &Self) -> bool {
+        self.clone().into_iter().eq(other.clone().into_iter())
+    }
+}
+
+impl Eq for TokenStream {}
+
 impl LexError {
     pub fn span(&self) -> Span {
         Span::_new(self.inner.span())
@@ -659,6 +668,27 @@ impl Debug for TokenTree {
         }
     }
 }
+
+/// Compare two `TokenTrees` for equality.
+impl PartialEq for TokenTree {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (TokenTree::Group(lhs), TokenTree::Group(other)) => {
+                lhs.delimiter() == other.delimiter() && lhs.stream() == other.stream()
+            }
+            (TokenTree::Ident(lhs), TokenTree::Ident(other)) => *lhs == *other,
+            (TokenTree::Punct(lhs), TokenTree::Punct(other)) => {
+                lhs.as_char() == other.as_char() && lhs.spacing() == other.spacing()
+            }
+            (TokenTree::Literal(lhs), TokenTree::Literal(other)) => {
+                lhs.to_string() == other.to_string()
+            }
+            _ => false,
+        }
+    }
+}
+
+impl Eq for TokenTree {}
 
 /// A delimited token stream.
 ///

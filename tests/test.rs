@@ -903,3 +903,13 @@ fn test_use_span_after_invalidation() {
 
     span.source_text();
 }
+
+#[test]
+fn test_tokenstream_eq() {
+    let tokens1 = "a { b c }".parse::<TokenStream>().unwrap();
+    let tokens2 = "a { b c }".parse::<TokenStream>().unwrap();
+    let tokens3 = "a { b d }".parse::<TokenStream>().unwrap();
+
+    assert_eq!(tokens1, tokens2);
+    assert_ne!(tokens1, tokens3);
+}
