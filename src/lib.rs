@@ -105,6 +105,7 @@
     clippy::missing_safety_doc,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
+    clippy::needless_lifetimes,
     clippy::new_without_default,
     clippy::return_self_not_must_use,
     clippy::shadow_unrelated,
