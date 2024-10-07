@@ -835,10 +835,16 @@ impl Punct {
     /// The returned `Punct` will have the default span of `Span::call_site()`
     /// which can be further configured with the `set_span` method below.
     pub fn new(ch: char, spacing: Spacing) -> Self {
-        Punct {
-            ch,
-            spacing,
-            span: Span::call_site(),
+        if let '!' | '#' | '$' | '%' | '&' | '\'' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';'
+        | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~' = ch
+        {
+            Punct {
+                ch,
+                spacing,
+                span: Span::call_site(),
+            }
+        } else {
+            panic!("unsupported proc macro punctuation character {:?}", ch);
         }
     }
 
