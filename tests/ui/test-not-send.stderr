@@ -4,7 +4,7 @@ error[E0277]: `proc_macro::Span` cannot be sent between threads safely
 5 |     requires_send::<Span>();
   |                     ^^^^ `proc_macro::Span` cannot be sent between threads safely
   |
-  = help: within `Span`, the trait `Send` is not implemented for `proc_macro::Span`, which is required by `Span: Send`
+  = help: within `Span`, the trait `Send` is not implemented for `proc_macro::Span`
 note: required because it appears within the type `proc_macro2::imp::Span`
  --> $WORKSPACE/src/wrapper.rs
   |
@@ -27,7 +27,7 @@ error[E0277]: `Rc<()>` cannot be sent between threads safely
 5 |     requires_send::<Span>();
   |                     ^^^^ `Rc<()>` cannot be sent between threads safely
   |
-  = help: within `Span`, the trait `Send` is not implemented for `Rc<()>`, which is required by `Span: Send`
+  = help: within `Span`, the trait `Send` is not implemented for `Rc<()>`
 note: required because it appears within the type `PhantomData<Rc<()>>`
  --> $RUST/core/src/marker.rs
   |
