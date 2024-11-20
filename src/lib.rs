@@ -209,7 +209,7 @@ impl TokenStream {
 
     fn _new_fallback(inner: fallback::TokenStream) -> Self {
         TokenStream {
-            inner: inner.into(),
+            inner: imp::TokenStream::from(inner),
             _marker: MARKER,
         }
     }
@@ -257,7 +257,7 @@ impl FromStr for TokenStream {
 #[cfg_attr(docsrs, doc(cfg(feature = "proc-macro")))]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> Self {
-        TokenStream::_new(inner.into())
+        TokenStream::_new(imp::TokenStream::from(inner))
     }
 }
 
@@ -265,7 +265,7 @@ impl From<proc_macro::TokenStream> for TokenStream {
 #[cfg_attr(docsrs, doc(cfg(feature = "proc-macro")))]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
-        inner.inner.into()
+        proc_macro::TokenStream::from(inner.inner)
     }
 }
 
@@ -405,7 +405,7 @@ impl Span {
 
     fn _new_fallback(inner: fallback::Span) -> Self {
         Span {
-            inner: inner.into(),
+            inner: imp::Span::from(inner),
             _marker: MARKER,
         }
     }
@@ -709,7 +709,7 @@ impl Group {
 
     fn _new_fallback(inner: fallback::Group) -> Self {
         Group {
-            inner: inner.into(),
+            inner: imp::Group::from(inner),
         }
     }
 
@@ -1138,7 +1138,7 @@ impl Literal {
 
     fn _new_fallback(inner: fallback::Literal) -> Self {
         Literal {
-            inner: inner.into(),
+            inner: imp::Literal::from(inner),
             _marker: MARKER,
         }
     }
