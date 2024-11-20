@@ -161,7 +161,7 @@ impl From<fallback::TokenStream> for TokenStream {
 // Assumes inside_proc_macro().
 fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
     match token {
-        TokenTree::Group(tt) => tt.inner.unwrap_nightly().into(),
+        TokenTree::Group(tt) => proc_macro::TokenTree::from(tt.inner.unwrap_nightly()),
         TokenTree::Punct(tt) => {
             let spacing = match tt.spacing() {
                 Spacing::Joint => proc_macro::Spacing::Joint,
@@ -169,19 +169,21 @@ fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
             };
             let mut punct = proc_macro::Punct::new(tt.as_char(), spacing);
             punct.set_span(tt.span().inner.unwrap_nightly());
-            punct.into()
+            proc_macro::TokenTree::from(punct)
         }
-        TokenTree::Ident(tt) => tt.inner.unwrap_nightly().into(),
-        TokenTree::Literal(tt) => tt.inner.unwrap_nightly().into(),
+        TokenTree::Ident(tt) => proc_macro::TokenTree::from(tt.inner.unwrap_nightly()),
+        TokenTree::Literal(tt) => proc_macro::TokenTree::from(tt.inner.unwrap_nightly()),
     }
 }
 
 impl From<TokenTree> for TokenStream {
     fn from(token: TokenTree) -> Self {
         if inside_proc_macro() {
-            TokenStream::Compiler(DeferredTokenStream::new(into_compiler_token(token).into()))
+            TokenStream::Compiler(DeferredTokenStream::new(proc_macro::TokenStream::from(
+                into_compiler_token(token),
+            )))
         } else {
-            TokenStream::Fallback(token.into())
+            TokenStream::Fallback(fallback::TokenStream::from(token))
         }
     }
 }
@@ -336,7 +338,9 @@ impl Iterator for TokenTreeIter {
             TokenTreeIter::Fallback(iter) => return iter.next(),
         };
         Some(match token {
-            proc_macro::TokenTree::Group(tt) => crate::Group::_new(Group::Compiler(tt)).into(),
+            proc_macro::TokenTree::Group(tt) => {
+                TokenTree::from(crate::Group::_new(Group::Compiler(tt)))
+            }
             proc_macro::TokenTree::Punct(tt) => {
                 let spacing = match tt.spacing() {
                     proc_macro::Spacing::Joint => Spacing::Joint,
@@ -344,10 +348,14 @@ impl Iterator for TokenTreeIter {
                 };
                 let mut o = Punct::new(tt.as_char(), spacing);
                 o.set_span(crate::Span::_new(Span::Compiler(tt.span())));
-                o.into()
+                TokenTree::from(o)
             }
-            proc_macro::TokenTree::Ident(s) => crate::Ident::_new(Ident::Compiler(s)).into(),
-            proc_macro::TokenTree::Literal(l) => crate::Literal::_new(Literal::Compiler(l)).into(),
+            proc_macro::TokenTree::Ident(s) => {
+                TokenTree::from(crate::Ident::_new(Ident::Compiler(s)))
+            }
+            proc_macro::TokenTree::Literal(l) => {
+                TokenTree::from(crate::Literal::_new(Literal::Compiler(l)))
+            }
         })
     }
 
