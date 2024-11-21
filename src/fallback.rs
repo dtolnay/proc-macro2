@@ -226,19 +226,14 @@ impl Debug for TokenStream {
 #[cfg(feature = "proc-macro")]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> Self {
-        inner
-            .to_string()
-            .parse()
-            .expect("compiler token stream parse failed")
+        TokenStream::from_str(&inner.to_string()).expect("compiler token stream parse failed")
     }
 }
 
 #[cfg(feature = "proc-macro")]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
-        inner
-            .to_string()
-            .parse()
+        proc_macro::TokenStream::from_str(&inner.to_string())
             .expect("failed to parse to compiler tokens")
     }
 }
