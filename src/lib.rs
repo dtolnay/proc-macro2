@@ -971,6 +971,13 @@ impl Ident {
         }
     }
 
+    fn _new_fallback(inner: fallback::Ident) -> Self {
+        Ident {
+            inner: imp::Ident::from(inner),
+            _marker: MARKER,
+        }
+    }
+
     /// Creates a new `Ident` with the given `string` as well as the specified
     /// `span`.
     ///
