@@ -117,14 +117,15 @@ impl FromStr for TokenStream {
                 proc_macro_parse(src)?,
             )))
         } else {
-            Ok(TokenStream::Fallback(src.parse()?))
+            Ok(TokenStream::Fallback(fallback::TokenStream::from_str(src)?))
         }
     }
 }
 
 // Work around https://github.com/rust-lang/rust/issues/58736.
 fn proc_macro_parse(src: &str) -> Result<proc_macro::TokenStream, LexError> {
-    let result = panic::catch_unwind(|| src.parse().map_err(LexError::Compiler));
+    let result =
+        panic::catch_unwind(|| proc_macro::TokenStream::from_str(src).map_err(LexError::Compiler));
     result.unwrap_or_else(|_| Err(LexError::CompilerPanic))
 }
 
@@ -147,7 +148,9 @@ impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
         match inner {
             TokenStream::Compiler(inner) => inner.into_token_stream(),
-            TokenStream::Fallback(inner) => inner.to_string().parse().unwrap(),
+            TokenStream::Fallback(inner) => {
+                proc_macro::TokenStream::from_str(&inner.to_string()).unwrap()
+            }
         }
     }
 }
@@ -897,7 +900,7 @@ impl Literal {
                 #[cfg(no_literal_byte_character)]
                 {
                     let fallback = fallback::Literal::byte_character(byte);
-                    fallback.repr.parse::<proc_macro::Literal>().unwrap()
+                    proc_macro::Literal::from_str(&fallback.repr).unwrap()
                 }
             })
         } else {
@@ -924,7 +927,7 @@ impl Literal {
                 #[cfg(no_literal_c_string)]
                 {
                     let fallback = fallback::Literal::c_string(string);
-                    fallback.repr.parse::<proc_macro::Literal>().unwrap()
+                    proc_macro::Literal::from_str(&fallback.repr).unwrap()
                 }
             })
         } else {

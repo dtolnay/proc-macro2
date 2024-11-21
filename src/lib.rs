@@ -245,7 +245,7 @@ impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        let e = src.parse().map_err(|e| LexError {
+        let e = imp::TokenStream::from_str(src).map_err(|e| LexError {
             inner: e,
             _marker: MARKER,
         })?;
@@ -1307,10 +1307,12 @@ impl FromStr for Literal {
     type Err = LexError;
 
     fn from_str(repr: &str) -> Result<Self, LexError> {
-        repr.parse().map(Literal::_new).map_err(|inner| LexError {
-            inner,
-            _marker: MARKER,
-        })
+        imp::Literal::from_str(repr)
+            .map(Literal::_new)
+            .map_err(|inner| LexError {
+                inner,
+                _marker: MARKER,
+            })
     }
 }
 
