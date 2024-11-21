@@ -944,7 +944,7 @@ fn doc_comment<'a>(input: Cursor<'a>, trees: &mut TokenStreamBuilder) -> PResult
     let doc_ident = crate::Ident::_new(crate::imp::Ident::new_unchecked("doc", fallback_span));
     let mut equal = Punct::new('=', Spacing::Alone);
     equal.set_span(span);
-    let mut literal = crate::Literal::string(comment);
+    let mut literal = crate::Literal::_new_fallback(Literal::string(comment));
     literal.set_span(span);
     let mut bracketed = TokenStreamBuilder::with_capacity(3);
     bracketed.push_token_from_parser(TokenTree::Ident(doc_ident));
