@@ -693,20 +693,12 @@ impl Ident {
         }
     }
 
-    pub(crate) fn new_unchecked(string: &str, span: fallback::Span) -> Self {
-        Ident::Fallback(fallback::Ident::new_unchecked(string, span))
-    }
-
     #[track_caller]
     pub(crate) fn new_raw_checked(string: &str, span: Span) -> Self {
         match span {
             Span::Compiler(s) => Ident::Compiler(proc_macro::Ident::new_raw(string, s)),
             Span::Fallback(s) => Ident::Fallback(fallback::Ident::new_raw_checked(string, s)),
         }
-    }
-
-    pub(crate) fn new_raw_unchecked(string: &str, span: fallback::Span) -> Self {
-        Ident::Fallback(fallback::Ident::new_raw_unchecked(string, span))
     }
 
     pub(crate) fn span(&self) -> Span {
@@ -730,6 +722,12 @@ impl Ident {
             Ident::Compiler(s) => s,
             Ident::Fallback(_) => mismatch(line!()),
         }
+    }
+}
+
+impl From<fallback::Ident> for Ident {
+    fn from(inner: fallback::Ident) -> Self {
+        Ident::Fallback(inner)
     }
 }
 

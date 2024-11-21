@@ -1,5 +1,5 @@
 use crate::fallback::{
-    self, is_ident_continue, is_ident_start, Group, LexError, Literal, Span, TokenStream,
+    self, is_ident_continue, is_ident_start, Group, Ident, LexError, Literal, Span, TokenStream,
     TokenStreamBuilder,
 };
 use crate::{Delimiter, Punct, Spacing, TokenTree};
@@ -300,10 +300,8 @@ fn ident_any(input: Cursor) -> PResult<crate::Ident> {
     let (rest, sym) = ident_not_raw(rest)?;
 
     if !raw {
-        let ident = crate::Ident::_new(crate::imp::Ident::new_unchecked(
-            sym,
-            fallback::Span::call_site(),
-        ));
+        let ident =
+            crate::Ident::_new_fallback(Ident::new_unchecked(sym, fallback::Span::call_site()));
         return Ok((rest, ident));
     }
 
@@ -312,10 +310,8 @@ fn ident_any(input: Cursor) -> PResult<crate::Ident> {
         _ => {}
     }
 
-    let ident = crate::Ident::_new(crate::imp::Ident::new_raw_unchecked(
-        sym,
-        fallback::Span::call_site(),
-    ));
+    let ident =
+        crate::Ident::_new_fallback(Ident::new_raw_unchecked(sym, fallback::Span::call_site()));
     Ok((rest, ident))
 }
 
@@ -941,7 +937,7 @@ fn doc_comment<'a>(input: Cursor<'a>, trees: &mut TokenStreamBuilder) -> PResult
         trees.push_token_from_parser(TokenTree::Punct(bang));
     }
 
-    let doc_ident = crate::Ident::_new(crate::imp::Ident::new_unchecked("doc", fallback_span));
+    let doc_ident = crate::Ident::_new_fallback(Ident::new_unchecked("doc", fallback_span));
     let mut equal = Punct::new('=', Spacing::Alone);
     equal.set_span(span);
     let mut literal = crate::Literal::_new_fallback(Literal::string(comment));
