@@ -1225,14 +1225,16 @@ fn escape_utf8(string: &str, repr: &mut String) {
 #[cfg(feature = "proc-macro")]
 pub(crate) trait FromStr2: FromStr<Err = proc_macro::LexError> {
     #[cfg(wrap_proc_macro)]
-    fn validate(src: &str) -> Result<(), LexError>;
+    fn valid(src: &str) -> bool;
 
     #[cfg(wrap_proc_macro)]
     fn from_str_checked(src: &str) -> Result<Self, imp::LexError> {
         // Validate using fallback parser, because rustc is incapable of
         // returning a recoverable Err for certain invalid token streams, and
         // will instead permanently poison the compilation.
-        Self::validate(src)?;
+        if !Self::valid(src) {
+            return Err(imp::LexError::CompilerPanic);
+        }
 
         // Catch panic to work around https://github.com/rust-lang/rust/issues/58736.
         match panic::catch_unwind(|| Self::from_str(src)) {
@@ -1250,15 +1252,15 @@ pub(crate) trait FromStr2: FromStr<Err = proc_macro::LexError> {
 #[cfg(feature = "proc-macro")]
 impl FromStr2 for proc_macro::TokenStream {
     #[cfg(wrap_proc_macro)]
-    fn validate(src: &str) -> Result<(), LexError> {
-        TokenStream::from_str_checked(src).map(drop)
+    fn valid(src: &str) -> bool {
+        TokenStream::from_str_checked(src).is_ok()
     }
 }
 
 #[cfg(feature = "proc-macro")]
 impl FromStr2 for proc_macro::Literal {
     #[cfg(wrap_proc_macro)]
-    fn validate(src: &str) -> Result<(), LexError> {
-        Literal::from_str_checked(src).map(drop)
+    fn valid(src: &str) -> bool {
+        Literal::from_str_checked(src).is_ok()
     }
 }
