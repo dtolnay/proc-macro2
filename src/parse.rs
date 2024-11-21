@@ -8,13 +8,13 @@ use core::str::{Bytes, CharIndices, Chars};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub(crate) struct Cursor<'a> {
-    pub rest: &'a str,
+    pub(crate) rest: &'a str,
     #[cfg(span_locations)]
-    pub off: u32,
+    pub(crate) off: u32,
 }
 
 impl<'a> Cursor<'a> {
-    pub fn advance(&self, bytes: usize) -> Cursor<'a> {
+    pub(crate) fn advance(&self, bytes: usize) -> Cursor<'a> {
         let (_front, rest) = self.rest.split_at(bytes);
         Cursor {
             rest,
@@ -23,22 +23,22 @@ impl<'a> Cursor<'a> {
         }
     }
 
-    pub fn starts_with(&self, s: &str) -> bool {
+    pub(crate) fn starts_with(&self, s: &str) -> bool {
         self.rest.starts_with(s)
     }
 
-    pub fn starts_with_char(&self, ch: char) -> bool {
+    pub(crate) fn starts_with_char(&self, ch: char) -> bool {
         self.rest.starts_with(ch)
     }
 
-    pub fn starts_with_fn<Pattern>(&self, f: Pattern) -> bool
+    pub(crate) fn starts_with_fn<Pattern>(&self, f: Pattern) -> bool
     where
         Pattern: FnMut(char) -> bool,
     {
         self.rest.starts_with(f)
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.rest.is_empty()
     }
 
