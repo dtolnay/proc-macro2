@@ -245,7 +245,7 @@ impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        match imp::TokenStream::from_str(src) {
+        match imp::TokenStream::from_str_checked(src) {
             Ok(tokens) => Ok(TokenStream::_new(tokens)),
             Err(lex) => Err(LexError {
                 inner: lex,
@@ -1309,7 +1309,7 @@ impl FromStr for Literal {
     type Err = LexError;
 
     fn from_str(repr: &str) -> Result<Self, LexError> {
-        match imp::Literal::from_str(repr) {
+        match imp::Literal::from_str_checked(repr) {
             Ok(lit) => Ok(Literal::_new(lit)),
             Err(lex) => Err(LexError {
                 inner: lex,
