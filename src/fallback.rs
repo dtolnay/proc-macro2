@@ -1,3 +1,5 @@
+#[cfg(wrap_proc_macro)]
+use crate::imp;
 #[cfg(span_locations)]
 use crate::location::LineColumn;
 use crate::parse::{self, Cursor};
@@ -1221,8 +1223,8 @@ fn escape_utf8(string: &str, repr: &mut String) {
 #[cfg(feature = "proc-macro")]
 pub(crate) trait FromStr2: FromStr<Err = proc_macro::LexError> {
     #[cfg(wrap_proc_macro)]
-    fn from_str_checked(src: &str) -> Result<Self, Self::Err> {
-        Self::from_str(src)
+    fn from_str_checked(src: &str) -> Result<Self, imp::LexError> {
+        Self::from_str(src).map_err(imp::LexError::Compiler)
     }
 
     fn from_str_unchecked(src: &str) -> Self {

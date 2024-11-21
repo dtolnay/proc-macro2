@@ -91,7 +91,7 @@ impl TokenStream {
             // Catch panic to work around https://github.com/rust-lang/rust/issues/58736.
             match panic::catch_unwind(|| proc_macro::TokenStream::from_str_checked(src)) {
                 Ok(Ok(tokens)) => Ok(TokenStream::Compiler(DeferredTokenStream::new(tokens))),
-                Ok(Err(lex)) => Err(LexError::Compiler(lex)),
+                Ok(Err(lex)) => Err(lex),
                 Err(_panic) => Err(LexError::CompilerPanic),
             }
         } else {
