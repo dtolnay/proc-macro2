@@ -8,7 +8,6 @@ use core::fmt::{self, Debug, Display};
 use core::ops::Range;
 use core::ops::RangeBounds;
 use std::ffi::CStr;
-use std::panic;
 #[cfg(super_unstable)]
 use std::path::PathBuf;
 
@@ -88,12 +87,9 @@ impl TokenStream {
 
     pub(crate) fn from_str_checked(src: &str) -> Result<Self, LexError> {
         if inside_proc_macro() {
-            // Catch panic to work around https://github.com/rust-lang/rust/issues/58736.
-            match panic::catch_unwind(|| proc_macro::TokenStream::from_str_checked(src)) {
-                Ok(Ok(tokens)) => Ok(TokenStream::Compiler(DeferredTokenStream::new(tokens))),
-                Ok(Err(lex)) => Err(lex),
-                Err(_panic) => Err(LexError::CompilerPanic),
-            }
+            Ok(TokenStream::Compiler(DeferredTokenStream::new(
+                proc_macro::TokenStream::from_str_checked(src)?,
+            )))
         } else {
             Ok(TokenStream::Fallback(
                 fallback::TokenStream::from_str_checked(src)?,
