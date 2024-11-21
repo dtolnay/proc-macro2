@@ -1,12 +1,12 @@
 use crate::detection::inside_proc_macro;
+use crate::fallback::{self, FromStr2 as _};
 #[cfg(span_locations)]
 use crate::location::LineColumn;
-use crate::{fallback, Delimiter, Punct, Spacing, TokenTree};
+use crate::{Delimiter, Punct, Spacing, TokenTree};
 use core::fmt::{self, Debug, Display};
 #[cfg(span_locations)]
 use core::ops::Range;
 use core::ops::RangeBounds;
-use core::str::FromStr;
 use std::ffi::CStr;
 use std::panic;
 #[cfg(super_unstable)]
@@ -86,6 +86,21 @@ impl TokenStream {
         }
     }
 
+    pub(crate) fn from_str_checked(src: &str) -> Result<Self, LexError> {
+        if inside_proc_macro() {
+            // Catch panic to work around https://github.com/rust-lang/rust/issues/58736.
+            match panic::catch_unwind(|| proc_macro::TokenStream::from_str_checked(src)) {
+                Ok(Ok(tokens)) => Ok(TokenStream::Compiler(DeferredTokenStream::new(tokens))),
+                Ok(Err(lex)) => Err(LexError::Compiler(lex)),
+                Err(_panic) => Err(LexError::CompilerPanic),
+            }
+        } else {
+            Ok(TokenStream::Fallback(
+                fallback::TokenStream::from_str_checked(src)?,
+            ))
+        }
+    }
+
     pub(crate) fn is_empty(&self) -> bool {
         match self {
             TokenStream::Compiler(tts) => tts.is_empty(),
@@ -105,28 +120,6 @@ impl TokenStream {
             TokenStream::Compiler(_) => mismatch(line!()),
             TokenStream::Fallback(s) => s,
         }
-    }
-}
-
-impl FromStr for TokenStream {
-    type Err = LexError;
-
-    fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        if inside_proc_macro() {
-            Ok(TokenStream::Compiler(DeferredTokenStream::new(
-                proc_macro_parse(src)?,
-            )))
-        } else {
-            Ok(TokenStream::Fallback(fallback::TokenStream::from_str(src)?))
-        }
-    }
-}
-
-// Work around https://github.com/rust-lang/rust/issues/58736.
-fn proc_macro_parse(src: &str) -> Result<proc_macro::TokenStream, LexError> {
-    match panic::catch_unwind(|| proc_macro::TokenStream::from_str(src)) {
-        Ok(result) => result.map_err(LexError::Compiler),
-        Err(_) => Err(LexError::CompilerPanic),
     }
 }
 
@@ -150,7 +143,7 @@ impl From<TokenStream> for proc_macro::TokenStream {
         match inner {
             TokenStream::Compiler(inner) => inner.into_token_stream(),
             TokenStream::Fallback(inner) => {
-                proc_macro::TokenStream::from_str(&inner.to_string()).unwrap()
+                proc_macro::TokenStream::from_str_unchecked(&inner.to_string())
             }
         }
     }
@@ -817,9 +810,19 @@ macro_rules! unsuffixed_integers {
 }
 
 impl Literal {
+    pub(crate) fn from_str_checked(repr: &str) -> Result<Self, LexError> {
+        if inside_proc_macro() {
+            let literal = proc_macro::Literal::from_str_checked(repr)?;
+            Ok(Literal::Compiler(literal))
+        } else {
+            let literal = fallback::Literal::from_str_checked(repr)?;
+            Ok(Literal::Fallback(literal))
+        }
+    }
+
     pub(crate) unsafe fn from_str_unchecked(repr: &str) -> Self {
         if inside_proc_macro() {
-            Literal::Compiler(proc_macro::Literal::from_str(repr).expect("invalid literal"))
+            Literal::Compiler(proc_macro::Literal::from_str_unchecked(repr))
         } else {
             Literal::Fallback(unsafe { fallback::Literal::from_str_unchecked(repr) })
         }
@@ -901,7 +904,7 @@ impl Literal {
                 #[cfg(no_literal_byte_character)]
                 {
                     let fallback = fallback::Literal::byte_character(byte);
-                    proc_macro::Literal::from_str(&fallback.repr).unwrap()
+                    proc_macro::Literal::from_str_unchecked(&fallback.repr)
                 }
             })
         } else {
@@ -928,7 +931,7 @@ impl Literal {
                 #[cfg(no_literal_c_string)]
                 {
                     let fallback = fallback::Literal::c_string(string);
-                    proc_macro::Literal::from_str(&fallback.repr).unwrap()
+                    proc_macro::Literal::from_str_unchecked(&fallback.repr)
                 }
             })
         } else {
@@ -973,20 +976,6 @@ impl Literal {
 impl From<fallback::Literal> for Literal {
     fn from(s: fallback::Literal) -> Self {
         Literal::Fallback(s)
-    }
-}
-
-impl FromStr for Literal {
-    type Err = LexError;
-
-    fn from_str(repr: &str) -> Result<Self, Self::Err> {
-        if inside_proc_macro() {
-            let literal = proc_macro::Literal::from_str(repr)?;
-            Ok(Literal::Compiler(literal))
-        } else {
-            let literal = fallback::Literal::from_str(repr)?;
-            Ok(Literal::Fallback(literal))
-        }
     }
 }
 

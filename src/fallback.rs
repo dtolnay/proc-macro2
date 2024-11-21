@@ -15,7 +15,9 @@ use core::mem::ManuallyDrop;
 use core::ops::Range;
 use core::ops::RangeBounds;
 use core::ptr;
-use core::str::{self, FromStr};
+use core::str;
+#[cfg(feature = "proc-macro")]
+use core::str::FromStr;
 use std::ffi::CStr;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
@@ -61,6 +63,24 @@ impl TokenStream {
         TokenStream {
             inner: RcVecBuilder::new().build(),
         }
+    }
+
+    pub(crate) fn from_str_checked(src: &str) -> Result<Self, LexError> {
+        // Create a dummy file & add it to the source map
+        let mut cursor = get_cursor(src);
+
+        // Strip a byte order mark if present
+        const BYTE_ORDER_MARK: &str = "\u{feff}";
+        if cursor.starts_with(BYTE_ORDER_MARK) {
+            cursor = cursor.advance(BYTE_ORDER_MARK.len());
+        }
+
+        parse::token_stream(cursor)
+    }
+
+    #[cfg(feature = "proc-macro")]
+    pub(crate) fn from_str_unchecked(src: &str) -> Self {
+        Self::from_str_checked(src).unwrap()
     }
 
     pub(crate) fn is_empty(&self) -> bool {
@@ -170,23 +190,6 @@ fn get_cursor(src: &str) -> Cursor {
     Cursor { rest: src }
 }
 
-impl FromStr for TokenStream {
-    type Err = LexError;
-
-    fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        // Create a dummy file & add it to the source map
-        let mut cursor = get_cursor(src);
-
-        // Strip a byte order mark if present
-        const BYTE_ORDER_MARK: &str = "\u{feff}";
-        if cursor.starts_with(BYTE_ORDER_MARK) {
-            cursor = cursor.advance(BYTE_ORDER_MARK.len());
-        }
-
-        parse::token_stream(cursor)
-    }
-}
-
 impl Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("cannot parse string into token stream")
@@ -226,15 +229,14 @@ impl Debug for TokenStream {
 #[cfg(feature = "proc-macro")]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> Self {
-        TokenStream::from_str(&inner.to_string()).expect("compiler token stream parse failed")
+        TokenStream::from_str_unchecked(&inner.to_string())
     }
 }
 
 #[cfg(feature = "proc-macro")]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
-        proc_macro::TokenStream::from_str(&inner.to_string())
-            .expect("failed to parse to compiler tokens")
+        proc_macro::TokenStream::from_str_unchecked(&inner.to_string())
     }
 }
 
@@ -950,6 +952,36 @@ impl Literal {
         }
     }
 
+    pub(crate) fn from_str_checked(repr: &str) -> Result<Self, LexError> {
+        let mut cursor = get_cursor(repr);
+        #[cfg(span_locations)]
+        let lo = cursor.off;
+
+        let negative = cursor.starts_with_char('-');
+        if negative {
+            cursor = cursor.advance(1);
+            if !cursor.starts_with_fn(|ch| ch.is_ascii_digit()) {
+                return Err(LexError::call_site());
+            }
+        }
+
+        if let Ok((rest, mut literal)) = parse::literal(cursor) {
+            if rest.is_empty() {
+                if negative {
+                    literal.repr.insert(0, '-');
+                }
+                literal.span = Span {
+                    #[cfg(span_locations)]
+                    lo,
+                    #[cfg(span_locations)]
+                    hi: rest.off,
+                };
+                return Ok(literal);
+            }
+        }
+        Err(LexError::call_site())
+    }
+
     pub(crate) unsafe fn from_str_unchecked(repr: &str) -> Self {
         Literal::_new(repr.to_owned())
     }
@@ -1147,40 +1179,6 @@ impl Literal {
     }
 }
 
-impl FromStr for Literal {
-    type Err = LexError;
-
-    fn from_str(repr: &str) -> Result<Self, Self::Err> {
-        let mut cursor = get_cursor(repr);
-        #[cfg(span_locations)]
-        let lo = cursor.off;
-
-        let negative = cursor.starts_with_char('-');
-        if negative {
-            cursor = cursor.advance(1);
-            if !cursor.starts_with_fn(|ch| ch.is_ascii_digit()) {
-                return Err(LexError::call_site());
-            }
-        }
-
-        if let Ok((rest, mut literal)) = parse::literal(cursor) {
-            if rest.is_empty() {
-                if negative {
-                    literal.repr.insert(0, '-');
-                }
-                literal.span = Span {
-                    #[cfg(span_locations)]
-                    lo,
-                    #[cfg(span_locations)]
-                    hi: rest.off,
-                };
-                return Ok(literal);
-            }
-        }
-        Err(LexError::call_site())
-    }
-}
-
 impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Display::fmt(&self.repr, f)
@@ -1219,3 +1217,21 @@ fn escape_utf8(string: &str, repr: &mut String) {
         }
     }
 }
+
+#[cfg(feature = "proc-macro")]
+pub(crate) trait FromStr2: FromStr<Err = proc_macro::LexError> {
+    #[cfg(wrap_proc_macro)]
+    fn from_str_checked(src: &str) -> Result<Self, Self::Err> {
+        Self::from_str(src)
+    }
+
+    fn from_str_unchecked(src: &str) -> Self {
+        Self::from_str(src).unwrap()
+    }
+}
+
+#[cfg(feature = "proc-macro")]
+impl FromStr2 for proc_macro::TokenStream {}
+
+#[cfg(feature = "proc-macro")]
+impl FromStr2 for proc_macro::Literal {}
