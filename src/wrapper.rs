@@ -124,9 +124,10 @@ impl FromStr for TokenStream {
 
 // Work around https://github.com/rust-lang/rust/issues/58736.
 fn proc_macro_parse(src: &str) -> Result<proc_macro::TokenStream, LexError> {
-    let result =
-        panic::catch_unwind(|| proc_macro::TokenStream::from_str(src).map_err(LexError::Compiler));
-    result.unwrap_or_else(|_| Err(LexError::CompilerPanic))
+    match panic::catch_unwind(|| proc_macro::TokenStream::from_str(src)) {
+        Ok(result) => result.map_err(LexError::Compiler),
+        Err(_) => Err(LexError::CompilerPanic),
+    }
 }
 
 impl Display for TokenStream {
