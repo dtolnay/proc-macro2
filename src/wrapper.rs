@@ -161,7 +161,7 @@ impl From<fallback::TokenStream> for TokenStream {
 // Assumes inside_proc_macro().
 fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
     match token {
-        TokenTree::Group(tt) => proc_macro::TokenTree::from(tt.inner.unwrap_nightly()),
+        TokenTree::Group(tt) => proc_macro::TokenTree::Group(tt.inner.unwrap_nightly()),
         TokenTree::Punct(tt) => {
             let spacing = match tt.spacing() {
                 Spacing::Joint => proc_macro::Spacing::Joint,
@@ -169,10 +169,10 @@ fn into_compiler_token(token: TokenTree) -> proc_macro::TokenTree {
             };
             let mut punct = proc_macro::Punct::new(tt.as_char(), spacing);
             punct.set_span(tt.span().inner.unwrap_nightly());
-            proc_macro::TokenTree::from(punct)
+            proc_macro::TokenTree::Punct(punct)
         }
-        TokenTree::Ident(tt) => proc_macro::TokenTree::from(tt.inner.unwrap_nightly()),
-        TokenTree::Literal(tt) => proc_macro::TokenTree::from(tt.inner.unwrap_nightly()),
+        TokenTree::Ident(tt) => proc_macro::TokenTree::Ident(tt.inner.unwrap_nightly()),
+        TokenTree::Literal(tt) => proc_macro::TokenTree::Literal(tt.inner.unwrap_nightly()),
     }
 }
 
@@ -339,7 +339,7 @@ impl Iterator for TokenTreeIter {
         };
         Some(match token {
             proc_macro::TokenTree::Group(tt) => {
-                TokenTree::from(crate::Group::_new(Group::Compiler(tt)))
+                TokenTree::Group(crate::Group::_new(Group::Compiler(tt)))
             }
             proc_macro::TokenTree::Punct(tt) => {
                 let spacing = match tt.spacing() {
@@ -348,13 +348,13 @@ impl Iterator for TokenTreeIter {
                 };
                 let mut o = Punct::new(tt.as_char(), spacing);
                 o.set_span(crate::Span::_new(Span::Compiler(tt.span())));
-                TokenTree::from(o)
+                TokenTree::Punct(o)
             }
             proc_macro::TokenTree::Ident(s) => {
-                TokenTree::from(crate::Ident::_new(Ident::Compiler(s)))
+                TokenTree::Ident(crate::Ident::_new(Ident::Compiler(s)))
             }
             proc_macro::TokenTree::Literal(l) => {
-                TokenTree::from(crate::Literal::_new(Literal::Compiler(l)))
+                TokenTree::Literal(crate::Literal::_new(Literal::Compiler(l)))
             }
         })
     }
