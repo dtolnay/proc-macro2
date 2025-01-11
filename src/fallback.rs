@@ -122,7 +122,50 @@ fn push_token_from_proc_macro(mut vec: RcVecMut<TokenTree>, token: TokenTree) {
     }
 }
 
-// Nonrecursive to prevent stack overflow.
+/// A visitor that non-recursively drops part of a `TokenStream`.
+/// This is required to prevent many nested groups from causing a stack overflow.
+/// See: <https://github.com/dtolnay/proc-macro2/issues/55>
+struct TokenStreamDropVisitor {
+    parent: Option<Box<TokenStreamDropVisitor>>,
+    current: TokenStream,
+}
+
+impl TokenStreamDropVisitor {
+    fn visit_next(mut self) -> Option<TokenStreamDropVisitor> {
+        // If this TokenStream does not hold the only reference to the internal Vec,
+        // dropping the Rc will not induce a recursive TokenStream Drop.
+        let mut inner = match self.current.inner.get_mut() {
+            Some(inner) => inner,
+            None => return self.parent.map(|v| *v),
+        };
+
+        // Search for `Group`s which would cause a recursive TokenStream drop,
+        // advancing the visitor and returning instead of dropping.
+        // Drop all other tokens in the stream.
+        while let Some(token) = inner.pop() {
+            let group = match token {
+                TokenTree::Group(group) => group.inner,
+                _ => continue,
+            };
+            #[cfg(wrap_proc_macro)]
+                let group = match group {
+                crate::imp::Group::Fallback(group) => group,
+                crate::imp::Group::Compiler(_) => continue,
+            };
+
+            return Some(TokenStreamDropVisitor {
+                parent: Some(Box::new(self)),
+                current: group.stream
+            })
+        }
+
+        // Advance the visitor back to the parent
+        self.parent.map(|v| *v)
+    }
+}
+
+/// Drop `TokenStream`s without recursively dropping nested groups.
+/// See: <https://github.com/dtolnay/proc-macro2/issues/55>
 impl Drop for TokenStream {
     fn drop(&mut self) {
         let mut inner = match self.inner.get_mut() {
@@ -139,7 +182,15 @@ impl Drop for TokenStream {
                 crate::imp::Group::Fallback(group) => group,
                 crate::imp::Group::Compiler(_) => continue,
             };
-            inner.extend(group.stream.take_inner());
+
+            let mut visitor = TokenStreamDropVisitor {
+                parent: None,
+                current: group.stream
+            };
+
+            while let Some(next_visitor) = visitor.visit_next() {
+                visitor = next_visitor;
+            }
         }
     }
 }

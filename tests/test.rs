@@ -903,3 +903,19 @@ fn test_use_span_after_invalidation() {
 
     span.source_text();
 }
+
+#[test]
+fn test_many_nested_groupings() {
+    // Test that the alternative `Drop` impl for `TokenStream`
+    // circumvents a stack overflow with many nested groupings.
+    // See: https://github.com/dtolnay/proc-macro2/issues/55
+    //
+    // Without the implementation, this is expected to fail with:
+    // thread 'test_many_nested_groupings' has overflowed its stack
+    // fatal runtime error: stack overflow
+
+    let string = format!("{}42{}", "(".repeat(4_000), ")".repeat(4_000));
+    let tokens = string.parse::<TokenStream>().unwrap();
+
+    drop(tokens);
+}
