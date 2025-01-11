@@ -80,10 +80,6 @@ impl<T> RcVecBuilder<T> {
         self.inner.extend(iter);
     }
 
-    pub(crate) fn pop(&mut self) -> Option<T> {
-        self.inner.pop()
-    }
-
     pub(crate) fn as_mut(&mut self) -> RcVecMut<T> {
         RcVecMut {
             inner: &mut self.inner,
