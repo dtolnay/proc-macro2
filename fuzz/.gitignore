@@ -1,8 +1,9 @@
-artifacts/
-corpus/
-coverage/
-hfuzz_target/
-hfuzz_workspace/
-in/
-out/
-target/
+/artifacts/
+/corpus/
+/coverage/
+/hfuzz_target/
+/hfuzz_workspace/
+/in/
+/out/
+/target/
+/Cargo.lock
