@@ -41,9 +41,6 @@ span-locations = []
 # This feature no longer means anything.
 nightly = []
 
-[lib]
-doc-scrape-examples = false
-
 [workspace]
 members = ["benches/bench-libproc-macro", "tests/ui"]
 
