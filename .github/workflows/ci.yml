@@ -172,7 +172,7 @@ jobs:
       - run: cargo hfuzz build --no-default-features --features honggfuzz
         working-directory: fuzz
         env:
-          RUSTFLAGS: -Clink-arg=-fuse-ld=lld ${{env.RUSTFLAGS}}
+          RUSTFLAGS: -Clink-arg=-fuse-ld=lld ${{env.RUSTFLAGS}}  # https://github.com/rust-fuzz/honggfuzz-rs/issues/97
 
   doc:
     name: Documentation
