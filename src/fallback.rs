@@ -664,7 +664,7 @@ impl Span {
     }
 }
 
-#[cfg(not(wrap_proc_macro))]
+#[cfg(all(not(wrap_proc_macro), feature = "proc-macro"))]
 impl From<proc_macro::Span> for crate::Span {
     fn from(_: proc_macro::Span) -> Self {
         crate::Span::_new(Span::call_site())
