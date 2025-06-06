@@ -115,6 +115,7 @@
     clippy::used_underscore_binding,
     clippy::vec_init_then_push
 )]
+#![allow(unknown_lints, mismatched_lifetime_syntaxes)]
 
 #[cfg(all(procmacro2_semver_exempt, wrap_proc_macro, not(super_unstable)))]
 compile_error! {"\
