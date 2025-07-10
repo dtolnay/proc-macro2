@@ -203,10 +203,14 @@ fn compile_probe(rustc_bootstrap: bool) -> bool {
     // Clean up to avoid leaving nondeterministic absolute paths in the dep-info
     // file in OUT_DIR, which causes nonreproducible builds in build systems
     // that treat the entire OUT_DIR as an artifact.
+    // Set the PROC_MACRO2_IGNORE_CLEANUP environment variable to make errors from
+    // the cleanup process non-fatal.
     if let Err(err) = fs::remove_dir_all(&out_subdir) {
         if err.kind() != ErrorKind::NotFound {
             eprintln!("Failed to clean up {}: {}", out_subdir.display(), err);
-            process::exit(1);
+            if env::var_os("PROC_MACRO2_IGNORE_CLEANUP").is_none() {
+                process::exit(1);
+            }
         }
     }
 
