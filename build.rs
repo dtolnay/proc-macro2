@@ -203,7 +203,7 @@ fn compile_probe(rustc_bootstrap: bool) -> bool {
     // file in OUT_DIR, which causes nonreproducible builds in build systems
     // that treat the entire OUT_DIR as an artifact.
     if let Err(err) = fs::remove_dir_all(&out_subdir) {
-        if err.kind() != ErrorKind::NotFound {
+        if err.kind() != ErrorKind::NotFound && err.kind() != ErrorKind::DirectoryNotEmpty {
             eprintln!("Failed to clean up {}: {}", out_subdir.display(), err);
             process::exit(1);
         }
