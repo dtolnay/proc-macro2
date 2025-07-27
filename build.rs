@@ -20,6 +20,7 @@ fn main() {
         println!("cargo:rustc-check-cfg=cfg(no_literal_c_string)");
         println!("cargo:rustc-check-cfg=cfg(no_source_text)");
         println!("cargo:rustc-check-cfg=cfg(proc_macro_span)");
+        println!("cargo:rustc-check-cfg=cfg(proc_macro_span_location)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_backtrace)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_nightly_testing)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_semver_exempt)");
@@ -71,12 +72,14 @@ fn main() {
     println!("cargo:rerun-if-changed=build/probe.rs");
 
     let proc_macro_span;
+    let proc_macro_span_location;
     let consider_rustc_bootstrap;
     if compile_probe(false) {
         // This is a nightly or dev compiler, so it supports unstable features
         // regardless of RUSTC_BOOTSTRAP. No need to rerun build script if
         // RUSTC_BOOTSTRAP is changed.
         proc_macro_span = true;
+        proc_macro_span_location = true;
         consider_rustc_bootstrap = false;
     } else if let Some(rustc_bootstrap) = env::var_os("RUSTC_BOOTSTRAP") {
         if compile_probe(true) {
@@ -84,17 +87,20 @@ fn main() {
             // RUSTC_BOOTSTRAP to turn on unstable features. Rerun build script
             // if they change it.
             proc_macro_span = true;
+            proc_macro_span_location = true;
             consider_rustc_bootstrap = true;
         } else if rustc_bootstrap == "1" {
             // This compiler does not support the proc macro Span API in the
             // form that proc-macro2 expects. No need to pay attention to
             // RUSTC_BOOTSTRAP.
             proc_macro_span = false;
+            proc_macro_span_location = rustc >= 88;
             consider_rustc_bootstrap = false;
         } else {
             // This is a stable or beta compiler for which RUSTC_BOOTSTRAP is
             // set to restrict the use of unstable features by this crate.
             proc_macro_span = false;
+            proc_macro_span_location = rustc >= 88;
             consider_rustc_bootstrap = true;
         }
     } else {
@@ -102,6 +108,7 @@ fn main() {
         // macro Span API in the form that proc-macro2 expects, but try again if
         // the user turns on unstable features.
         proc_macro_span = false;
+        proc_macro_span_location = rustc >= 88;
         consider_rustc_bootstrap = true;
     }
 
@@ -116,11 +123,17 @@ fn main() {
     }
 
     if proc_macro_span {
-        // Enable non-dummy behavior of Span::start and Span::end methods which
-        // requires an unstable compiler feature. Enabled when building with
-        // nightly, unless `-Z allow-feature` in RUSTFLAGS disallows unstable
-        // features.
+        // Enable non-dummy behavior of Span::byte_range and Span::join methods
+        // which require an unstable compiler feature. Enabled when building
+        // with nightly, unless `-Z allow-feature` in RUSTFLAGS disallows
+        // unstable features.
         println!("cargo:rustc-cfg=proc_macro_span");
+    }
+
+    if proc_macro_span_location {
+        // Enable non-dummy behavior of Span::start and Span::end methods which
+        // require Rust 1.88.
+        println!("cargo:rustc-cfg=proc_macro_span_location");
     }
 
     if semver_exempt && proc_macro_span {
