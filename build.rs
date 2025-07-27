@@ -124,7 +124,7 @@ fn main() {
 
     if proc_macro_span {
         // Enable non-dummy behavior of Span::byte_range and Span::join methods
-        // which require an unstable compiler feature. Enabled when building
+        // which requires an unstable compiler feature. Enabled when building
         // with nightly, unless `-Z allow-feature` in RUSTFLAGS disallows
         // unstable features.
         println!("cargo:rustc-cfg=proc_macro_span");
@@ -132,7 +132,7 @@ fn main() {
 
     if proc_macro_span_location {
         // Enable non-dummy behavior of Span::start and Span::end methods which
-        // require Rust 1.88.
+        // requires Rust 1.88.
         println!("cargo:rustc-cfg=proc_macro_span_location");
     }
 
