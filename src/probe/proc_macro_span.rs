@@ -2,7 +2,7 @@
 // If the current toolchain is able to compile it, then proc-macro2 is able to
 // offer these APIs too.
 
-#![feature(proc_macro_span)]
+#![cfg_attr(procmacro2_build_probe, feature(proc_macro_span))]
 
 extern crate proc_macro;
 
@@ -38,4 +38,5 @@ pub fn subspan<R: RangeBounds<usize>>(this: &Literal, range: R) -> Option<Span> 
 }
 
 // Include in sccache cache key.
+#[cfg(procmacro2_build_probe)]
 const _: Option<&str> = option_env!("RUSTC_BOOTSTRAP");
