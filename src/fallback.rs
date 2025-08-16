@@ -455,35 +455,32 @@ impl SourceMap {
         span
     }
 
-    fn filepath(&self, span: Span) -> String {
+    fn find(&self, span: Span) -> usize {
         for (i, file) in self.files.iter().enumerate() {
             if file.span_within(span) {
-                return if i == 0 {
-                    "<unspecified>".to_owned()
-                } else {
-                    format!("<parsed string {}>", i)
-                };
+                return i;
             }
         }
         unreachable!("Invalid span with no related FileInfo!");
+    }
+
+    fn filepath(&self, span: Span) -> String {
+        let i = self.find(span);
+        if i == 0 {
+            "<unspecified>".to_owned()
+        } else {
+            format!("<parsed string {}>", i)
+        }
     }
 
     fn fileinfo(&self, span: Span) -> &FileInfo {
-        for file in &self.files {
-            if file.span_within(span) {
-                return file;
-            }
-        }
-        unreachable!("Invalid span with no related FileInfo!");
+        let i = self.find(span);
+        &self.files[i]
     }
 
     fn fileinfo_mut(&mut self, span: Span) -> &mut FileInfo {
-        for file in &mut self.files {
-            if file.span_within(span) {
-                return file;
-            }
-        }
-        unreachable!("Invalid span with no related FileInfo!");
+        let i = self.find(span);
+        &mut self.files[i]
     }
 }
 
