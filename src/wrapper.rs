@@ -4,6 +4,8 @@ use crate::fallback::{self, FromStr2 as _};
 use crate::location::LineColumn;
 #[cfg(proc_macro_span)]
 use crate::probe::proc_macro_span;
+#[cfg(all(span_locations, proc_macro_span_location))]
+use crate::probe::proc_macro_span_location;
 use crate::{Delimiter, Punct, Spacing, TokenTree};
 use core::fmt::{self, Debug, Display};
 #[cfg(span_locations)]
@@ -433,12 +435,12 @@ impl Span {
     #[cfg(span_locations)]
     pub(crate) fn start(&self) -> LineColumn {
         match self {
-            #[cfg(proc_macro_span)]
+            #[cfg(proc_macro_span_location)]
             Span::Compiler(s) => LineColumn {
-                line: proc_macro_span::line(s),
-                column: proc_macro_span::column(s).saturating_sub(1),
+                line: proc_macro_span_location::line(s),
+                column: proc_macro_span_location::column(s).saturating_sub(1),
             },
-            #[cfg(not(proc_macro_span))]
+            #[cfg(not(proc_macro_span_location))]
             Span::Compiler(_) => LineColumn { line: 0, column: 0 },
             Span::Fallback(s) => s.start(),
         }
@@ -447,15 +449,15 @@ impl Span {
     #[cfg(span_locations)]
     pub(crate) fn end(&self) -> LineColumn {
         match self {
-            #[cfg(proc_macro_span)]
+            #[cfg(proc_macro_span_location)]
             Span::Compiler(s) => {
-                let end = proc_macro_span::end(s);
+                let end = proc_macro_span_location::end(s);
                 LineColumn {
-                    line: proc_macro_span::line(&end),
-                    column: proc_macro_span::column(&end).saturating_sub(1),
+                    line: proc_macro_span_location::line(&end),
+                    column: proc_macro_span_location::column(&end).saturating_sub(1),
                 }
             }
-            #[cfg(not(proc_macro_span))]
+            #[cfg(not(proc_macro_span_location))]
             Span::Compiler(_) => LineColumn { line: 0, column: 0 },
             Span::Fallback(s) => s.end(),
         }
