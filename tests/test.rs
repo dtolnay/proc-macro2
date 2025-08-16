@@ -523,7 +523,7 @@ fn lifetimes() {
     "' a".parse::<TokenStream>().unwrap_err();
     "' r#gen".parse::<TokenStream>().unwrap_err();
     "' prefix#lifetime".parse::<TokenStream>().unwrap_err();
-    "'prefix#lifetime".parse::<TokenStream>().unwrap(); // FIXME
+    "'prefix#lifetime".parse::<TokenStream>().unwrap_err();
     "'aa'bb".parse::<TokenStream>().unwrap_err();
     "'r#gen'a".parse::<TokenStream>().unwrap_err();
 }
