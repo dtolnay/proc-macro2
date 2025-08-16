@@ -21,6 +21,7 @@ fn main() {
         println!("cargo:rustc-check-cfg=cfg(no_source_text)");
         println!("cargo:rustc-check-cfg=cfg(proc_macro_span)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_backtrace)");
+        println!("cargo:rustc-check-cfg=cfg(procmacro2_build_probe)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_nightly_testing)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_semver_exempt)");
         println!("cargo:rustc-check-cfg=cfg(randomize_layout)");
@@ -67,7 +68,7 @@ fn main() {
         return;
     }
 
-    println!("cargo:rerun-if-changed=build/probe.rs");
+    println!("cargo:rerun-if-changed=src/probe/proc_macro_span.rs");
 
     let proc_macro_span;
     let consider_rustc_bootstrap;
@@ -148,7 +149,7 @@ fn compile_probe(rustc_bootstrap: bool) -> bool {
     let rustc = cargo_env_var("RUSTC");
     let out_dir = cargo_env_var("OUT_DIR");
     let out_subdir = Path::new(&out_dir).join("probe");
-    let probefile = Path::new("build").join("probe.rs");
+    let probefile = Path::new("src").join("probe").join("proc_macro_span.rs");
 
     if let Err(err) = fs::create_dir(&out_subdir) {
         if err.kind() != ErrorKind::AlreadyExists {
@@ -172,6 +173,7 @@ fn compile_probe(rustc_bootstrap: bool) -> bool {
     }
 
     cmd.stderr(Stdio::null())
+        .arg("--cfg=procmacro2_build_probe")
         .arg("--edition=2021")
         .arg("--crate-name=proc_macro2")
         .arg("--crate-type=lib")

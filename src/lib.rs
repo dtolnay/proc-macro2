@@ -141,6 +141,7 @@ extern crate proc_macro;
 
 mod marker;
 mod parse;
+mod probe;
 mod rcvec;
 
 #[cfg(wrap_proc_macro)]
