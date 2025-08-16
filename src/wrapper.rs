@@ -4,6 +4,8 @@ use crate::fallback::{self, FromStr2 as _};
 use crate::location::LineColumn;
 #[cfg(proc_macro_span)]
 use crate::probe::proc_macro_span;
+#[cfg(all(span_locations, proc_macro_span_file))]
+use crate::probe::proc_macro_span_file;
 #[cfg(all(span_locations, proc_macro_span_location))]
 use crate::probe::proc_macro_span_location;
 use crate::{Delimiter, Punct, Spacing, TokenTree};
@@ -12,7 +14,7 @@ use core::fmt::{self, Debug, Display};
 use core::ops::Range;
 use core::ops::RangeBounds;
 use std::ffi::CStr;
-#[cfg(super_unstable)]
+#[cfg(span_locations)]
 use std::path::PathBuf;
 
 #[derive(Clone)]
@@ -463,18 +465,24 @@ impl Span {
         }
     }
 
-    #[cfg(super_unstable)]
+    #[cfg(span_locations)]
     pub(crate) fn file(&self) -> String {
         match self {
-            Span::Compiler(s) => s.file(),
+            #[cfg(proc_macro_span_file)]
+            Span::Compiler(s) => proc_macro_span_file::file(s),
+            #[cfg(not(proc_macro_span_file))]
+            Span::Compiler(_) => "<token stream>".to_owned(),
             Span::Fallback(s) => s.file(),
         }
     }
 
-    #[cfg(super_unstable)]
+    #[cfg(span_locations)]
     pub(crate) fn local_file(&self) -> Option<PathBuf> {
         match self {
-            Span::Compiler(s) => s.local_file(),
+            #[cfg(proc_macro_span_file)]
+            Span::Compiler(s) => proc_macro_span_file::local_file(s),
+            #[cfg(not(proc_macro_span_file))]
+            Span::Compiler(_) => None,
             Span::Fallback(s) => s.local_file(),
         }
     }

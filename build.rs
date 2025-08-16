@@ -20,6 +20,7 @@ fn main() {
         println!("cargo:rustc-check-cfg=cfg(no_literal_c_string)");
         println!("cargo:rustc-check-cfg=cfg(no_source_text)");
         println!("cargo:rustc-check-cfg=cfg(proc_macro_span)");
+        println!("cargo:rustc-check-cfg=cfg(proc_macro_span_file)");
         println!("cargo:rustc-check-cfg=cfg(proc_macro_span_location)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_backtrace)");
         println!("cargo:rustc-check-cfg=cfg(procmacro2_build_probe)");
@@ -126,6 +127,12 @@ fn main() {
         // Enable non-dummy behavior of Span::start and Span::end methods on
         // Rust 1.88+.
         println!("cargo:rustc-cfg=proc_macro_span_location");
+    }
+
+    if proc_macro_span || (rustc >= 88 && compile_probe_stable("proc_macro_span_file")) {
+        // Enable non-dummy behavior of Span::file and Span::local_file methods
+        // on Rust 1.88+.
+        println!("cargo:rustc-cfg=proc_macro_span_file");
     }
 
     if semver_exempt && proc_macro_span {
