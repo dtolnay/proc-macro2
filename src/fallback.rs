@@ -23,7 +23,7 @@ use core::str::FromStr;
 use std::ffi::CStr;
 #[cfg(wrap_proc_macro)]
 use std::panic;
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_locations)]
 use std::path::PathBuf;
 
 /// Force use of proc-macro2's fallback implementation of the API for now, even
@@ -455,7 +455,6 @@ impl SourceMap {
         span
     }
 
-    #[cfg(procmacro2_semver_exempt)]
     fn filepath(&self, span: Span) -> String {
         for (i, file) in self.files.iter().enumerate() {
             if file.span_within(span) {
@@ -568,7 +567,7 @@ impl Span {
         })
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_locations)]
     pub(crate) fn file(&self) -> String {
         #[cfg(fuzzing)]
         return "<unspecified>".to_owned();
@@ -580,7 +579,7 @@ impl Span {
         })
     }
 
-    #[cfg(procmacro2_semver_exempt)]
+    #[cfg(span_locations)]
     pub(crate) fn local_file(&self) -> Option<PathBuf> {
         None
     }
