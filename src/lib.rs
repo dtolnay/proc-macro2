@@ -116,6 +116,7 @@
     clippy::vec_init_then_push
 )]
 #![allow(unknown_lints, mismatched_lifetime_syntaxes)]
+#![cfg_attr(feature = "nightly", feature(proc_macro_value))]
 
 #[cfg(all(procmacro2_semver_exempt, wrap_proc_macro, not(super_unstable)))]
 compile_error! {"\
@@ -1272,6 +1273,35 @@ impl Literal {
     #[doc(hidden)]
     pub unsafe fn from_str_unchecked(repr: &str) -> Self {
         Literal::_new(unsafe { imp::Literal::from_str_unchecked(repr) })
+    }
+
+    /// Returns the unescaped string value if the current literal is a string or a string literal.
+    #[cfg(feature = "nightly")]
+    pub fn str_value(&self) -> Result<String, proc_macro::ConversionErrorKind> {
+        let imp::Literal::Compiler(ref compiler_lit) = self.inner else {
+            panic!("method only supported on compiler literals");
+        };
+        compiler_lit.str_value()
+    }
+
+    /// Returns the unescaped string value if the current literal is a c-string or a c-string
+    /// literal.
+    #[cfg(feature = "nightly")]
+    pub fn cstr_value(&self) -> Result<Vec<u8>, proc_macro::ConversionErrorKind> {
+        let imp::Literal::Compiler(ref compiler_lit) = self.inner else {
+            panic!("method only supported on compiler literals");
+        };
+        compiler_lit.cstr_value()
+    }
+
+    /// Returns the unescaped string value if the current literal is a byte string or a byte string
+    /// literal.
+    #[cfg(feature = "nightly")]
+    pub fn byte_str_value(&self) -> Result<Vec<u8>, proc_macro::ConversionErrorKind> {
+        let imp::Literal::Compiler(ref compiler_lit) = self.inner else {
+            panic!("method only supported on compiler literals");
+        };
+        compiler_lit.byte_str_value()
     }
 }
 

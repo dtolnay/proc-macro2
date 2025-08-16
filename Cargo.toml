@@ -45,7 +45,7 @@ default = ["proc-macro"]
 # of a token.
 span-locations = []
 
-# This feature no longer means anything.
+# Used for unstable `Literal` API.
 nightly = []
 
 [workspace]
