@@ -200,7 +200,6 @@ fn do_compile_probe(feature: &str, rustc_bootstrap: bool) -> bool {
         .arg("--crate-type=lib")
         .arg("--cap-lints=allow")
         .arg("--emit=dep-info,metadata")
-        .arg("--cap-lints=allow")
         .arg("--out-dir")
         .arg(&out_subdir)
         .arg(probefile);
