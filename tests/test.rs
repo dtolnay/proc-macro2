@@ -4,7 +4,8 @@
     clippy::needless_pass_by_value,
     clippy::needless_raw_string_hashes,
     clippy::non_ascii_literal,
-    clippy::octal_escapes
+    clippy::octal_escapes,
+    clippy::uninlined_format_args
 )]
 
 use proc_macro2::{Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};

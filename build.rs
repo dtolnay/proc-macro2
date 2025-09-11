@@ -1,5 +1,6 @@
 #![allow(unknown_lints)]
 #![allow(unexpected_cfgs)]
+#![allow(clippy::uninlined_format_args)]
 
 use std::env;
 use std::ffi::OsString;
