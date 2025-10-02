@@ -88,6 +88,10 @@
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(
+    all(procmacro2_semver_exempt, feature = "proc-macro"),
+    feature(proc_macro_value)
+)]
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(
     clippy::cast_lossless,
@@ -177,6 +181,11 @@ use std::error::Error;
 use std::ffi::CStr;
 #[cfg(span_locations)]
 use std::path::PathBuf;
+
+#[cfg(all(procmacro2_semver_exempt, feature = "proc-macro"))]
+use proc_macro::ConversionErrorKind;
+#[cfg(all(procmacro2_semver_exempt, feature = "proc-macro"))]
+use rustc_literal_escaper::MixedUnit;
 
 #[cfg(span_locations)]
 #[cfg_attr(docsrs, doc(cfg(feature = "span-locations")))]
@@ -1270,6 +1279,113 @@ impl Literal {
     #[doc(hidden)]
     pub unsafe fn from_str_unchecked(repr: &str) -> Self {
         Literal::_new(unsafe { imp::Literal::from_str_unchecked(repr) })
+    }
+
+    /// Returns the unescaped string value if the current literal is a string or a string literal.
+    #[cfg(all(procmacro2_semver_exempt, feature = "proc-macro"))]
+    pub fn str_value(&self) -> Result<String, ConversionErrorKind> {
+        match self.inner {
+            imp::Literal::Compiler(ref compiler_lit) => compiler_lit.str_value(),
+            imp::Literal::Fallback(ref fallback) => {
+                if !fallback.repr.starts_with('"') {
+                    return Err(ConversionErrorKind::InvalidLiteralKind);
+                }
+                let mut error = None;
+                let mut buf = String::with_capacity(fallback.repr.len());
+                rustc_literal_escaper::unescape_str(&fallback.repr, |_, res| match res {
+                    Ok(c) => buf.push(c),
+                    Err(err) => {
+                        if err.is_fatal() {
+                            // `proc_macro::EscapeError` is the reexport of
+                            // `rustc_literal_escaper::EscapeError` so we safely transmute between
+                            // the two.
+                            error = Some(ConversionErrorKind::FailedToUnescape(unsafe {
+                                std::mem::transmute(err)
+                            }));
+                        }
+                    }
+                });
+                if let Some(error) = error {
+                    Err(error)
+                } else {
+                    Ok(buf)
+                }
+            }
+        }
+    }
+
+    /// Returns the unescaped string value if the current literal is a c-string or a c-string
+    /// literal.
+    #[cfg(all(procmacro2_semver_exempt, feature = "proc-macro"))]
+    pub fn cstr_value(&self) -> Result<Vec<u8>, ConversionErrorKind> {
+        match self.inner {
+            imp::Literal::Compiler(ref compiler_lit) => compiler_lit.cstr_value(),
+            imp::Literal::Fallback(ref fallback) => {
+                if !fallback.repr.starts_with('c') {
+                    return Err(ConversionErrorKind::InvalidLiteralKind);
+                }
+                let mut error = None;
+                let mut buf = Vec::with_capacity(fallback.repr.len());
+
+                rustc_literal_escaper::unescape_c_str(&fallback.repr, |_span, res| match res {
+                    Ok(MixedUnit::Char(c)) => {
+                        buf.extend_from_slice(c.get().encode_utf8(&mut [0; 4]).as_bytes())
+                    }
+                    Ok(MixedUnit::HighByte(b)) => buf.push(b.get()),
+                    Err(err) => {
+                        if err.is_fatal() {
+                            // `proc_macro::EscapeError` is the reexport of
+                            // `rustc_literal_escaper::EscapeError` so we safely transmute between
+                            // the two.
+                            error = Some(ConversionErrorKind::FailedToUnescape(unsafe {
+                                std::mem::transmute(err)
+                            }));
+                        }
+                    }
+                });
+                if let Some(error) = error {
+                    Err(error)
+                } else {
+                    buf.push(0);
+                    Ok(buf)
+                }
+            }
+        }
+    }
+
+    /// Returns the unescaped string value if the current literal is a byte string or a byte string
+    /// literal.
+    #[cfg(all(procmacro2_semver_exempt, feature = "proc-macro"))]
+    pub fn byte_str_value(&self) -> Result<Vec<u8>, ConversionErrorKind> {
+        match self.inner {
+            imp::Literal::Compiler(ref compiler_lit) => compiler_lit.byte_str_value(),
+            imp::Literal::Fallback(ref fallback) => {
+                if !fallback.repr.starts_with('c') {
+                    return Err(ConversionErrorKind::InvalidLiteralKind);
+                }
+                let mut error = None;
+                let mut buf = Vec::with_capacity(fallback.repr.len());
+
+                rustc_literal_escaper::unescape_byte_str(&fallback.repr, |_span, res| match res {
+                    Ok(c) => buf.push(c),
+                    Err(err) => {
+                        if err.is_fatal() {
+                            // `proc_macro::EscapeError` is the reexport of
+                            // `rustc_literal_escaper::EscapeError` so we safely transmute between
+                            // the two.
+                            error = Some(ConversionErrorKind::FailedToUnescape(unsafe {
+                                std::mem::transmute(err)
+                            }));
+                        }
+                    }
+                });
+                if let Some(error) = error {
+                    Err(error)
+                } else {
+                    Ok(buf)
+                }
+            }
+        }
     }
 }
 

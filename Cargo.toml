@@ -31,6 +31,9 @@ features = ["span-locations"]
 [dependencies]
 unicode-ident = "1.0"
 
+[target.'cfg(procmacro2_semver_exempt)'.dependencies]
+rustc-literal-escaper = "0.0.5"
+
 [dev-dependencies]
 flate2 = "1.0"
 quote = { version = "1.0", default-features = false }
