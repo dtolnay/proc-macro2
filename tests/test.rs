@@ -722,7 +722,7 @@ fn test_debug_ident() {
 fn test_display_tokenstream() {
     let tts = TokenStream::from_str("[a + 1]").unwrap();
     assert_eq!(format!("{tts}"), "[a + 1]");
-    assert_eq!(format!("{tts:-^5}"), "[--a-- --+-- --1--]"); // FIXME
+    assert_eq!(format!("{tts:-^5}"), "[a + 1]");
 }
 
 #[test]
