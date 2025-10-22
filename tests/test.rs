@@ -719,13 +719,19 @@ fn test_display_ident() {
 #[test]
 fn test_debug_ident() {
     let ident = Ident::new("proc_macro", Span::call_site());
+    let expected = if cfg!(span_locations) {
+        "Ident { sym: proc_macro }"
+    } else {
+        "Ident(proc_macro)"
+    };
+    assert_eq!(expected, format!("{:?}", ident));
 
-    #[cfg(not(span_locations))]
-    let expected = "Ident(proc_macro)";
-
-    #[cfg(span_locations)]
-    let expected = "Ident { sym: proc_macro }";
-
+    let ident = Ident::new_raw("proc_macro", Span::call_site());
+    let expected = if cfg!(span_locations) {
+        "Ident { sym: r#proc_macro }"
+    } else {
+        "Ident(r#proc_macro)"
+    };
     assert_eq!(expected, format!("{:?}", ident));
 }
 
