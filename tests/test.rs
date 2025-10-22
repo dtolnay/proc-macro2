@@ -709,11 +709,11 @@ fn raw_identifier() {
 fn test_display_ident() {
     let ident = Ident::new("proc_macro", Span::call_site());
     assert_eq!(format!("{ident}"), "proc_macro");
-    assert_eq!(format!("{ident:-^14}"), "--proc_macro--");
+    assert_eq!(format!("{ident:-^14}"), "proc_macro");
 
     let ident = Ident::new_raw("proc_macro", Span::call_site());
     assert_eq!(format!("{ident}"), "r#proc_macro");
-    assert_eq!(format!("{ident:-^14}"), "r#--proc_macro--"); // FIXME
+    assert_eq!(format!("{ident:-^14}"), "r#proc_macro");
 }
 
 #[test]
