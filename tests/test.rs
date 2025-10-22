@@ -719,6 +719,13 @@ fn test_debug_ident() {
 }
 
 #[test]
+fn test_display_tokenstream() {
+    let tts = TokenStream::from_str("[a + 1]").unwrap();
+    assert_eq!(format!("{tts}"), "[a + 1]");
+    assert_eq!(format!("{tts:-^5}"), "[--a-- --+-- --1--]"); // FIXME
+}
+
+#[test]
 fn test_debug_tokenstream() {
     let tts = TokenStream::from_str("[a + 1]").unwrap();
 
