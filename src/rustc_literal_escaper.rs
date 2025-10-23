@@ -6,7 +6,7 @@
 
 use crate::num::NonZeroChar;
 use std::ffi::CStr;
-use std::num::NonZero;
+use std::num::NonZeroU8;
 use std::ops::Range;
 use std::str::Chars;
 
@@ -261,7 +261,7 @@ pub enum MixedUnit {
     /// For example, if `\xa5` appears in a string it is represented here as
     /// `MixedUnit::HighByte(0xa5)`, and it will be appended to the relevant
     /// byte string as the single byte `0xa5`.
-    HighByte(NonZero<u8>),
+    HighByte(NonZeroU8),
 }
 
 impl From<NonZeroChar> for MixedUnit {
@@ -271,9 +271,9 @@ impl From<NonZeroChar> for MixedUnit {
     }
 }
 
-impl From<NonZero<u8>> for MixedUnit {
+impl From<NonZeroU8> for MixedUnit {
     #[inline]
-    fn from(byte: NonZero<u8>) -> Self {
+    fn from(byte: NonZeroU8) -> Self {
         if byte.get().is_ascii() {
             MixedUnit::Char(NonZeroChar::new(byte.get() as char).unwrap())
         } else {
@@ -298,7 +298,7 @@ impl TryFrom<u8> for MixedUnit {
 
     #[inline]
     fn try_from(byte: u8) -> Result<Self, EscapeError> {
-        NonZero::new(byte)
+        NonZeroU8::new(byte)
             .map(From::from)
             .ok_or(EscapeError::NulInCStr)
     }
@@ -313,7 +313,7 @@ trait Unescape {
     const ZERO_RESULT: Result<Self::Unit, EscapeError>;
 
     /// Converts non-zero bytes to the unit type
-    fn nonzero_byte2unit(b: NonZero<u8>) -> Self::Unit;
+    fn nonzero_byte2unit(b: NonZeroU8) -> Self::Unit;
 
     /// Converts chars to the unit type
     fn char2unit(c: char) -> Result<Self::Unit, EscapeError>;
@@ -401,9 +401,9 @@ trait Unescape {
 ///
 /// Parses the character of an ASCII escape (except nul) without the leading backslash.
 #[inline] // single use in Unescape::unescape_1
-fn simple_escape(c: char) -> Result<NonZero<u8>, char> {
+fn simple_escape(c: char) -> Result<NonZeroU8, char> {
     // Previous character was '\\', unescape what follows.
-    Ok(NonZero::new(match c {
+    Ok(NonZeroU8::new(match c {
         '"' => b'"',
         'n' => b'\n',
         'r' => b'\r',
@@ -519,7 +519,7 @@ impl Unescape for str {
     const ZERO_RESULT: Result<Self::Unit, EscapeError> = Ok('\0');
 
     #[inline]
-    fn nonzero_byte2unit(b: NonZero<u8>) -> Self::Unit {
+    fn nonzero_byte2unit(b: NonZeroU8) -> Self::Unit {
         b.get().into()
     }
 
@@ -549,7 +549,7 @@ impl Unescape for [u8] {
     const ZERO_RESULT: Result<Self::Unit, EscapeError> = Ok(b'\0');
 
     #[inline]
-    fn nonzero_byte2unit(b: NonZero<u8>) -> Self::Unit {
+    fn nonzero_byte2unit(b: NonZeroU8) -> Self::Unit {
         b.get()
     }
 
@@ -575,7 +575,7 @@ impl Unescape for CStr {
     const ZERO_RESULT: Result<Self::Unit, EscapeError> = Err(EscapeError::NulInCStr);
 
     #[inline]
-    fn nonzero_byte2unit(b: NonZero<u8>) -> Self::Unit {
+    fn nonzero_byte2unit(b: NonZeroU8) -> Self::Unit {
         b.into()
     }
 
