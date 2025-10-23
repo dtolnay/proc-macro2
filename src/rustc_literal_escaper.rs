@@ -1,3 +1,6 @@
+// Vendored from rustc-literal-escaper v0.0.5
+// https://github.com/rust-lang/literal-escaper/tree/v0.0.5
+
 //! Utilities for validating (raw) string, char, and byte literals and
 //! turning escape sequences into the values they represent.
 
@@ -5,9 +8,6 @@ use std::ffi::CStr;
 use std::num::NonZero;
 use std::ops::Range;
 use std::str::Chars;
-
-#[cfg(test)]
-mod tests;
 
 /// Errors and warnings that can occur during string, char, and byte unescaping.
 ///
