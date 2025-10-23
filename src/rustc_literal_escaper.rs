@@ -4,6 +4,7 @@
 //! Utilities for validating (raw) string, char, and byte literals and
 //! turning escape sequences into the values they represent.
 
+use crate::num::NonZeroChar;
 use std::ffi::CStr;
 use std::num::NonZero;
 use std::ops::Range;
@@ -108,7 +109,7 @@ pub fn check_raw_byte_str(src: &str, callback: impl FnMut(Range<usize>, Result<u
 /// NOTE: Does no escaping, but produces errors for bare carriage return ('\r').
 pub fn check_raw_c_str(
     src: &str,
-    callback: impl FnMut(Range<usize>, Result<NonZero<char>, EscapeError>),
+    callback: impl FnMut(Range<usize>, Result<NonZeroChar, EscapeError>),
 ) {
     CStr::check_raw(src, callback);
 }
@@ -185,11 +186,11 @@ fn char2byte(c: char) -> Result<u8, EscapeError> {
 }
 
 impl CheckRaw for CStr {
-    type RawUnit = NonZero<char>;
+    type RawUnit = NonZeroChar;
 
     #[inline]
     fn char2raw_unit(c: char) -> Result<Self::RawUnit, EscapeError> {
-        NonZero::new(c).ok_or(EscapeError::NulInCStr)
+        NonZeroChar::new(c).ok_or(EscapeError::NulInCStr)
     }
 }
 
@@ -253,7 +254,7 @@ pub enum MixedUnit {
     /// For example, if '¥' appears in a string it is represented here as
     /// `MixedUnit::Char('¥')`, and it will be appended to the relevant byte
     /// string as the two-byte UTF-8 sequence `[0xc2, 0xa5]`
-    Char(NonZero<char>),
+    Char(NonZeroChar),
 
     /// Used for high bytes (`\x80`..`\xff`).
     ///
@@ -263,9 +264,9 @@ pub enum MixedUnit {
     HighByte(NonZero<u8>),
 }
 
-impl From<NonZero<char>> for MixedUnit {
+impl From<NonZeroChar> for MixedUnit {
     #[inline]
-    fn from(c: NonZero<char>) -> Self {
+    fn from(c: NonZeroChar) -> Self {
         MixedUnit::Char(c)
     }
 }
@@ -274,7 +275,7 @@ impl From<NonZero<u8>> for MixedUnit {
     #[inline]
     fn from(byte: NonZero<u8>) -> Self {
         if byte.get().is_ascii() {
-            MixedUnit::Char(NonZero::new(byte.get() as char).unwrap())
+            MixedUnit::Char(NonZeroChar::new(byte.get() as char).unwrap())
         } else {
             MixedUnit::HighByte(byte)
         }
@@ -286,7 +287,7 @@ impl TryFrom<char> for MixedUnit {
 
     #[inline]
     fn try_from(c: char) -> Result<Self, EscapeError> {
-        NonZero::new(c)
+        NonZeroChar::new(c)
             .map(MixedUnit::Char)
             .ok_or(EscapeError::NulInCStr)
     }
