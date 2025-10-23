@@ -1,6 +1,6 @@
 // TODO: use NonZero<char> in Rust 1.89+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) struct NonZeroChar(char);
+pub struct NonZeroChar(char);
 
 impl NonZeroChar {
     pub fn new(ch: char) -> Option<Self> {
