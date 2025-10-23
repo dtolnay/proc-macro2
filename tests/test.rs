@@ -146,6 +146,30 @@ fn literal_raw_string() {
         .unwrap_err();
 }
 
+#[cfg(procmacro2_semver_exempt)]
+#[test]
+fn literal_string_value() {
+    for string in ["", "...", "...\t...", "...\\...", "...\0...", "...\u{1}..."] {
+        assert_eq!(string, Literal::string(string).str_value().unwrap());
+        assert_eq!(
+            string,
+            format!("r\"{string}\"")
+                .parse::<Literal>()
+                .unwrap()
+                .str_value()
+                .unwrap(),
+        );
+        assert_eq!(
+            string,
+            format!("r##\"{string}\"##")
+                .parse::<Literal>()
+                .unwrap()
+                .str_value()
+                .unwrap(),
+        );
+    }
+}
+
 #[test]
 fn literal_byte_character() {
     #[track_caller]
@@ -189,6 +213,42 @@ fn literal_byte_string() {
     "b\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
     "b\"\\\r\n  \u{a0}x\"".parse::<TokenStream>().unwrap_err();
     "br\"\u{a0}\"".parse::<TokenStream>().unwrap_err();
+}
+
+#[cfg(procmacro2_semver_exempt)]
+#[test]
+fn literal_byte_string_value() {
+    for bytestr in [
+        &b""[..],
+        b"...",
+        b"...\t...",
+        b"...\\...",
+        b"...\0...",
+        b"...\xF0...",
+    ] {
+        assert_eq!(
+            bytestr,
+            Literal::byte_string(bytestr).byte_str_value().unwrap(),
+        );
+        if let Ok(string) = str::from_utf8(bytestr) {
+            assert_eq!(
+                bytestr,
+                format!("br\"{string}\"")
+                    .parse::<Literal>()
+                    .unwrap()
+                    .byte_str_value()
+                    .unwrap(),
+            );
+            assert_eq!(
+                bytestr,
+                format!("br##\"{string}\"##")
+                    .parse::<Literal>()
+                    .unwrap()
+                    .byte_str_value()
+                    .unwrap(),
+            );
+        }
+    }
 }
 
 #[test]
@@ -258,6 +318,42 @@ fn literal_c_string() {
     for invalid in &[r#"c"\0""#, r#"c"\x00""#, r#"c"\u{0}""#, "c\"\0\""] {
         if let Ok(unexpected) = invalid.parse::<TokenStream>() {
             panic!("unexpected token: {:?}", unexpected);
+        }
+    }
+}
+
+#[cfg(procmacro2_semver_exempt)]
+#[test]
+fn literal_c_string_value() {
+    for cstr in [
+        c"",
+        c"...",
+        c"...\t...",
+        c"...\\...",
+        c"...\u{1}...",
+        c"...\xF0...",
+    ] {
+        assert_eq!(
+            cstr.to_bytes_with_nul(),
+            Literal::c_string(cstr).cstr_value().unwrap(),
+        );
+        if let Ok(string) = cstr.to_str() {
+            assert_eq!(
+                cstr.to_bytes_with_nul(),
+                format!("cr\"{string}\"")
+                    .parse::<Literal>()
+                    .unwrap()
+                    .cstr_value()
+                    .unwrap(),
+            );
+            assert_eq!(
+                cstr.to_bytes_with_nul(),
+                format!("cr##\"{string}\"##")
+                    .parse::<Literal>()
+                    .unwrap()
+                    .cstr_value()
+                    .unwrap(),
+            );
         }
     }
 }
