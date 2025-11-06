@@ -180,19 +180,16 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
         #[cfg(span_locations)]
         let lo = input.off;
 
-        let first = match input.bytes().next() {
-            Some(first) => first,
-            None => match stack.last() {
-                None => return Ok(trees.build()),
+        let Some(first) = input.bytes().next() else {
+            return match stack.last() {
+                None => Ok(trees.build()),
                 #[cfg(span_locations)]
-                Some((lo, _frame)) => {
-                    return Err(LexError {
-                        span: Span { lo: *lo, hi: *lo },
-                    })
-                }
+                Some((lo, _frame)) => Err(LexError {
+                    span: Span { lo: *lo, hi: *lo },
+                }),
                 #[cfg(not(span_locations))]
-                Some(_frame) => return Err(LexError { span: Span {} }),
-            },
+                Some(_frame) => Err(LexError { span: Span {} }),
+            };
         };
 
         if let Some(open_delimiter) = match first {
@@ -213,9 +210,8 @@ pub(crate) fn token_stream(mut input: Cursor) -> Result<TokenStream, LexError> {
             b'}' => Some(Delimiter::Brace),
             _ => None,
         } {
-            let frame = match stack.pop() {
-                Some(frame) => frame,
-                None => return Err(lex_error(input)),
+            let Some(frame) = stack.pop() else {
+                return Err(lex_error(input));
             };
             #[cfg(span_locations)]
             let (lo, frame) = frame;
@@ -895,11 +891,8 @@ fn punct_char(input: Cursor) -> PResult<char> {
     }
 
     let mut chars = input.chars();
-    let first = match chars.next() {
-        Some(ch) => ch,
-        None => {
-            return Err(Reject);
-        }
+    let Some(first) = chars.next() else {
+        return Err(Reject);
     };
     let recognized = "~!@#$%^&*-=+|;:,<.>/?'";
     if recognized.contains(first) {
