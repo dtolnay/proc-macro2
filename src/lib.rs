@@ -304,6 +304,31 @@ impl Extend<TokenStream> for TokenStream {
     }
 }
 
+impl Extend<Group> for TokenStream {
+    fn extend<I: IntoIterator<Item = Group>>(&mut self, tokens: I) {
+        self.inner.extend(tokens.into_iter().map(TokenTree::Group));
+    }
+}
+
+impl Extend<Ident> for TokenStream {
+    fn extend<I: IntoIterator<Item = Ident>>(&mut self, tokens: I) {
+        self.inner.extend(tokens.into_iter().map(TokenTree::Ident));
+    }
+}
+
+impl Extend<Punct> for TokenStream {
+    fn extend<I: IntoIterator<Item = Punct>>(&mut self, tokens: I) {
+        self.inner.extend(tokens.into_iter().map(TokenTree::Punct));
+    }
+}
+
+impl Extend<Literal> for TokenStream {
+    fn extend<I: IntoIterator<Item = Literal>>(&mut self, tokens: I) {
+        self.inner
+            .extend(tokens.into_iter().map(TokenTree::Literal));
+    }
+}
+
 /// Collects a number of token trees into a single stream.
 impl FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(tokens: I) -> Self {
