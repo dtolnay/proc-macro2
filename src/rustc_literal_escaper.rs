@@ -6,9 +6,9 @@
 
 use crate::num::NonZeroChar;
 use core::ffi::CStr;
-use std::num::NonZeroU8;
-use std::ops::Range;
-use std::str::Chars;
+use core::num::NonZeroU8;
+use core::ops::Range;
+use core::str::Chars;
 
 /// Errors and warnings that can occur during string, char, and byte unescaping.
 ///
