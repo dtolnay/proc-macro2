@@ -83,6 +83,7 @@
 //! types make use of thread-local memory, meaning they cannot be accessed from
 //! a different thread.
 
+#![no_std]
 #![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.104")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
@@ -135,6 +136,7 @@ compile_error! {"\
 "}
 
 extern crate alloc;
+extern crate std;
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;
@@ -173,6 +175,11 @@ use crate::extra::DelimSpan;
 use crate::marker::{ProcMacroAutoTraits, MARKER};
 #[cfg(procmacro2_semver_exempt)]
 use crate::rustc_literal_escaper::MixedUnit;
+#[cfg(procmacro2_semver_exempt)]
+use alloc::borrow::ToOwned as _;
+use alloc::string::{String, ToString as _};
+#[cfg(procmacro2_semver_exempt)]
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::ffi::CStr;
 use core::fmt::{self, Debug, Display};
