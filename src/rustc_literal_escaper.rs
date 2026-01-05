@@ -5,7 +5,7 @@
 //! turning escape sequences into the values they represent.
 
 use crate::num::NonZeroChar;
-use std::ffi::CStr;
+use core::ffi::CStr;
 use std::num::NonZeroU8;
 use std::ops::Range;
 use std::str::Chars;

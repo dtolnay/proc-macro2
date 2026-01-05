@@ -9,11 +9,11 @@ use crate::probe::proc_macro_span_file;
 #[cfg(all(span_locations, proc_macro_span_location))]
 use crate::probe::proc_macro_span_location;
 use crate::{Delimiter, Punct, Spacing, TokenTree};
+use core::ffi::CStr;
 use core::fmt::{self, Debug, Display};
 #[cfg(span_locations)]
 use core::ops::Range;
 use core::ops::RangeBounds;
-use std::ffi::CStr;
 #[cfg(span_locations)]
 use std::path::PathBuf;
 

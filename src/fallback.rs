@@ -13,6 +13,7 @@ use core::cell::RefCell;
 use core::cmp;
 #[cfg(all(span_locations, not(fuzzing)))]
 use core::cmp::Ordering;
+use core::ffi::CStr;
 use core::fmt::{self, Debug, Display, Write};
 use core::mem::ManuallyDrop;
 #[cfg(span_locations)]
@@ -22,7 +23,6 @@ use core::ptr;
 use core::str;
 #[cfg(feature = "proc-macro")]
 use core::str::FromStr;
-use std::ffi::CStr;
 #[cfg(wrap_proc_macro)]
 use std::panic;
 #[cfg(span_locations)]

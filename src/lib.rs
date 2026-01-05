@@ -175,6 +175,7 @@ use crate::marker::{ProcMacroAutoTraits, MARKER};
 #[cfg(procmacro2_semver_exempt)]
 use crate::rustc_literal_escaper::MixedUnit;
 use core::cmp::Ordering;
+use core::ffi::CStr;
 use core::fmt::{self, Debug, Display};
 use core::hash::{Hash, Hasher};
 #[cfg(span_locations)]
@@ -182,7 +183,6 @@ use core::ops::Range;
 use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::error::Error;
-use std::ffi::CStr;
 #[cfg(span_locations)]
 use std::path::PathBuf;
 
