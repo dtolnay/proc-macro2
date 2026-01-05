@@ -84,7 +84,7 @@
 //! a different thread.
 
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.104")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.105")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
