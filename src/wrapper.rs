@@ -9,6 +9,10 @@ use crate::probe::proc_macro_span_file;
 #[cfg(all(span_locations, proc_macro_span_location))]
 use crate::probe::proc_macro_span_location;
 use crate::{Delimiter, Punct, Spacing, TokenTree};
+#[cfg(all(span_locations, not(proc_macro_span_file)))]
+use alloc::borrow::ToOwned as _;
+use alloc::string::{String, ToString as _};
+use alloc::vec::Vec;
 use core::ffi::CStr;
 use core::fmt::{self, Debug, Display};
 #[cfg(span_locations)]
