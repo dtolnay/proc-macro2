@@ -2,7 +2,9 @@
 
 #![cfg_attr(procmacro2_build_probe, no_std)]
 
+extern crate alloc;
 extern crate proc_macro;
+extern crate std;
 
 use proc_macro::Span;
 

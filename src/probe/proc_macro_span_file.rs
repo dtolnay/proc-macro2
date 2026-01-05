@@ -4,6 +4,7 @@
 
 extern crate alloc;
 extern crate proc_macro;
+extern crate std;
 
 use alloc::string::String;
 use proc_macro::Span;
