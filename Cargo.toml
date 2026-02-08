@@ -10,7 +10,7 @@ edition = "2021"
 keywords = ["macros", "syn"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/dtolnay/proc-macro2"
-rust-version = "1.70"
+rust-version = "1.71"
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg=procmacro2_semver_exempt"]
