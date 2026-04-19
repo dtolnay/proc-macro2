@@ -516,6 +516,8 @@ impl Span {
     ///
     /// This might not correspond to a valid file system path. It might be
     /// remapped, or might be an artificial path such as `"<macro expansion>"`.
+    ///
+    /// With stable Rust suggest to use this with Rust 1.88 or newer.
     #[cfg(span_locations)]
     #[cfg_attr(docsrs, doc(cfg(feature = "span-locations")))]
     pub fn file(&self) -> String {
@@ -528,6 +530,8 @@ impl Span {
     ///
     /// This path should not be embedded in the output of the macro; prefer
     /// `file()` instead.
+    ///
+    /// With stable Rust suggest to use this with Rust 1.88 or newer.
     #[cfg(span_locations)]
     #[cfg_attr(docsrs, doc(cfg(feature = "span-locations")))]
     pub fn local_file(&self) -> Option<PathBuf> {
