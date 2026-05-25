@@ -509,6 +509,19 @@ fn literal_parse() {
 }
 
 #[test]
+fn literal_negative_suffixed() {
+    for literal in [
+        "-1i32", "-1i64", "-1u32", "-1u64",
+        "-1.0f32", "-1.0f64", "-0isize", "-0usize",
+    ] {
+        let parsed = literal.parse::<Literal>().unwrap();
+        assert_eq!(parsed.to_string(), literal);
+        let reparsed = parsed.to_string().parse::<Literal>().unwrap();
+        assert_eq!(reparsed.to_string(), literal);
+    }
+}
+
+#[test]
 fn literal_span() {
     let positive = "0.1".parse::<Literal>().unwrap();
     let negative = "-0.1".parse::<Literal>().unwrap();
