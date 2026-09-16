@@ -549,6 +549,11 @@ impl Span {
     /// Compares two spans to see if they're equal.
     ///
     /// This method is semver exempt and not exposed by default.
+    ///
+    /// Semver-exempt APIs are not available as a Cargo feature. They are
+    /// enabled by passing `--cfg procmacro2_semver_exempt` in `RUSTFLAGS` from
+    /// the top-level crate; see the "Unstable features" section of the
+    /// [crate documentation](crate#unstable-features).
     #[cfg(procmacro2_semver_exempt)]
     #[cfg_attr(docsrs, doc(cfg(procmacro2_semver_exempt)))]
     pub fn eq(&self, other: &Span) -> bool {
