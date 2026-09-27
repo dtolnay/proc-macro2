@@ -4,12 +4,10 @@ use crate::fallback::{self, FromStr2 as _};
 use crate::location::LineColumn;
 #[cfg(proc_macro_span)]
 use crate::probe::proc_macro_span;
-#[cfg(all(span_locations, proc_macro_span_file))]
-use crate::probe::proc_macro_span_file;
 #[cfg(all(span_locations, proc_macro_span_location))]
 use crate::probe::proc_macro_span_location;
 use crate::{Delimiter, Punct, Spacing, TokenTree};
-#[cfg(all(span_locations, not(proc_macro_span_file)))]
+#[cfg(all(span_locations, no_proc_macro_span_file))]
 use alloc::borrow::ToOwned as _;
 use alloc::string::{String, ToString as _};
 use alloc::vec::Vec;
@@ -472,9 +470,9 @@ impl Span {
     #[cfg(span_locations)]
     pub(crate) fn file(&self) -> String {
         match self {
-            #[cfg(proc_macro_span_file)]
-            Span::Compiler(s) => proc_macro_span_file::file(s),
-            #[cfg(not(proc_macro_span_file))]
+            #[cfg(not(no_proc_macro_span_file))]
+            Span::Compiler(s) => s.file(),
+            #[cfg(no_proc_macro_span_file)]
             Span::Compiler(_) => "<token stream>".to_owned(),
             Span::Fallback(s) => s.file(),
         }
@@ -483,9 +481,9 @@ impl Span {
     #[cfg(span_locations)]
     pub(crate) fn local_file(&self) -> Option<PathBuf> {
         match self {
-            #[cfg(proc_macro_span_file)]
-            Span::Compiler(s) => proc_macro_span_file::local_file(s),
-            #[cfg(not(proc_macro_span_file))]
+            #[cfg(not(no_proc_macro_span_file))]
+            Span::Compiler(s) => s.local_file(),
+            #[cfg(no_proc_macro_span_file)]
             Span::Compiler(_) => None,
             Span::Fallback(s) => s.local_file(),
         }
