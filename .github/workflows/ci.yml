@@ -169,7 +169,6 @@ jobs:
       - uses: dtolnay/install@honggfuzz
       - name: Run apt install binutils-dev libunwind-dev
         run: |
-          sudo sed -i 's/^update_initramfs=yes$/update_initramfs=no/' /etc/initramfs-tools/update-initramfs.conf
           sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update
           sudo apt-get install binutils-dev libunwind-dev
