@@ -359,10 +359,11 @@ fn literal_nocapture(input: Cursor) -> Result<Cursor, Reject> {
     }
 }
 
-fn literal_suffix(input: Cursor) -> Cursor {
+fn literal_suffix(input: Cursor) -> Result<Cursor, Reject> {
     match ident_not_raw(input) {
-        Ok((input, _)) => input,
-        Err(Reject) => input,
+        Ok((_, "_")) => Err(Reject),
+        Ok((input, _)) => Ok(input),
+        Err(Reject) => Ok(input),
     }
 }
 
@@ -383,7 +384,7 @@ fn cooked_string(mut input: Cursor) -> Result<Cursor, Reject> {
         match ch {
             '"' => {
                 let input = input.advance(i + 1);
-                return Ok(literal_suffix(input));
+                return literal_suffix(input);
             }
             '\r' => match chars.next() {
                 Some((_, '\n')) => {}
@@ -417,7 +418,7 @@ fn raw_string(input: Cursor) -> Result<Cursor, Reject> {
         match byte {
             b'"' if input.rest[i + 1..].starts_with(delimiter) => {
                 let rest = input.advance(i + 1 + delimiter.len());
-                return Ok(literal_suffix(rest));
+                return literal_suffix(rest);
             }
             b'\r' => match bytes.next() {
                 Some((_, b'\n')) => {}
@@ -445,7 +446,7 @@ fn cooked_byte_string(mut input: Cursor) -> Result<Cursor, Reject> {
         match b {
             b'"' => {
                 let input = input.advance(offset + 1);
-                return Ok(literal_suffix(input));
+                return literal_suffix(input);
             }
             b'\r' => match bytes.next() {
                 Some((_, b'\n')) => {}
@@ -494,7 +495,7 @@ fn raw_byte_string(input: Cursor) -> Result<Cursor, Reject> {
         match byte {
             b'"' if input.rest[i + 1..].starts_with(delimiter) => {
                 let rest = input.advance(i + 1 + delimiter.len());
-                return Ok(literal_suffix(rest));
+                return literal_suffix(rest);
             }
             b'\r' => match bytes.next() {
                 Some((_, b'\n')) => {}
@@ -527,7 +528,7 @@ fn raw_c_string(input: Cursor) -> Result<Cursor, Reject> {
         match byte {
             b'"' if input.rest[i + 1..].starts_with(delimiter) => {
                 let rest = input.advance(i + 1 + delimiter.len());
-                return Ok(literal_suffix(rest));
+                return literal_suffix(rest);
             }
             b'\r' => match bytes.next() {
                 Some((_, b'\n')) => {}
@@ -547,7 +548,7 @@ fn cooked_c_string(mut input: Cursor) -> Result<Cursor, Reject> {
         match ch {
             '"' => {
                 let input = input.advance(i + 1);
-                return Ok(literal_suffix(input));
+                return literal_suffix(input);
             }
             '\r' => match chars.next() {
                 Some((_, '\n')) => {}
@@ -596,7 +597,7 @@ fn byte(input: Cursor) -> Result<Cursor, Reject> {
         return Err(Reject);
     }
     let input = input.advance(offset).parse("'")?;
-    Ok(literal_suffix(input))
+    literal_suffix(input)
 }
 
 fn character(input: Cursor) -> Result<Cursor, Reject> {
@@ -616,7 +617,7 @@ fn character(input: Cursor) -> Result<Cursor, Reject> {
     }
     let (idx, _) = chars.next().ok_or(Reject)?;
     let input = input.advance(idx).parse("'")?;
-    Ok(literal_suffix(input))
+    literal_suffix(input)
 }
 
 macro_rules! next_ch {
