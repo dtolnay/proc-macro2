@@ -464,6 +464,12 @@ fn literal_suffix() {
     assert_eq!(token_count("0o0A"), 1);
     assert_eq!(token_count("0E--0"), 4);
     assert_eq!(token_count("0.0ECMA"), 1);
+    assert_eq!(token_count("\"s\"__"), 1);
+    assert_eq!(token_count("\"s\"_s"), 1);
+    assert_eq!(token_count("'c'__"), 1);
+    assert_eq!(token_count("'c'_s"), 1);
+    assert_eq!(token_count("b\"\"__"), 1);
+    assert_eq!(token_count("c\"\"__"), 1);
 }
 
 #[test]
@@ -685,6 +691,12 @@ fn fail() {
     fail("br##\"\"#");
     fail("cr##\"\"#");
     fail("\"\\\n\u{85}\r\"");
+    fail("'x'_");
+    fail("\"s\"_");
+    fail("r#\"s\"#_");
+    fail("b\"s\"_");
+    fail("c\"s\"_");
+    fail("b's'_");
 }
 
 #[cfg(span_locations)]
