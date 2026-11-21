@@ -119,7 +119,21 @@ fn literal_string() {
     );
 
     "\"\\\r\n    x\"".parse::<TokenStream>().unwrap();
-    "\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
+    "\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap();
+}
+
+#[test]
+fn literal_string_continuation_carriage_return() {
+    for prefix in &["", "b", "c"] {
+        for newline in &["\n", "\r\n"] {
+            for whitespace in &["\r", " \r\t \r"] {
+                for suffix in &["", "x"] {
+                    let source = format!("{}\"\\{}{}{}\"", prefix, newline, whitespace, suffix);
+                    source.parse::<TokenStream>().unwrap();
+                }
+            }
+        }
+    }
 }
 
 #[test]
@@ -210,7 +224,7 @@ fn literal_byte_string() {
     );
 
     "b\"\\\r\n    x\"".parse::<TokenStream>().unwrap();
-    "b\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap_err();
+    "b\"\\\r\n  \rx\"".parse::<TokenStream>().unwrap();
     "b\"\\\r\n  \u{a0}x\"".parse::<TokenStream>().unwrap_err();
     "br\"\u{a0}\"".parse::<TokenStream>().unwrap_err();
 }
